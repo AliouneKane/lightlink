@@ -1,0 +1,36 @@
+# Secrets (never commit)
+.env
+.env.*
+!.env.example
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+dist/
+npm-debug.log*
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+*.iml
+android/local.properties
+
+# Python (prediction)
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+
+# Firebase
+serviceaccount*.json
+google-services.json
+.firebase/
