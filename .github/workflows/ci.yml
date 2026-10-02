@@ -1,0 +1,104 @@
+name: CI
+
+# Runs on every push and on every pull request to main.
+# A red check means: do not merge.
+on:
+  push:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  web:
+    name: Web (format, lint, tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check web project exists
+        id: has
+        working-directory: .
+        run: |
+          if [ -f web/package.json ]; then echo "found=true" >> "$GITHUB_OUTPUT"; else echo "found=false" >> "$GITHUB_OUTPUT"; echo "No web/package.json yet, skipping."; fi
+      - uses: actions/setup-node@v4
+        if: steps.has.outputs.found == 'true'
+        with:
+          node-version: 20
+      - if: steps.has.outputs.found == 'true'
+        run: npm install
+      - name: Prettier
+        if: steps.has.outputs.found == 'true'
+        run: npx prettier --check .
+      - name: ESLint
+        if: steps.has.outputs.found == 'true'
+        run: npm run lint --if-present
+      - name: Tests
+        if: steps.has.outputs.found == 'true'
+        run: npm test --if-present
+
+  mobile:
+    name: Mobile (format, analyze, tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check mobile project exists
+        id: has
+        working-directory: .
+        run: |
+          if [ -f mobile/pubspec.yaml ]; then echo "found=true" >> "$GITHUB_OUTPUT"; else echo "found=false" >> "$GITHUB_OUTPUT"; echo "No mobile/pubspec.yaml yet, skipping."; fi
+      - uses: subosito/flutter-action@v2
+        if: steps.has.outputs.found == 'true'
+        with:
+          channel: stable
+      - if: steps.has.outputs.found == 'true'
+        run: flutter pub get
+      - name: Format
+        if: steps.has.outputs.found == 'true'
+        run: dart format --output=none --set-exit-if-changed .
+      - name: Analyze
+        if: steps.has.outputs.found == 'true'
+        run: flutter analyze
+      - name: Tests
+        if: steps.has.outputs.found == 'true'
+        run: flutter test
+
+  prediction:
+    name: Prediction (tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: prediction
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check prediction project exists
+        id: has
+        working-directory: .
+        run: |
+          if [ -f prediction/requirements.txt ]; then echo "found=true" >> "$GITHUB_OUTPUT"; else echo "found=false" >> "$GITHUB_OUTPUT"; echo "No prediction/requirements.txt yet, skipping."; fi
+      - uses: actions/setup-python@v5
+        if: steps.has.outputs.found == 'true'
+        with:
+          python-version: "3.11"
+      - if: steps.has.outputs.found == 'true'
+        run: pip install -r requirements.txt pytest
+      - name: Tests
+        if: steps.has.outputs.found == 'true'
+        run: pytest
