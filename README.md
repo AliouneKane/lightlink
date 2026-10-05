@@ -44,7 +44,7 @@ LightLink combines three pillars:
 
 - Alioune Abdou Salam Kane
 - Ndeye Ramatoulaye Ndoye Fall
-- Judicael Oscar Kafando
+- Judicaël Oscar Kafando
 - Papa Amadou Niang
 
 ## Getting started
