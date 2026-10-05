@@ -38,18 +38,32 @@ jobs:
       - uses: actions/setup-node@v4
         if: steps.has.outputs.found == 'true'
         with:
-          node-version: 20
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
       - if: steps.has.outputs.found == 'true'
-        run: npm install
+        run: npm ci
       - name: Prettier
         if: steps.has.outputs.found == 'true'
-        run: npx prettier --check .
+        run: npm run format:check
       - name: ESLint
         if: steps.has.outputs.found == 'true'
         run: npm run lint --if-present
       - name: Tests
         if: steps.has.outputs.found == 'true'
         run: npm test --if-present
+      - name: Typecheck
+        if: steps.has.outputs.found == 'true'
+        run: npm run typecheck
+      - name: Production build
+        if: steps.has.outputs.found == 'true'
+        run: npm run build
+      - name: Install browser
+        if: steps.has.outputs.found == 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Browser tests
+        if: steps.has.outputs.found == 'true'
+        run: npm run test:e2e
 
   mobile:
     name: Mobile (format, analyze, tests)
