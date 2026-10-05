@@ -691,6 +691,49 @@ test("theme choice survives reload and can be changed back", async ({
   await expect(shell).toHaveAttribute("data-theme", "dark");
 });
 
+test("pilot neighborhoods toggle by arrow and keyboard and survive reload", async ({
+  page,
+}, testInfo) => {
+  await page.goto("/");
+  const sidebar = page.getByRole("complementary", {
+    name: "Navigation principale",
+  });
+  const toggle = sidebar.getByRole("button", {
+    name: "Quartiers pilotes",
+    exact: true,
+  });
+  const neighborhoods = sidebar.locator(".sidebar-zone-links");
+  await revealSidebarControl(page, toggle);
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await expect(neighborhoods.getByRole("link")).toHaveCount(10);
+  await toggle.locator(".sidebar-group-chevron").click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(neighborhoods).not.toBeVisible();
+  await expect(
+    sidebar.locator(".source-nav").getByRole("link", { name: /Solaire/ }),
+  ).toBeVisible();
+  await page.reload();
+  await revealSidebarControl(page, toggle);
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(neighborhoods).not.toBeVisible();
+  await toggle.focus();
+  await toggle.press("Enter");
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await expect(neighborhoods).toBeVisible();
+  await toggle.press("Space");
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(neighborhoods).not.toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath("pilot-neighborhoods-closed.png"),
+  });
+  await toggle.press("Enter");
+  await neighborhoods.getByRole("link", { name: /^Madina/ }).click();
+  await expect(page).toHaveURL(/\/carte\?quartier=madina$/);
+  await expect(page.locator(".neighborhood-detail strong")).toHaveText(
+    "Madina",
+  );
+});
+
 test("desktop sidebar collapse changes its width and survives reload", async ({
   page,
 }, testInfo) => {

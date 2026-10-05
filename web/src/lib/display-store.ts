@@ -7,6 +7,7 @@ export type SectionId = (typeof sectionIds)[number];
 export interface DisplayPreferences {
   theme: "dark" | "light";
   collapsed: boolean;
+  neighborhoodsOpen: boolean;
   order: SectionId[];
   visible: Record<SectionId, boolean>;
 }
@@ -14,6 +15,7 @@ export const displayKey = "lightlink.display.v1";
 export const defaultDisplay: DisplayPreferences = {
   theme: "dark",
   collapsed: false,
+  neighborhoodsOpen: true,
   order: [...sectionIds],
   visible: { offers: true, network: true, insights: true },
 };
@@ -26,6 +28,8 @@ export function parseDisplay(value: string | null): DisplayPreferences {
     if (
       (data.theme !== "dark" && data.theme !== "light") ||
       typeof data.collapsed !== "boolean" ||
+      (data.neighborhoodsOpen !== undefined &&
+        typeof data.neighborhoodsOpen !== "boolean") ||
       !Array.isArray(data.order) ||
       data.order.length !== 3 ||
       new Set(data.order).size !== 3 ||
@@ -40,6 +44,10 @@ export function parseDisplay(value: string | null): DisplayPreferences {
     return {
       theme: data.theme,
       collapsed: data.collapsed,
+      neighborhoodsOpen:
+        typeof data.neighborhoodsOpen === "boolean"
+          ? data.neighborhoodsOpen
+          : true,
       order: data.order as SectionId[],
       visible: {
         offers: visible.offers as boolean,

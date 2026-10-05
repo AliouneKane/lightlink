@@ -19,9 +19,29 @@ describe("display preferences boundary", () => {
     const preferences = {
       theme: "light",
       collapsed: true,
+      neighborhoodsOpen: false,
       order: ["insights", "offers", "network"],
       visible: { offers: false, network: true, insights: true },
     };
     expect(parseDisplay(JSON.stringify(preferences))).toEqual(preferences);
+  });
+  it("keeps existing preferences when the neighborhood setting is absent", () => {
+    const legacy = {
+      theme: "light",
+      collapsed: true,
+      order: defaultDisplay.order,
+      visible: defaultDisplay.visible,
+    };
+    expect(parseDisplay(JSON.stringify(legacy))).toEqual({
+      ...legacy,
+      neighborhoodsOpen: true,
+    });
+  });
+  it("rejects an invalid neighborhood visibility value", () => {
+    expect(
+      parseDisplay(
+        JSON.stringify({ ...defaultDisplay, neighborhoodsOpen: "false" }),
+      ),
+    ).toEqual(defaultDisplay);
   });
 });

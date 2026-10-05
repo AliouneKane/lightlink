@@ -208,12 +208,27 @@ export function AppShell({
           })}
         </nav>
         <div className="sidebar-scroll">
-          <div className="sidebar-group-title">
+          <button
+            type="button"
+            className="sidebar-group-title sidebar-group-toggle"
+            aria-expanded={display.neighborhoodsOpen}
+            aria-controls="sidebar-pilot-neighborhoods"
+            onClick={() =>
+              updateDisplay((previous) => ({
+                ...previous,
+                neighborhoodsOpen: !previous.neighborhoodsOpen,
+              }))
+            }
+          >
             <MapPinSymbol />
             <span>Quartiers pilotes</span>
-            <ChevronDown size={14} />
-          </div>
-          <div className="sidebar-zone-links">
+            <ChevronDown size={14} className="sidebar-group-chevron" />
+          </button>
+          <div
+            className="sidebar-zone-links"
+            id="sidebar-pilot-neighborhoods"
+            hidden={!display.neighborhoodsOpen}
+          >
             {zones.map((zone) => (
               <Link
                 href={`/carte?quartier=${zone.id}`}
@@ -407,6 +422,7 @@ export function AppShell({
                         ...defaultDisplay,
                         theme: previous.theme,
                         collapsed: previous.collapsed,
+                        neighborhoodsOpen: previous.neighborhoodsOpen,
                       }))
                     }
                   >

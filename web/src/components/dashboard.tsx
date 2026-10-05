@@ -223,6 +223,7 @@ export function Dashboard({
                   ...defaultDisplay,
                   theme: previous.theme,
                   collapsed: previous.collapsed,
+                  neighborhoodsOpen: previous.neighborhoodsOpen,
                 }))
               }
             >

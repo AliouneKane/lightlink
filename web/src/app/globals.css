@@ -478,6 +478,23 @@ h3 {
 .sidebar-group-title > svg {
   color: #d8b568;
 }
+.sidebar-group-toggle {
+  width: 100%;
+  min-height: 32px;
+  height: auto;
+  border-radius: 6px;
+  text-align: left;
+}
+.sidebar-group-toggle:hover {
+  background: #ffffff0b;
+}
+.sidebar-group-toggle > .sidebar-group-chevron {
+  color: var(--yellow);
+  transition: transform 180ms ease;
+}
+.sidebar-group-toggle[aria-expanded="false"] .sidebar-group-chevron {
+  transform: rotate(-90deg);
+}
 .sidebar-scroll {
   min-height: 0;
   overflow-y: auto;
@@ -491,6 +508,9 @@ h3 {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+.sidebar-zone-links[hidden] {
+  display: none;
 }
 .sidebar-zone-links a,
 .sidebar-zone-links button,
