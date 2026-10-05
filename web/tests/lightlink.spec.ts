@@ -31,15 +31,17 @@ function stat(page: Page, name: string): Locator {
 }
 
 async function revealSidebarControl(page: Page, control: Locator) {
-  const visible = await control.isVisible();
-  const bounds = visible ? await control.boundingBox() : null;
-  if (!visible || !bounds || bounds.x < 0) {
-    const menu = page.getByRole("button", {
-      name: "Ouvrir le menu",
-      exact: true,
-    });
-    await expect(menu).toBeVisible();
-    await menu.click();
+  const menu = page.getByRole("button", {
+    name: "Ouvrir le menu",
+    exact: true,
+  });
+  if (await menu.isVisible()) {
+    // A hidden sidebar leaves the accessibility tree between locator calls.
+    // Open the drawer before resolving or measuring any of its controls.
+    if ((await menu.getAttribute("aria-expanded")) !== "true") {
+      await menu.click();
+    }
+    await expect(menu).toHaveAttribute("aria-expanded", "true");
   }
   await expect(control).toBeVisible();
   await control.scrollIntoViewIfNeeded();
@@ -59,6 +61,12 @@ async function closeMobileMenu(page: Page) {
       .getByRole("button", { name: "Fermer le menu", exact: true })
       .click();
     await expect(menu).toHaveAttribute("aria-expanded", "false");
+    await expect(
+      page.getByRole("complementary", {
+        name: "Navigation principale",
+        includeHidden: true,
+      }),
+    ).toBeHidden();
   }
 }
 
