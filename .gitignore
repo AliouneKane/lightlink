@@ -34,3 +34,13 @@ __pycache__/
 serviceaccount*.json
 google-services.json
 .firebase/
+
+# Local development and browser QA
+.tools/
+*.tsbuildinfo
+web/test-results/
+web/playwright-report/
+web/artifacts/
+
+# Reviewed upstream design reference (independent checkout)
+/linkwarden/

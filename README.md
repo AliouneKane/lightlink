@@ -25,7 +25,7 @@ LightLink combines three pillars:
 
 ## Tech stack
 
-- Mobile: Flutter
+- Mobile: React Native / Expo (planned; latest task distribution)
 - Web: Next.js
 - Backend, auth, realtime: Supabase or Firebase
 - Maps: Google Maps or Mapbox
@@ -34,7 +34,7 @@ LightLink combines three pillars:
 
 ## Repository structure
 
-- mobile/ : Flutter app
+- mobile/ : mobile app placeholder (React Native / Expo planned)
 - web/ : Next.js app
 - backend/ : database, rules and APIs
 - prediction/ : outage prediction logic
@@ -49,7 +49,26 @@ LightLink combines three pillars:
 
 ## Getting started
 
-Setup instructions are coming soon. Copy .env.example to .env and fill in your own values. Never commit secrets: this repository is public.
+The functional PAN web prototype runs locally with demonstration data. From the repository root:
+
+```sh
+cd web
+npm ci
+npm run dev
+```
+
+Open `http://localhost:3000`. The local prototype needs no API key or `.env` file. Reports, offers, requests and profile changes stay in this browser; authentication, live ECG data and the backend are future integrations. Team validation of the frontend is pending.
+
+```sh
+npm run lint
+npm run typecheck
+npm run test
+npm run build
+npx playwright install chromium
+npm run test:e2e
+```
+
+See [the web README](web/README.md) for routes, data limits and future Vercel setup, and [PAN's web scope](docs/PAN_WEB_SCOPE.md) for task status and reference documents. Never commit secrets: this repository is public.
 
 ## License
 
