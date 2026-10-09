@@ -343,6 +343,10 @@ test("la publication valide les données et empêche de demander sa propre offre
   page,
 }) => {
   await page.getByRole("button", { name: "Partager", exact: true }).click();
+  // Validation must return focus to the first error even from lower in the form.
+  await page
+    .getByLabel("Fin · HH:mm", { exact: true })
+    .scrollIntoViewIfNeeded();
   await page
     .getByRole("button", { name: "Publier mon offre locale", exact: true })
     .click();
@@ -367,6 +371,7 @@ test("la publication valide les données et empêche de demander sa propre offre
   await expect(page.getByRole("alert")).toHaveText(
     "Utilisez le format HH:mm, par exemple 19:00.",
   );
+  await expect(page.getByLabel("Fin · HH:mm", { exact: true })).toBeFocused();
   await page.getByLabel("Fin · HH:mm", { exact: true }).fill("19:00");
   await page
     .getByLabel("Contribution conseillée (GHS)", { exact: true })

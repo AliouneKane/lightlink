@@ -165,7 +165,8 @@ export function Screen({
             ref={scrollRef}
             style={{ flex: 1, minHeight: 0 }}
             keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
+            // React Native Web also dismisses focus during programmatic scrolls.
+            keyboardDismissMode={Platform.OS === "web" ? "none" : "on-drag"}
             contentContainerStyle={{ flexGrow: 1 }}
             showsVerticalScrollIndicator={false}
           >
