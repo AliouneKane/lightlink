@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "LightLink",
+    "slug": "lightlink",
+    "scheme": "lightlink",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "africa.lightlink.app"
+    },
+    "android": {
+      "package": "africa.lightlink.app",
+      "softwareKeyboardLayoutMode": "resize",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#132d39"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/icon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#121b22",
+          "image": "./assets/splash.png",
+          "imageWidth": 120
+        }
+      ],
+      "expo-image"
+    ]
+  }
+}

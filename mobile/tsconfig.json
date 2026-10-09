@@ -1,0 +1,12 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "types": ["node"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx", "../shared/**/*.ts"],
+  "exclude": ["node_modules", "dist", "test-results", "playwright-report"]
+}

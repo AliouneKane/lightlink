@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 import type { Neighborhood } from "@/lib/energy";
+import { forecastScenario } from "../../../shared/forecast";
 
 export const statusLabels = {
   powered: "Courant disponible",
@@ -139,12 +140,12 @@ export function EnergyArtwork() {
 }
 
 export function RiskChart({ detailed = false }: { detailed?: boolean }) {
-  const values = [13, 12, 9, 18, 26, 22, 35, 57, 78, 69, 48, 25];
+  const values = forecastScenario.riskValues;
   return (
     <div
       className={`risk-chart ${detailed ? "detailed" : ""}`}
       role="img"
-      aria-label="Exemple simulé : le risque de coupure atteint 78 % vers 18 h, puis diminue en soirée."
+      aria-label={forecastScenario.chartDescription}
     >
       {detailed && (
         <div className="chart-grid">
@@ -157,7 +158,12 @@ export function RiskChart({ detailed = false }: { detailed?: boolean }) {
         {values.map((value, index) => (
           <div
             key={index}
-            className={index >= 7 && index <= 9 ? "peak" : ""}
+            className={
+              index >= forecastScenario.peakStartIndex &&
+              index <= forecastScenario.peakEndIndex
+                ? "peak"
+                : ""
+            }
             style={{ height: `${value}%` }}
           >
             <span>{value}%</span>
@@ -165,10 +171,9 @@ export function RiskChart({ detailed = false }: { detailed?: boolean }) {
         ))}
       </div>
       <div className="chart-hours">
-        <span>06 h</span>
-        <span>12 h</span>
-        <span>18 h</span>
-        <span>23 h</span>
+        {forecastScenario.hourLabels.map((hour) => (
+          <span key={hour}>{hour}</span>
+        ))}
       </div>
     </div>
   );

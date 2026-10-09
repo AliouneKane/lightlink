@@ -55,6 +55,7 @@ import {
   type EnergyOffer,
 } from "@/lib/energy";
 import { updateDemoState, useDemoState } from "@/lib/demo-store";
+import { forecastScenario } from "../../../shared/forecast";
 
 const EnergyMap = dynamic(() => import("./energy-map"), {
   ssr: false,
@@ -377,7 +378,8 @@ export function LightLinkApp({
           <div>
             <strong>Coupure possible ce soir</strong>
             <span>
-              18:00 – 20:30 <i>·</i> environ 2 h 30
+              {forecastScenario.windowStart} – {forecastScenario.windowEnd}{" "}
+              <i>·</i> environ {forecastScenario.durationLabel}
             </span>
           </div>
         </div>
@@ -702,12 +704,13 @@ export function LightLinkApp({
                 <div>
                   <span>Créneau probable</span>
                   <strong>
-                    18:00 <i>–</i> 20:30
+                    {forecastScenario.windowStart} <i>–</i>{" "}
+                    {forecastScenario.windowEnd}
                   </strong>
                 </div>
                 <div>
                   <span>Durée estimée</span>
-                  <strong>2 h 30</strong>
+                  <strong>{forecastScenario.durationLabel}</strong>
                 </div>
                 <div>
                   <span>Confiance</span>
