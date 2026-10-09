@@ -25,20 +25,21 @@ LightLink combines three pillars:
 
 ## Tech stack
 
-- Mobile: React Native / Expo (planned; latest task distribution)
+- Mobile: React Native / Expo with TypeScript and Expo Router (local frontend prototype)
 - Web: Next.js
 - Backend, auth, realtime: Supabase or Firebase
-- Maps: Google Maps or Mapbox
+- Maps: native Google Maps / Apple Maps in the mobile prototype; production provider still to validate
 - Notifications: Firebase Cloud Messaging
 - Prediction: rules first, ML later
 
 ## Repository structure
 
-- mobile/ : mobile app placeholder (React Native / Expo planned)
+- mobile/ : React Native / Expo mobile frontend, local demonstration data
 - web/ : Next.js app
 - backend/ : database, rules and APIs
 - prediction/ : outage prediction logic
 - docs/ : documentation
+- shared/ : demonstration energy model shared by the mobile and web frontends
 
 ## Team: LightLink Squad
 
@@ -48,6 +49,16 @@ LightLink combines three pillars:
 - Papa Amadou Niang
 
 ## Getting started
+
+The mobile frontend runs with Expo. From the repository root:
+
+```sh
+cd mobile
+npm ci
+npm start
+```
+
+Use an Expo Go version compatible with SDK 57 from [the Expo Go download page](https://expo.dev/go), then scan the terminal's QR code with your phone on the same network. In Windows PowerShell, use `npm.cmd` and `npx.cmd` if script execution is restricted. See [the mobile README](mobile/README.md) for browser preview, checks and native setup limits, and [PAN's mobile scope](docs/PAN_MOBILE_SCOPE.md) for delivered frontend behavior and pending validation. This is a local prototype; authentication, live data, payment and push services remain future integrations.
 
 The functional PAN web prototype runs locally with demonstration data. From the repository root:
 

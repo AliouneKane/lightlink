@@ -16,7 +16,8 @@ Golden rule: **nobody pushes directly to `main`**. Everything goes through a pul
 - You cannot approve your own PR.
 - A new commit after approval requires a new approval.
 - All review comments must be resolved before merging.
-- Formatting: Prettier and ESLint for web, `dart format` and `flutter analyze` for mobile.
+- Formatting: Prettier and ESLint for web and React Native / Expo mobile. Run the project's TypeScript checks and tests before committing.
+- Mobile checks from `mobile/`: `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test`, `npx expo install --check`, `npm run export` and `npm run test:e2e`. Browser checks support frontend review; record native device checks separately.
 
 ## Secrets
 
