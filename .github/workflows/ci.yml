@@ -14,6 +14,9 @@ jobs:
   secrets:
     name: Secret scan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -21,6 +24,7 @@ jobs:
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
 
   web:
     name: Web (format, lint, tests)
@@ -66,33 +70,53 @@ jobs:
         run: npm run test:e2e
 
   mobile:
-    name: Mobile (format, analyze, tests)
+    name: Mobile (Expo, checks, browser journeys)
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: mobile
     steps:
       - uses: actions/checkout@v4
-      - name: Check mobile project exists
-        id: has
-        working-directory: .
-        run: |
-          if [ -f mobile/pubspec.yaml ]; then echo "found=true" >> "$GITHUB_OUTPUT"; else echo "found=false" >> "$GITHUB_OUTPUT"; echo "No mobile/pubspec.yaml yet, skipping."; fi
-      - uses: subosito/flutter-action@v2
-        if: steps.has.outputs.found == 'true'
+      - uses: actions/setup-node@v4
         with:
-          channel: stable
-      - if: steps.has.outputs.found == 'true'
-        run: flutter pub get
-      - name: Format
-        if: steps.has.outputs.found == 'true'
-        run: dart format --output=none --set-exit-if-changed .
-      - name: Analyze
-        if: steps.has.outputs.found == 'true'
-        run: flutter analyze
-      - name: Tests
-        if: steps.has.outputs.found == 'true'
-        run: flutter test
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - name: Prettier
+        run: npm run format:check
+      - name: ESLint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      - name: Expo dependency compatibility
+        run: npx expo install --check
+      - name: Export Android, iOS and web bundles
+        run: npm run export
+      - name: Install browser
+        run: npx playwright install --with-deps chromium
+      - name: Browser tests on exported web bundle
+        run: npx playwright test
+      - name: Upload mobile design captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-design-captures
+          path: mobile/artifacts/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Upload browser failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-browser-failure
+          path: |
+            mobile/playwright-report/
+            mobile/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
 
   prediction:
     name: Prediction (tests)
