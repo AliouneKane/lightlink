@@ -1,0 +1,18 @@
+{
+  "name": "lightlink-backend",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Supabase project for LightLink: database, auth, realtime and row level security.",
+  "scripts": {
+    "supabase": "supabase",
+    "start": "supabase start",
+    "stop": "supabase stop",
+    "status": "supabase status",
+    "reset": "supabase db reset",
+    "lint": "supabase db lint",
+    "types": "supabase gen types typescript --local > types/database.ts"
+  },
+  "devDependencies": {
+    "supabase": "^2.0.0"
+  }
+}
