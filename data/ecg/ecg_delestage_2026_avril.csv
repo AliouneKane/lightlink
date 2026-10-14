@@ -1,0 +1,5 @@
+bloc,debut,fin,description
+1,06:00,12:00,Un groupe (A, B ou C) est coupé; la rotation change chaque bloc
+2,12:00,18:00,Idem
+3,18:00,00:00,Idem
+4,00:00,06:00,Idem
