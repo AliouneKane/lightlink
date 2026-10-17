@@ -47,3 +47,6 @@ web/artifacts/
 
 # Third-party research PDFs (author copyright, public repo)
 docs/donnees/pdf/Klugman_*.pdf
+
+# Supabase CLI local state
+backend/supabase/.branches/

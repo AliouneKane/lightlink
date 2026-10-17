@@ -43,10 +43,31 @@ npm run stop
 
 Copy the local `API URL` and `anon key` from `npm run status` into `.env` (see `.env.example`).
 
-## Link a hosted project
+## Connect the apps to the hosted project
+
+Once, by a team member who owns the Supabase project:
 
 ```sh
+cd backend
 npx supabase login
-npx supabase link --project-ref <project-ref>
-npx supabase db push
+npx supabase link --project-ref <project-ref>      # asks the database password
+npx supabase db push --include-seed                # migrations + zones, groups, ECG schedules
+npx supabase config push                           # auth settings, incl. anonymous sign-ins
 ```
+
+Then give each app the two **public** values (Project Settings > API). Never the `service_role` key.
+
+| App | File (git-ignored) | Variables |
+|---|---|---|
+| Web | `web/.env.local` | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
+| Mobile | `mobile/.env` | `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` |
+
+Without these values both apps stay local demos. With them, reports go to the database, the map follows `zone_status` live, the ECG calendar reads `ecg_schedules`, the web creates real accounts, and the mobile keeps reports made offline until the network is back.
+
+Check the whole chain (anonymous report, Realtime, map, access rules) on the hosted project:
+
+```sh
+SUPABASE_URL=https://<project-ref>.supabase.co SUPABASE_ANON_KEY=<anon key> npm run test:live
+```
+
+For the daily ECG schedule import (`.github/workflows/ecg-schedules.yml`), add the repository secret `SUPABASE_DB_URL` (Project Settings > Database > Connection string, session pooler).
