@@ -126,17 +126,35 @@ jobs:
         working-directory: prediction
     steps:
       - uses: actions/checkout@v4
-      - name: Check prediction project exists
-        id: has
-        working-directory: .
-        run: |
-          if [ -f prediction/requirements.txt ]; then echo "found=true" >> "$GITHUB_OUTPUT"; else echo "found=false" >> "$GITHUB_OUTPUT"; echo "No prediction/requirements.txt yet, skipping."; fi
       - uses: actions/setup-python@v5
-        if: steps.has.outputs.found == 'true'
         with:
           python-version: "3.11"
-      - if: steps.has.outputs.found == 'true'
-        run: pip install -r requirements.txt pytest
-      - name: Tests
-        if: steps.has.outputs.found == 'true'
-        run: pytest
+      # Standard library only: nothing to install.
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
+      - name: Backtest
+        run: python backtest.py
+      - name: Generated SQL is up to date with data/
+        working-directory: .
+        run: |
+          python prediction/build_zone_groups.py > /dev/null
+          python prediction/import_schedules.py --write-seed > /dev/null
+          git diff --exit-code backend/supabase/seed.sql backend/seed.sql
+
+  backend:
+    name: Backend (migrations, row level security)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      # In-memory Postgres: no Docker, about one second.
+      - name: Migrations, seed and access rules
+        run: npm run test:sql

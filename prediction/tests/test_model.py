@@ -183,6 +183,40 @@ class RealData(unittest.TestCase):
         self.assertTrue(all(r.days == len(self.window.days) for r in rates.values()))
 
 
+class ImportSchedules(unittest.TestCase):
+    """Tâches 65-66: import des horaires ECG de data/ dans ecg_schedules."""
+
+    @classmethod
+    def setUpClass(cls):
+        import import_schedules
+
+        cls.module = import_schedules
+        cls.items = import_schedules.schedules()
+
+    def test_only_published_windows_no_invented_hour(self):
+        self.assertTrue(self.items)
+        for (_, start, end, kind), _item in self.items.items():
+            self.assertTrue(start.endswith("Z") and end.endswith("Z"))
+            self.assertLess(start, end)
+            self.assertIn(kind, ("planned", "emergency", "fault", "load_shedding"))
+
+    def test_known_real_windows(self):
+        keys = {(z, s) for z, s, _, _ in self.items}
+        self.assertIn(("madina", "2026-10-08T09:00:00Z"), keys)
+        self.assertIn(("east-legon", "2026-10-09T09:00:00Z"), keys)
+        self.assertIn(("tema-community-1", "2023-04-02T18:00:00Z"), keys)  # PDF ECG, groupe D
+
+    def test_localities_grouped_and_partial_flag(self):
+        madina14 = next(v for k, v in self.items.items() if k[0] == "madina" and k[1] == "2026-10-14T09:00:00Z")
+        self.assertEqual(madina14["localities"], {"Madina Washington", "UN Madina"})
+        self.assertTrue(madina14["partial"])
+
+    def test_sql_is_idempotent_and_deterministic(self):
+        sql = self.module.to_sql(self.items)
+        self.assertIn("on conflict (zone_id, starts_at, ends_at, kind) do nothing", sql)
+        self.assertEqual(sql, self.module.to_sql(self.module.schedules()))
+
+
 class Sql(unittest.TestCase):
     def test_sql_is_utc_idempotent_and_transactional(self):
         preds, window = m.predict_all(date(2026, 10, 16))
