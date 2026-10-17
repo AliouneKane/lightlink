@@ -24,7 +24,16 @@ import {
   ZonePicker,
 } from "@/components/ui";
 import { ForecastChart } from "@/components/forecast-chart";
-import { DEMO_LABEL, DEMO_TIMESTAMP } from "@/lib/energy";
+import {
+  DEMO_LABEL,
+  DEMO_TIMESTAMP,
+  answerReport,
+  findAnswer,
+  formatDay,
+  formatTime,
+  getZoneAnnouncements,
+  isActive,
+} from "@/lib/energy";
 import { forecastScenario } from "@/lib/forecast";
 import { useDemo } from "@/providers/demo-provider";
 import { useTheme } from "@/providers/theme-provider";
@@ -64,8 +73,26 @@ export default function ForecastScreen() {
 function ForecastContent({ initialZone }: { initialZone: string }) {
   const router = useRouter();
   const { colors } = useTheme();
-  const { neighborhoods } = useDemo();
+  const { neighborhoods, state, report } = useDemo();
   const [zoneId, setZoneId] = useState(initialZone);
+  const [answerError, setAnswerError] = useState<string | null>(null);
+  const homeZone =
+    neighborhoods.find((item) => item.id === state.profile.neighborhoodId) ??
+    neighborhoods[0];
+  const announcementTime = new Date();
+  const announcements = getZoneAnnouncements(homeZone.id, announcementTime);
+  const currentAnnouncement = announcements.find((item) =>
+    isActive(item, announcementTime),
+  );
+  const currentAnswer = currentAnnouncement
+    ? findAnswer(state.reports, currentAnnouncement, state.profile.name)
+    : undefined;
+  const pastAnnouncements = announcements.filter((item) => !item.demo);
+
+  function answerAnnouncement(hasPower: boolean) {
+    if (!currentAnnouncement) return;
+    setAnswerError(report(answerReport(currentAnnouncement, hasPower)));
+  }
   const [showMethod, setShowMethod] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
   const zone =
@@ -295,17 +322,88 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
           </View>
           <View style={[styles.tag, { backgroundColor: colors.soft }]}>
             <Txt size={9} weight="extrabold" tone="muted">
-              NON CONNECTÉ
+              {homeZone.name.toUpperCase()}
             </Txt>
           </View>
         </View>
-        <Txt size={15} weight="bold">
-          Les horaires officiels arrivent bientôt
-        </Txt>
-        <Txt size={12} tone="muted" style={styles.paragraph}>
-          Aucun calendrier officiel n’est chargé. Consultez directement ECG pour
-          les annonces vérifiées.
-        </Txt>
+        {currentAnnouncement && (
+          <View
+            style={[styles.question, { borderColor: colors.accent }]}
+            accessibilityRole="summary"
+          >
+            <Txt size={12} tone="muted">
+              {currentAnnouncement.demo
+                ? "DÉMO · Aujourd’hui · scénario de démonstration"
+                : `${formatDay(currentAnnouncement.startsAt)} · ${formatTime(currentAnnouncement.startsAt)}–${formatTime(currentAnnouncement.endsAt)} GMT`}
+            </Txt>
+            <Txt size={15} weight="bold" accessibilityRole="header">
+              Avez-vous du courant ?
+            </Txt>
+            <Txt size={12} tone="muted" style={styles.paragraph}>
+              {currentAnnouncement.demo
+                ? "Annonce de démonstration : l’ECG n’a rien publié pour votre quartier aujourd’hui."
+                : `Coupure annoncée par l’ECG : ${currentAnnouncement.localities}.`}
+            </Txt>
+            <Button
+              label="Oui, j’ai du courant"
+              variant={
+                currentAnswer?.status === "powered" ? "primary" : "secondary"
+              }
+              onPress={() => answerAnnouncement(true)}
+            />
+            <Button
+              label="Non, c’est coupé"
+              variant={
+                currentAnswer?.status === "outage" ? "primary" : "secondary"
+              }
+              onPress={() => answerAnnouncement(false)}
+            />
+            {currentAnswer && (
+              <Txt size={12} accessibilityLiveRegion="polite">
+                Réponse enregistrée :{" "}
+                {currentAnswer.status === "powered"
+                  ? "courant disponible"
+                  : "coupure"}
+                . Vous pouvez la modifier.
+              </Txt>
+            )}
+            {answerError && (
+              <Txt size={12} tone="danger" accessibilityRole="alert">
+                {answerError}
+              </Txt>
+            )}
+            <Txt size={11} tone="muted">
+              Vos réponses vérifient si les annonces sont tenues. Seul le nombre
+              de réponses sert au calcul.
+            </Txt>
+          </View>
+        )}
+        {pastAnnouncements.length > 0 ? (
+          pastAnnouncements.map((item) => (
+            <Pressable
+              key={item.id}
+              accessibilityRole="link"
+              accessibilityLabel={`Annonce ECG du ${formatDay(item.startsAt)}, source`}
+              onPress={() =>
+                void Linking.openURL(item.sourceUrl).catch(() => {})
+              }
+              style={[styles.announcement, { borderColor: colors.line }]}
+            >
+              <Txt size={12} weight="bold">
+                {formatDay(item.startsAt)} · {formatTime(item.startsAt)}–
+                {formatTime(item.endsAt)}
+              </Txt>
+              <Txt size={12} tone="muted">
+                {item.localities}
+                {item.partial ? " (partiel)" : ""} · Source ECG
+              </Txt>
+            </Pressable>
+          ))
+        ) : (
+          <Txt size={12} tone="muted" style={styles.paragraph}>
+            Aucune annonce ECG récente pour {homeZone.name}.
+          </Txt>
+        )}
         {linkError && (
           <Txt size={12} tone="danger" accessibilityRole="alert">
             {linkError}
@@ -417,4 +515,6 @@ const styles = StyleSheet.create({
   certainty: { fontStyle: "italic", lineHeight: 18 },
   dataCard: { gap: 12 },
   tag: { borderRadius: 7, paddingHorizontal: 7, paddingVertical: 5 },
+  question: { gap: 10, padding: 12, borderWidth: 1, borderRadius: 12 },
+  announcement: { gap: 2, paddingVertical: 8, borderBottomWidth: 1 },
 });
