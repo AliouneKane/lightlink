@@ -29,7 +29,7 @@ Seules **407 lignes** (les 3 dernières sources, sans les 2 gros fichiers) sont 
 
 | Besoin | Où on en est |
 |---|---|
-| **Une heure de retour du courant** (pour estimer des durées) | **20 lignes** seulement, toutes mars et mai 2025 |
+| **Une heure de retour du courant** (pour estimer des durées) | **20 lignes** seulement, toutes mars et mai 2025. **Ce sont des heures de retour *annoncées* par l'ECG, pas mesurées**: le 4 mai 2025, l'ECG annonçait 14:00 et le courant est revenu à 13:20 (voir [verification_x](verification_x/README.md)). Ne pas s'en servir comme durées réelles |
 | **Heures de début et de fin** | Présentes pour presque toutes les annonces planifiées (9h-17h en général), absentes pour les pannes |
 | **Témoignages d'habitants** (signalements) | **0**. Les deux agents n'en ont trouvé aucun |
 | **Historique long** (mois ou années) | **Non**: 21 jours de coupures sur 19 mois, avec de grands vides |
@@ -55,7 +55,7 @@ Seules **407 lignes** (les 3 dernières sources, sans les 2 gros fichiers) sont 
 | Osu | non trouvé dans 3news | 2023: B, C, D (parties) |
 | Cantonments | non trouvé dans 3news | 2023: B et D |
 | Airport Residential | non trouvé dans 3news | 2023: A, C, D |
-| Tema Community 1 | non trouvé (« Lakeside Community 1 and 8 » en A est un autre lieu) | aucune |
+| Tema Community 1 | non trouvé (« Lakeside Community 1 and 8 » en A est un autre lieu) | 2023: D (« Comm. 1 Market », « Presby Church Comm. 1 Casino ») |
 
 Le groupe de Madina, East Legon, Labone et Dansoman est **cohérent** entre le PDF de 2023 et 3news.
 

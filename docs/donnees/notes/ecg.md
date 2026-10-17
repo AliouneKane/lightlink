@@ -16,7 +16,7 @@
 
 - **Accra** compte 134 localités dans le groupe A, 117 dans B, 131 dans C et 123 dans D.
 - **Madina** et **East Legon** sont dans le groupe A. **Labone** est surtout dans B. **Achimota** est dans B, C et D selon la partie. **Cantonments** est dans B et D.
-- **Tema Community 1** n'apparaît pas dans ce PDF (Tema liste des « Comm. 2, 4, 8… »). Son groupe est à chercher dans une source plus récente.
+- **Tema Community 1** est en **groupe D**: le PDF l'écrit « Comm. 1 Market » et « Presby Church Comm. 1 Casino », sans « Tema » (une première lecture l'avait manqué). Son groupe 2026 est inconnu: 3news n'a pas de page pour Comm. 1.
 - Le calendrier de 2023 tourne dans l'ordre A, B, C, D, A, B, C, D, A, un groupe par soir.
 
 ## Avril 2026 (pas de fichier de zones)

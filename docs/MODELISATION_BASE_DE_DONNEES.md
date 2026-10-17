@@ -155,7 +155,7 @@ Qui a le droit: chacun lit et modifie **seulement son propre** profil.
 | `id` | Un numéro unique |
 | `zone_id` | Le quartier concerné |
 | `user_id` | La personne qui signale (rempli automatiquement) |
-| `kind` | `outage` = coupure, `restored` = courant revenu |
+| `kind` | `outage` = coupure, `restored` = courant revenu, `unstable` = courant instable, `powered` = « j'ai du courant » (réponse à la question « Avez-vous du courant ? » pendant une coupure annoncée; la vue `announcement_outcomes` compte ces réponses par annonce, voir `backend/README.md`) |
 | `description` | Un petit texte facultatif (280 lettres au maximum) |
 | `lat`, `lng` | La position du téléphone, facultative |
 | `created_at` | L'heure du signalement |
@@ -223,7 +223,8 @@ Qui a le droit: tout le monde lit. Seuls nos scripts écrivent (avec la clé sec
 | `probability` | Le risque, de 0 à 100 |
 | `confidence` | La confiance dans la prévision, de 0 à 100 (affichée à l'utilisateur) |
 | `expected_duration_min` | La durée estimée, en minutes |
-| `method` | `rules` = règles simples (version 1), `random_forest` = modèle d'apprentissage (bonus, tâche 114) |
+| `hourly_risks` | Tableau JSON des 12 valeurs horaires alimentant le composant `RiskChart` du front-end |
+| `method` | `rules` = règles simples (version 1), `random_forest` = modèle d'apprentissage, **réservé pour plus tard** (trop peu de données aujourd'hui, voir `prediction/README.md`) |
 | `model_version` | Le nom de la version qui a calculé, pour s'y retrouver |
 
 Qui a le droit: tout le monde lit. Seuls nos scripts écrivent.
@@ -300,20 +301,22 @@ Ce sont les tests à écrire pour être sûr que personne ne triche:
 - Le **6e signalement en 10 minutes** est refusé.
 - Un hôte ne peut pas modifier **l'offre d'un autre** (quand `offers` existera).
 
-## 9. Questions à trancher avec Oscar
+## 9. Décisions validées avec Oscar (Responsable Données)
 
-1. **Garde-t-on les feeders ?** Le projet en parle, mais aucune source publique ne donne les feeders par quartier. **Je propose de les ignorer dans la v1.**
-2. **Garde-t-on les anciens signalements ?** L'état d'un quartier n'utilise que 2 heures, mais l'historique servira à la prédiction. **Je propose de tout garder.**
-3. **Garde-t-on la position exacte d'un signalement ?** **Je propose de la garder facultative et de ne jamais la montrer aux autres utilisateurs.**
+1. **Garde-t-on les feeders ?** **NON pour la v1.** Les données publiques sur les feeders d'Accra étant parcellaires, le modèle s'appuie de façon robuste sur les 10 zones pilotes et les 4 groupes de rotation ECG (A, B, C, D).
+2. **Garde-t-on les anciens signalements ?** **OUI, ABSOLUMENT.** L'état en direct n'utilise que les 2 dernières heures, mais l'ensemble de l'historique constituera la vérité terrain servant à calibrer les règles de prédiction, puis à entraîner un modèle d'apprentissage quand il y aura assez de données.
+3. **Garde-t-on la position exacte d'un signalement ?** **OUI mais PRIVÉE.** Facultative et stockée uniquement pour vérifier la proximité et contrer le spam, elle n'est jamais exposée publiquement (seul le centre du quartier est visible).
 
 ## 10. Où trouver quoi dans le dépôt
 
 | Je cherche | Fichier |
 |---|---|
-| Les tables déjà créées | `backend/supabase/migrations/20261014000000_init_phase2.sql` |
-| Les 10 quartiers de départ | `backend/supabase/seed.sql` |
+| Le schéma SQL complet exécutable | `backend/schema.sql` |
+| Les 10 quartiers et groupes de départ | `backend/seed.sql` |
+| Les prévisions générées (rejouables) | `backend/predictions_seed.sql` |
+| Les annonces ECG réelles | `data/` |
+| Le modèle de risque (règles + taux estimés) | `prediction/lightlink_model.py` |
+| La commande qui génère les prévisions | `prediction/predict.py` |
+| L'évaluation et les limites du modèle | `prediction/README.md`, `prediction/backtest.py` |
 | Comment lancer la base chez soi | `backend/README.md` |
-| Pourquoi Supabase | `docs/DECISION_SUPABASE.md` |
-| Les fausses données actuelles des écrans | `shared/energy.ts` |
-| Qui fait quoi, et les dates | `LightLink_Repartition_des_taches_v2.md` |
 | Les variables à remplir (clés) | `.env.example` |
