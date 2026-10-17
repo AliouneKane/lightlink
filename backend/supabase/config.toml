@@ -35,3 +35,18 @@ enable_signup = true
 [auth.email]
 enable_signup = true
 enable_confirmations = false
+
+# Services LightLink does not use, switched off to save local disk and memory:
+# analytics (Logflare + Vector, the heaviest containers), file storage (no uploads),
+# edge functions (none) and the test mailbox (email confirmations are disabled).
+[analytics]
+enabled = false
+
+[storage]
+enabled = false
+
+[edge_runtime]
+enabled = false
+
+[local_smtp]
+enabled = false

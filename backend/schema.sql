@@ -26,12 +26,16 @@ CREATE TABLE IF NOT EXISTS public.ecg_groups (
     label VARCHAR(100) NOT NULL
 );
 
--- 1.3 Liaison Quartiers <-> Groupes ECG
+-- 1.3 Liaison Quartiers <-> Groupes ECG, datée par source (même définition que la migration
+-- backend/supabase/migrations/20261017000100_dated_zone_groups.sql, qui fait foi).
 CREATE TABLE IF NOT EXISTS public.zone_groups (
-    zone_id VARCHAR(50) REFERENCES public.zones(id) ON DELETE CASCADE,
-    group_id VARCHAR(10) REFERENCES public.ecg_groups(id) ON DELETE CASCADE,
-    is_partial BOOLEAN DEFAULT FALSE NOT NULL,
-    PRIMARY KEY (zone_id, group_id)
+    zone_id VARCHAR(50) NOT NULL REFERENCES public.zones(id) ON DELETE CASCADE,
+    group_id VARCHAR(10) NOT NULL REFERENCES public.ecg_groups(id) ON DELETE CASCADE,
+    is_partial BOOLEAN NOT NULL,
+    source TEXT NOT NULL,
+    valid_from DATE NOT NULL,
+    valid_to DATE NOT NULL CHECK (valid_to >= valid_from),
+    PRIMARY KEY (zone_id, group_id, source)
 );
 
 -- ==============================================================================
@@ -55,7 +59,7 @@ CREATE TABLE IF NOT EXISTS public.outage_reports (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     zone_id VARCHAR(50) NOT NULL REFERENCES public.zones(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-    kind VARCHAR(20) NOT NULL CHECK (kind IN ('outage', 'restored', 'unstable')),
+    kind VARCHAR(20) NOT NULL CHECK (kind IN ('outage', 'restored', 'unstable', 'powered')),
     description VARCHAR(280),
     lat DOUBLE PRECISION,
     lng DOUBLE PRECISION,

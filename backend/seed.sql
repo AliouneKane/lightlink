@@ -18,45 +18,55 @@ INSERT INTO public.zones (id, name, lat, lng) VALUES
 ON CONFLICT (id) DO UPDATE 
 SET name = EXCLUDED.name, lat = EXCLUDED.lat, lng = EXCLUDED.lng;
 
--- 2. INSERTION DES GROUPES DE DÉLESTAGE OFFICIELS ECG
-INSERT INTO public.ecg_groups (id, label) VALUES
-    ('A', 'Groupe A - Secteur Est & Résidentiel'),
-    ('B', 'Groupe B - Secteur Ouest & Périphérie'),
-    ('C', 'Groupe C - Centre-Ville & Affaires'),
-    ('D', 'Groupe D - Zone Portuaire & Industrielle')
-ON CONFLICT (id) DO UPDATE SET label = EXCLUDED.label;
+-- 2. GROUPES ECG DATÉS: section générée en fin de fichier (prediction/build_zone_groups.py).
 
--- 3. RATTACHEMENT QUARTIERS <-> GROUPES ECG
-INSERT INTO public.zone_groups (zone_id, group_id, is_partial) VALUES
-    ('dansoman', 'B', true),
-    ('dansoman', 'C', true),
-    ('dansoman', 'D', true),
-    ('airport-residential', 'A', true),
-    ('airport-residential', 'C', true),
-    ('airport-residential', 'D', true),
-    ('madina', 'A', false),
-    ('madina', 'B', true),
-    ('osu', 'B', false),
-    ('labone', 'A', false),
-    ('east-legon', 'A', false),
-    ('adabraka', 'C', false),
-    ('cantonments', 'A', false),
-    ('achimota', 'B', false),
-    ('tema-community-1', 'D', false)
-ON CONFLICT (zone_id, group_id) DO UPDATE SET is_partial = EXCLUDED.is_partial;
+-- Les prévisions ne sont plus semées à la main (les anciennes valeurs étaient inventées).
+-- Elles sont générées depuis les annonces ECG réelles: python3 prediction/predict.py (écrit backend/predictions_seed.sql).
 
--- 4. INSERTION D'UN EXEMPLE DE PRÉVISION INITIALE (Pour le graphique RiskChart de l'app)
-INSERT INTO public.predictions (
-    zone_id,
-    window_start,
-    window_end,
-    probability,
-    confidence,
-    expected_duration_min,
-    hourly_risks,
-    method,
-    model_version
-) VALUES
-    ('osu', NOW(), NOW() + INTERVAL '3 hours', 82, 92, 150, '[13, 12, 9, 18, 26, 22, 35, 57, 78, 69, 48, 25]'::JSONB, 'rules', 'v1.0'),
-    ('madina', NOW() + INTERVAL '1 hour', NOW() + INTERVAL '4 hours', 75, 84, 180, '[10, 15, 20, 25, 40, 55, 75, 85, 70, 50, 30, 20]'::JSONB, 'rules', 'v1.0'),
-    ('east-legon', NOW() + INTERVAL '2 hours', NOW() + INTERVAL '5 hours', 61, 81, 120, '[8, 10, 12, 15, 30, 45, 61, 65, 50, 35, 20, 15]'::JSONB, 'rules', 'v1.0');
+-- BEGIN zone_groups (généré par prediction/build_zone_groups.py, ne pas éditer à la main)
+insert into public.ecg_groups (id, label) values
+  ('A', 'Groupe A'), ('B', 'Groupe B'), ('C', 'Groupe C'), ('D', 'Groupe D')
+on conflict (id) do nothing;
+
+-- Sans groupe 2026 connu (absents de 3news): cantonments, tema-community-1.
+insert into public.zone_groups (zone_id, group_id, is_partial, source, valid_from, valid_to) values
+  ('osu', 'A', true, '3news_2026', '2026-04-25', '2026-05-01'),  -- Osu Anglican, Osu Oxford Street
+  ('osu', 'B', true, '3news_2026', '2026-04-25', '2026-05-01'),  -- Osu Entertainement
+  ('labone', 'B', false, '3news_2026', '2026-04-25', '2026-05-01'),  -- Labone, Labone GNTC
+  ('east-legon', 'A', false, '3news_2026', '2026-04-25', '2026-05-01'),  -- East Legon
+  ('east-legon', 'C', true, '3news_2026', '2026-04-25', '2026-05-01'),  -- East Legon Hills
+  ('adabraka', 'A', false, '3news_2026', '2026-04-25', '2026-05-01'),  -- Adabraka, Adabraka Free Town, Adabraka Methodist
+  ('dansoman', 'A', true, '3news_2026', '2026-04-25', '2026-05-01'),  -- Dansoman SSNIT Flats
+  ('dansoman', 'B', false, '3news_2026', '2026-04-25', '2026-05-01'),  -- Dansoman, Dansoman Keep Fit
+  ('dansoman', 'C', true, '3news_2026', '2026-04-25', '2026-05-01'),  -- Dansoman Beach Road, Dansoman Last Stop
+  ('airport-residential', 'A', true, '3news_2026', '2026-04-25', '2026-05-01'),  -- Airport Residential Area
+  ('achimota', 'A', true, '3news_2026', '2026-04-25', '2026-05-01'),  -- New Achimota Station
+  ('achimota', 'B', true, '3news_2026', '2026-04-25', '2026-05-01'),  -- Achimota Halt Tower, Achimota Market
+  ('achimota', 'C', true, '3news_2026', '2026-04-25', '2026-05-01'),  -- Achimota Police Station, Achimota School, New Achimota
+  ('madina', 'A', false, '3news_2026', '2026-04-25', '2026-05-01'),  -- Madina, Madina Estate and its environs, Madina Market, Madina Mosque
+  ('madina', 'C', true, '3news_2026', '2026-04-25', '2026-05-01'),  -- Madina Social Welfare, Madina Zongo Junction
+  ('osu', 'B', true, 'ecg_pdf_2023', '2023-03-30', '2023-04-07'),  -- Osu Oxford Street
+  ('osu', 'C', true, 'ecg_pdf_2023', '2023-03-30', '2023-04-07'),  -- Osu Oxford Street
+  ('osu', 'D', true, 'ecg_pdf_2023', '2023-03-30', '2023-04-07'),  -- Osu Police Station
+  ('labone', 'A', false, 'ecg_pdf_2023', '2023-03-30', '2023-04-07'),  -- Labone
+  ('labone', 'B', false, 'ecg_pdf_2023', '2023-03-30', '2023-04-07'),  -- Labone, Labone Police Barracks, Labone SHS
+  ('east-legon', 'A', false, 'ecg_pdf_2023', '2023-03-30', '2023-04-07'),  -- East Legon
+  ('adabraka', 'A', true, 'ecg_pdf_2023', '2023-03-30', '2023-04-07'),  -- Adabraka Free Town
+  ('adabraka', 'B', false, 'ecg_pdf_2023', '2023-03-30', '2023-04-07'),  -- Adabraka
+  ('adabraka', 'D', false, 'ecg_pdf_2023', '2023-03-30', '2023-04-07'),  -- Adabraka
+  ('cantonments', 'B', true, 'ecg_pdf_2023', '2023-03-30', '2023-04-07'),  -- East Cantonments
+  ('cantonments', 'D', false, 'ecg_pdf_2023', '2023-03-30', '2023-04-07'),  -- Cantonments
+  ('dansoman', 'B', true, 'ecg_pdf_2023', '2023-03-30', '2023-04-07'),  -- Dansoman SSNIT Flats
+  ('dansoman', 'C', false, 'ecg_pdf_2023', '2023-03-30', '2023-04-07'),  -- Dansoman, Dansoman Keep Fit
+  ('dansoman', 'D', true, 'ecg_pdf_2023', '2023-03-30', '2023-04-07'),  -- Dansoman Last Stop
+  ('airport-residential', 'A', true, 'ecg_pdf_2023', '2023-03-30', '2023-04-07'),  -- Airport Residential Area
+  ('airport-residential', 'C', true, 'ecg_pdf_2023', '2023-03-30', '2023-04-07'),  -- Airport Residential Area
+  ('airport-residential', 'D', true, 'ecg_pdf_2023', '2023-03-30', '2023-04-07'),  -- Airport Residential Area
+  ('achimota', 'B', true, 'ecg_pdf_2023', '2023-03-30', '2023-04-07'),  -- New Achimota Station
+  ('achimota', 'C', true, 'ecg_pdf_2023', '2023-03-30', '2023-04-07'),  -- Achimota Market
+  ('achimota', 'D', true, 'ecg_pdf_2023', '2023-03-30', '2023-04-07'),  -- Achimota Police Station, Achimota School, New Achimota
+  ('madina', 'A', false, 'ecg_pdf_2023', '2023-03-30', '2023-04-07'),  -- Madina
+  ('madina', 'B', true, 'ecg_pdf_2023', '2023-03-30', '2023-04-07'),  -- Madina Zongo Junction
+  ('tema-community-1', 'D', true, 'ecg_pdf_2023', '2023-03-30', '2023-04-07')  -- Comm. 1 Market, Presby Church Comm. 1 Casino
+on conflict (zone_id, group_id, source) do nothing;
+-- END zone_groups
