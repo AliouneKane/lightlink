@@ -46,6 +46,7 @@ import {
 import {
   DEMO_TIMESTAMP,
   answerReport,
+  applyLiveStatus,
   findAnswer,
   formatDay,
   formatTime,
@@ -55,10 +56,18 @@ import {
   initialState,
   isActive,
   neighborhoods,
+  scheduleRowsToAnnouncements,
   validateOffer,
   validateReport,
   type EnergyOffer,
 } from "@/lib/energy";
+import {
+  liveEnabled,
+  sendReport,
+  signIn,
+  signUp,
+  useLiveData,
+} from "@/lib/live";
 import { updateDemoState, useDemoState } from "@/lib/demo-store";
 import { forecastScenario } from "../../../shared/forecast";
 
@@ -91,7 +100,10 @@ export function LightLinkApp({
   const pathname = usePathname();
   const view = pathname === "/" ? "dashboard" : pathname.slice(1);
   const state = useDemoState();
-  const zones = getNeighborhoods(state.reports);
+  const live = useLiveData();
+  const zones = live.zones
+    ? applyLiveStatus(getNeighborhoods(state.reports), live.zones)
+    : getNeighborhoods(state.reports);
   const [selectedOverride, setSelectedId] = useState<string | null>(
     initialNeighborhood ?? null,
   );
@@ -133,7 +145,15 @@ export function LightLinkApp({
   );
   const activeOutages = zones.filter((zone) => zone.status === "outage").length;
   const announcementTime = new Date(now());
-  const announcements = getZoneAnnouncements(homeZone.id, announcementTime);
+  // Live mode reads the ECG schedules of the database and never adds a demo announcement.
+  const announcements = liveEnabled
+    ? getZoneAnnouncements(
+        homeZone.id,
+        announcementTime,
+        scheduleRowsToAnnouncements(live.schedules),
+        false,
+      )
+    : getZoneAnnouncements(homeZone.id, announcementTime);
   const currentAnnouncement = announcements.find((item) =>
     isActive(item, announcementTime),
   );
@@ -196,7 +216,7 @@ export function LightLinkApp({
       { timeout: 10000, maximumAge: 60000 },
     );
   }
-  function submitReport(event: FormEvent<HTMLFormElement>) {
+  async function submitReport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const report = {
@@ -207,6 +227,11 @@ export function LightLinkApp({
     const error = validateReport(report);
     if (error) {
       setFormError(error);
+      return;
+    }
+    const liveError = await sendReport(report);
+    if (liveError) {
+      setFormError(liveError);
       return;
     }
     save(
@@ -222,14 +247,23 @@ export function LightLinkApp({
           ...previous.reports,
         ],
       }),
-      "Signalement ajouté à votre démo. Merci pour votre contribution !",
+      liveEnabled
+        ? "Signalement envoyé. Merci, la carte se met à jour pour tout le quartier."
+        : "Signalement ajouté à votre démo. Merci pour votre contribution !",
     );
+    void live.refresh();
     setSelectedId(report.neighborhoodId);
     setDialog(null);
   }
-  function answerAnnouncement(hasPower: boolean) {
+  async function answerAnnouncement(hasPower: boolean) {
     if (!currentAnnouncement) return;
     const report = answerReport(currentAnnouncement, hasPower);
+    const liveError = await sendReport(report);
+    if (liveError) {
+      setToast(liveError);
+      return;
+    }
+    void live.refresh();
     save(
       (previous) => ({
         ...previous,
@@ -292,7 +326,7 @@ export function LightLinkApp({
     );
     setDialog(null);
   }
-  function submitProfile(event: FormEvent<HTMLFormElement>) {
+  async function submitProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const name = String(form.get("name") ?? state.profile.name).trim();
@@ -305,9 +339,25 @@ export function LightLinkApp({
       setFormError("Indiquez un nom de 2 à 50 caractères et un quartier.");
       return;
     }
+    if (liveEnabled && form.has("email")) {
+      const email = String(form.get("email")).trim();
+      const password = String(form.get("password") ?? "");
+      const accountError =
+        authMode === "register"
+          ? await signUp({ email, password, name, neighborhoodId })
+          : await signIn(email, password);
+      if (accountError) {
+        setFormError(accountError);
+        return;
+      }
+    }
     save(
       (previous) => ({ ...previous, profile: { name, neighborhoodId } }),
-      "Profil de démonstration enregistré. Aucun compte réel n’a été créé.",
+      liveEnabled
+        ? authMode === "register"
+          ? "Compte créé. Bienvenue sur LightLink !"
+          : "Vous êtes connecté."
+        : "Profil de démonstration enregistré. Aucun compte réel n’a été créé.",
     );
     setSelectedId(neighborhoodId);
     setDialog(null);
@@ -1588,14 +1638,19 @@ export function LightLinkApp({
                   </p>
                 )}
                 <button className="button primary full-width" type="submit">
-                  {authMode === "register"
-                    ? "Essayer l’inscription"
-                    : "Essayer la connexion"}
+                  {liveEnabled
+                    ? authMode === "register"
+                      ? "Créer mon compte"
+                      : "Me connecter"
+                    : authMode === "register"
+                      ? "Essayer l’inscription"
+                      : "Essayer la connexion"}
                   <ArrowRight size={16} />
                 </button>
                 <p className="form-note">
-                  Aucun compte réel créé. E-mail et mot de passe ne sont ni
-                  envoyés ni enregistrés.
+                  {liveEnabled
+                    ? "Votre mot de passe est chiffré par Supabase. Votre position n’est jamais montrée aux autres."
+                    : "Aucun compte réel créé. E-mail et mot de passe ne sont ni envoyés ni enregistrés."}
                 </p>
               </form>
             </div>

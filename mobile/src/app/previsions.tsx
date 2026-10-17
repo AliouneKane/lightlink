@@ -33,6 +33,7 @@ import {
   formatTime,
   getZoneAnnouncements,
   isActive,
+  scheduleRowsToAnnouncements,
 } from "@/lib/energy";
 import { forecastScenario } from "@/lib/forecast";
 import { useDemo } from "@/providers/demo-provider";
@@ -73,14 +74,23 @@ export default function ForecastScreen() {
 function ForecastContent({ initialZone }: { initialZone: string }) {
   const router = useRouter();
   const { colors } = useTheme();
-  const { neighborhoods, state, report } = useDemo();
+  const { neighborhoods, state, report, liveEnabled, liveSchedules } =
+    useDemo();
   const [zoneId, setZoneId] = useState(initialZone);
   const [answerError, setAnswerError] = useState<string | null>(null);
   const homeZone =
     neighborhoods.find((item) => item.id === state.profile.neighborhoodId) ??
     neighborhoods[0];
   const announcementTime = new Date();
-  const announcements = getZoneAnnouncements(homeZone.id, announcementTime);
+  // Live mode reads the ECG schedules of the database and never adds a demo announcement.
+  const announcements = liveEnabled
+    ? getZoneAnnouncements(
+        homeZone.id,
+        announcementTime,
+        scheduleRowsToAnnouncements(liveSchedules),
+        false,
+      )
+    : getZoneAnnouncements(homeZone.id, announcementTime);
   const currentAnnouncement = announcements.find((item) =>
     isActive(item, announcementTime),
   );
