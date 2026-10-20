@@ -20,8 +20,7 @@ const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
  * EXPO_PUBLIC_LIGHTLINK_MODE=demo forces the demo (browser tests never touch the real database).
  */
 export const liveEnabled =
-  Boolean(url && anonKey) &&
-  process.env.EXPO_PUBLIC_LIGHTLINK_MODE !== "demo";
+  Boolean(url && anonKey) && process.env.EXPO_PUBLIC_LIGHTLINK_MODE !== "demo";
 
 let client: SupabaseClient | null = null;
 function supabase(): SupabaseClient | null {
