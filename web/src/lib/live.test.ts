@@ -7,6 +7,8 @@ import {
   neighborhoods,
   reportRow,
   scheduleRowsToAnnouncements,
+  newClientId,
+  withoutLiveData,
   type ZoneStatusRow,
 } from "./energy";
 
@@ -152,5 +154,43 @@ describe("live reports", () => {
     expect(isRetryable({ message: "Too many reports, try again later" })).toBe(
       false,
     );
+  });
+});
+
+describe("PAN's review of #6", () => {
+  it("never shows a demo state while live data is missing", () => {
+    for (const state of ["loading", "error"] as const) {
+      const zones = withoutLiveData(neighborhoods, state);
+      expect(zones.every((zone) => zone.reports === 0)).toBe(true);
+      expect(zones.some((zone) => zone.status !== "powered")).toBe(false);
+    }
+    expect(withoutLiveData(neighborhoods, "error")[0].restoration).toBe(
+      "Données en direct indisponibles",
+    );
+  });
+
+  it("does not promise an automatic resend on the web", () => {
+    const message = liveErrorMessage({ message: "TypeError: Failed to fetch" });
+    expect(message).toContain("réessayez");
+    expect(message).not.toContain("sera envoyé");
+  });
+
+  it("sends the observation time and a stable id only when given", () => {
+    const clientId = newClientId();
+    expect(clientId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
+    expect(
+      reportRow({
+        neighborhoodId: "osu",
+        status: "outage",
+        description: "",
+        observedAt: "2026-10-20T07:00:00.000Z",
+        clientId,
+      }),
+    ).toMatchObject({
+      observed_at: "2026-10-20T07:00:00.000Z",
+      client_id: clientId,
+    });
   });
 });

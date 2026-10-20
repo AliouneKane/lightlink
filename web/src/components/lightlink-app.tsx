@@ -57,6 +57,7 @@ import {
   isActive,
   neighborhoods,
   scheduleRowsToAnnouncements,
+  withoutLiveData,
   validateOffer,
   validateReport,
   type EnergyOffer,
@@ -101,9 +102,13 @@ export function LightLinkApp({
   const view = pathname === "/" ? "dashboard" : pathname.slice(1);
   const state = useDemoState();
   const live = useLiveData();
+  // Live mode never shows the demo states: before the first read, or if it fails,
+  // the zones carry no state and the map says why (PAN's review of #6).
   const zones = live.zones
     ? applyLiveStatus(getNeighborhoods(state.reports), live.zones)
-    : getNeighborhoods(state.reports);
+    : live.state === "loading" || live.state === "error"
+      ? withoutLiveData(neighborhoods, live.state)
+      : getNeighborhoods(state.reports);
   const [selectedOverride, setSelectedId] = useState<string | null>(
     initialNeighborhood ?? null,
   );
@@ -622,6 +627,7 @@ export function LightLinkApp({
           }}
           layer={layer}
           focus={focus}
+          liveState={live.zones ? "ready" : live.state}
         />
         <div className="map-bottom">
           <div className="map-legend">
@@ -642,7 +648,15 @@ export function LightLinkApp({
               Énergie à partager
             </span>
           </div>
-          <span className="map-update">Données simulées</span>
+          <span className="map-update">
+            {live.state === "off"
+              ? "Données simulées"
+              : live.zones
+                ? "Signalements des habitants, en direct"
+                : live.state === "loading"
+                  ? "Connexion aux données en direct…"
+                  : "Données en direct indisponibles"}
+          </span>
         </div>
         <div className="neighborhood-detail">
           <span className={`neighborhood-symbol ${selected.status}`}>
@@ -710,6 +724,7 @@ export function LightLinkApp({
         openDialog(next);
       }}
       profile={state.profile}
+      liveState={live.zones ? "ready" : live.state}
       sourceCounts={{
         solar: state.offers.filter(
           (offer) => offer.available && offer.source === "solar",

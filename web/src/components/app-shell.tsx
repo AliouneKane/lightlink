@@ -30,7 +30,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Brand } from "./ui";
-import { liveEnabled } from "@/lib/live";
+import type { LiveState } from "@/lib/live";
 import type { Neighborhood } from "@/lib/energy";
 import {
   defaultDisplay,
@@ -66,6 +66,7 @@ export function AppShell({
   bookingCount,
   online,
   sourceCounts,
+  liveState,
 }: {
   children: ReactNode;
   search: string;
@@ -77,6 +78,7 @@ export function AppShell({
   sourceCounts: Record<"solar" | "generator" | "battery", number>;
   bookingCount: number;
   online: boolean;
+  liveState: LiveState;
 }) {
   const pathname = usePathname();
   const display = useDisplay();
@@ -361,9 +363,16 @@ export function AppShell({
               <Plus size={18} />
             </button>
             {/* Live mode: reports, map and forecasts come from Supabase. Energy sharing stays simulated. */}
-            <span className="demo-badge">
+            <span className="demo-badge" role="status">
               <span />
-              {liveEnabled ? "EN DIRECT" : "DÉMO"}
+              {
+                {
+                  off: "DÉMO",
+                  loading: "CONNEXION…",
+                  ready: "EN DIRECT",
+                  error: "HORS LIGNE",
+                }[liveState]
+              }
             </span>
             {pathname === "/" && (
               <details

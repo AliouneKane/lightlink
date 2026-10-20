@@ -1,4 +1,4 @@
-import type { EnergyStatus } from "./energy";
+import { newClientId, type EnergyStatus } from "./energy";
 
 /**
  * Task 56: reports made without network wait on the phone and leave when it comes back.
@@ -11,6 +11,10 @@ export interface QueuedReport {
   description: string;
   lat?: number;
   lng?: number;
+  /** When the resident saw it, kept while the report waits for the network. */
+  observedAt?: string;
+  /** Fixed when queued and sent on every retry, so the database stores it once. */
+  clientId?: string;
 }
 
 export type SendResult =
@@ -102,7 +106,14 @@ export function createReportQueue(
     },
     /** Sends now, or keeps the report for later when the network is missing. */
     async submit(report: QueuedReport) {
-      items = [...items, report].slice(-maxPending);
+      items = [
+        ...items,
+        {
+          ...report,
+          observedAt: report.observedAt ?? new Date().toISOString(),
+          clientId: report.clientId ?? newClientId(),
+        },
+      ].slice(-maxPending);
       await persist();
       publish(null);
       await queue.flush();

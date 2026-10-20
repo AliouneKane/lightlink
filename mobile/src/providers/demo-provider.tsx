@@ -136,7 +136,8 @@ export function useDemo() {
       /** Saved on the phone at once; in live mode also sent to Supabase, now or when back online. */
       report(input: ReportInput): string | null {
         const error = repository.report(input);
-        if (!error && queue) void queue.submit(input);
+        if (!error && queue)
+          void queue.submit({ ...input, observedAt: new Date().toISOString() });
         return error;
       },
       createOffer: repository.createOffer,

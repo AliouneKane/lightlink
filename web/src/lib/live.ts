@@ -117,8 +117,14 @@ function accountError(message: string): string {
  * Live neighbourhood states and ECG schedules, refreshed when a report arrives
  * (task 60, realtime) and at most every 2 seconds.
  */
+/** "off": demo mode; "loading": first read pending; "error": no live data could be read. */
+export type LiveState = "off" | "loading" | "ready" | "error";
+
 export function useLiveData() {
   const [zones, setZones] = useState<ZoneStatusRow[] | null>(null);
+  const [state, setState] = useState<LiveState>(
+    liveEnabled ? "loading" : "off",
+  );
   const [schedules, setSchedules] = useState<EcgScheduleRow[]>([]);
   const [predictions, setPredictions] = useState<PredictionRow[]>([]);
 
@@ -127,25 +133,38 @@ export function useLiveData() {
     if (!db) return;
     const since = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
     const [dayStart, dayEnd] = todayBounds();
-    const [status, planned, forecast] = await Promise.all([
-      db.from("zone_status").select("*"),
-      db
-        .from("ecg_schedules")
-        .select(
-          "id, zone_id, starts_at, ends_at, partial, localities, source_url",
-        )
-        .gte("ends_at", since)
-        .order("starts_at", { ascending: false })
-        .limit(200),
-      // Today's forecasts, newest first: the apps keep the first row of each zone.
-      db
-        .from("predictions")
-        .select(predictionColumns)
-        .gte("window_start", dayStart)
-        .lt("window_start", dayEnd)
-        .order("generated_at", { ascending: false }),
-    ]);
-    if (!status.error && status.data) setZones(status.data as ZoneStatusRow[]);
+    let results;
+    try {
+      results = await Promise.all([
+        db.from("zone_status").select("*"),
+        db
+          .from("ecg_schedules")
+          .select(
+            "id, zone_id, starts_at, ends_at, partial, localities, source_url",
+          )
+          .gte("ends_at", since)
+          .order("starts_at", { ascending: false })
+          .limit(200),
+        // Today's forecasts, newest first: the apps keep the first row of each zone.
+        db
+          .from("predictions")
+          .select(predictionColumns)
+          .gte("window_start", dayStart)
+          .lt("window_start", dayEnd)
+          .order("generated_at", { ascending: false }),
+      ]);
+    } catch {
+      // Keep the last live data if there is some; otherwise say it is unavailable.
+      setState((previous) => (previous === "ready" ? previous : "error"));
+      return;
+    }
+    const [status, planned, forecast] = results;
+    if (status.error || !status.data) {
+      setState((previous) => (previous === "ready" ? previous : "error"));
+    } else {
+      setState("ready");
+      setZones(status.data as ZoneStatusRow[]);
+    }
     if (!planned.error && planned.data)
       setSchedules(planned.data as EcgScheduleRow[]);
     if (!forecast.error && forecast.data)
@@ -183,5 +202,5 @@ export function useLiveData() {
     };
   }, [refresh]);
 
-  return { zones, schedules, predictions, refresh };
+  return { state, zones, schedules, predictions, refresh };
 }

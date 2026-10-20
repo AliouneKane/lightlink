@@ -54,7 +54,13 @@ export async function sendLiveReport(
   try {
     const session = await ensureSession(db);
     if (session) return session;
-    const { error } = await db.from("outage_reports").insert(reportRow(report));
+    // A retry after a lost answer must not add a second row (same client_id).
+    const { error } = await db
+      .from("outage_reports")
+      .upsert(reportRow(report), {
+        onConflict: "client_id",
+        ignoreDuplicates: true,
+      });
     return error
       ? {
           ok: false,

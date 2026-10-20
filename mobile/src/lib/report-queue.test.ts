@@ -67,6 +67,34 @@ describe("offline report queue", () => {
     expect(second.getSnapshot().pending).toBe(0);
   });
 
+  it("keeps the observation time and the same id on every retry (PAN's review)", async () => {
+    const storage = memoryStorage();
+    const attempts: QueuedReport[] = [];
+    let online = false;
+    const send = vi.fn(async (item: QueuedReport) => {
+      attempts.push(item);
+      return online ? ({ ok: true } as SendResult) : offline;
+    });
+    const first = createReportQueue(storage, send);
+    await first.load();
+    await first.submit({
+      ...report("a"),
+      observedAt: "2026-10-20T07:00:00.000Z",
+    });
+    await first.flush();
+    // Restart, then the network comes back hours later.
+    const second = createReportQueue(storage, send);
+    await second.load();
+    online = true;
+    await second.flush();
+    expect(attempts).toHaveLength(3);
+    expect(new Set(attempts.map((item) => item.clientId)).size).toBe(1);
+    expect(attempts[0].clientId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(
+      attempts.every((item) => item.observedAt === "2026-10-20T07:00:00.000Z"),
+    ).toBe(true);
+  });
+
   it("does not retry a refusal and tells why", async () => {
     const queue = createReportQueue(memoryStorage(), async () => refused);
     await queue.load();

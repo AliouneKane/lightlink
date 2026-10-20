@@ -36,7 +36,7 @@ await db.exec(`
 `);
 
 const user = (n) => `00000000-0000-0000-0000-0000000000${String(n).padStart(2, "0")}`;
-for (let n = 1; n <= 12; n++) {
+for (let n = 1; n <= 15; n++) {
   await db.query("insert into auth.users (id) values ($1)", [user(n)]);
 }
 // Fixtures are written as the owner (row level security does not apply).
@@ -169,6 +169,45 @@ const seeded = await db.query("select count(*)::int as n from public.ecg_schedul
 assert.ok(seeded.rows[0].n >= 50, "the real ECG schedules of data/ must be seeded");
 assert.equal(imported.rows[0].n, 1);
 
+// --- Offline reports (PAN's review of #6) ------------------------------------------------
+// 1. A report observed 3 h ago and sent now is not a current outage, and it answers the
+//    announcement that was running when it was observed.
+await db.exec(`insert into public.ecg_schedules (zone_id, starts_at, ends_at, kind)
+  values ('cantonments', now() - interval '4 hours', now() - interval '2 hours 30 minutes', 'planned')`);
+await as(13, (tx) =>
+  tx.query("insert into public.outage_reports (zone_id, kind, observed_at) values ('cantonments', 'outage', now() - interval '3 hours')"),
+);
+const cantonments = (await db.query("select status from public.zone_status where zone_id = 'cantonments'")).rows[0];
+assert.equal(cantonments.status, "powered", "an old observation must not colour the map now");
+const answered = (
+  await db.query(
+    "select residents_cut::int from public.announcement_outcomes where zone_id = 'cantonments' and kind = 'planned' and starts_at > now() - interval '5 hours'",
+  )
+).rows[0];
+assert.equal(answered.residents_cut, 1, "the late report answers the announcement it was observed in");
+await rejects(
+  as(13, (tx) => tx.query("insert into public.outage_reports (zone_id, kind, observed_at) values ('osu', 'outage', now() + interval '1 hour')")),
+  "observation in the future",
+);
+await rejects(
+  as(13, (tx) => tx.query("insert into public.outage_reports (zone_id, kind, observed_at) values ('osu', 'outage', now() - interval '25 hours')")),
+  "observation older than 24 hours",
+);
+// 2. The phone retries the same report after lost answers: stored once.
+const clientId = "11111111-2222-4333-8444-555555555555";
+for (let attempt = 0; attempt < 3; attempt++) {
+  await as(14, (tx) =>
+    tx.query(
+      "insert into public.outage_reports (zone_id, kind, client_id) values ('airport-residential', 'outage', $1) on conflict (client_id) do nothing",
+      [clientId],
+    ),
+  );
+}
+const stored = await db.query("select count(*)::int as n from public.outage_reports where client_id = $1", [clientId]);
+assert.equal(stored.rows[0].n, 1, "a retried report must be stored once");
+const airport = (await db.query("select status from public.zone_status where zone_id = 'airport-residential'")).rows[0];
+assert.equal(airport.status, "probable_outage", "one resident must not confirm an outage alone");
+
 // --- Forecasts: the SQL written by prediction/predict.py loads, is public and read-only ---
 await db.exec(readFileSync(join(root, "..", "predictions_seed.sql"), "utf8"));
 await db.exec(readFileSync(join(root, "..", "predictions_seed.sql"), "utf8")); // re-run: no duplicate
@@ -185,4 +224,4 @@ await rejects(
 );
 
 await db.close();
-console.log(`OK: ${migrations.length} migrations + seed; positions, rate limit, row level security, zone state, planned or surprise, outcomes, groups, idempotent import, forecasts`);
+console.log(`OK: ${migrations.length} migrations + seed; positions, rate limit, row level security, zone state, planned or surprise, outcomes, groups, idempotent import, forecasts, offline reports`);
