@@ -69,7 +69,7 @@ import {
   useLiveData,
 } from "@/lib/live";
 import { updateDemoState, useDemoState } from "@/lib/demo-store";
-import { forecastScenario } from "../../../shared/forecast";
+import { forecastSourceLabel, getForecast } from "../../../shared/forecast";
 
 const EnergyMap = dynamic(() => import("./energy-map"), {
   ssr: false,
@@ -144,6 +144,7 @@ export function LightLinkApp({
     zone.name.toLocaleLowerCase().includes(search.toLocaleLowerCase()),
   );
   const activeOutages = zones.filter((zone) => zone.status === "outage").length;
+  const forecast = getForecast(homeZone.id, live.predictions);
   const announcementTime = new Date(now());
   // Live mode reads the ECG schedules of the database and never adds a demo announcement.
   const announcements = liveEnabled
@@ -459,26 +460,26 @@ export function LightLinkApp({
             <ZapOff size={21} />
           </span>
           <div>
-            <strong>Coupure possible ce soir</strong>
+            <strong>{forecast.headline}</strong>
             <span>
-              {forecastScenario.windowStart} – {forecastScenario.windowEnd}{" "}
-              <i>·</i> environ {forecastScenario.durationLabel}
+              {forecast.windowStart} – {forecast.windowEnd} <i>·</i>{" "}
+              {forecast.probability} % au plus fort
             </span>
           </div>
         </div>
-        <RiskChart />
+        <RiskChart forecast={forecast} />
         <div className="confidence">
-          <span>Confiance de l’exemple</span>
+          <span>Confiance</span>
           <strong>
-            {homeZone.confidence}% <ShieldCheck size={14} />
+            {forecast.confidence}% <ShieldCheck size={14} />
           </strong>
         </div>
         <div className="confidence-track">
-          <span style={{ width: `${homeZone.confidence}%` }} />
+          <span style={{ width: `${forecast.confidence}%` }} />
         </div>
         <p className="prediction-note">
-          Prévision simulée, sans garantie. Vérifiez les annonces officielles
-          ECG.
+          {forecastSourceLabel(forecast)}. Une estimation, sans garantie :
+          vérifiez les annonces officielles ECG.
         </p>
         <Link href="/previsions" className="text-button prediction-link">
           Comprendre la prévision
@@ -781,32 +782,32 @@ export function LightLinkApp({
                   </span>
                   <h2>Le rythme de votre énergie</h2>
                 </div>
-                <span className="tiny-tag">SCÉNARIO SIMULÉ</span>
+                <span className="tiny-tag">
+                  {forecastSourceLabel(forecast).toUpperCase()}
+                </span>
               </div>
               <div className="forecast-kpi">
                 <div>
                   <span>Créneau probable</span>
                   <strong>
-                    {forecastScenario.windowStart} <i>–</i>{" "}
-                    {forecastScenario.windowEnd}
+                    {forecast.windowStart} <i>–</i> {forecast.windowEnd}
                   </strong>
                 </div>
                 <div>
-                  <span>Durée estimée</span>
-                  <strong>{forecastScenario.durationLabel}</strong>
+                  <span>Risque au plus fort</span>
+                  <strong>{forecast.probability}%</strong>
                 </div>
                 <div>
                   <span>Confiance</span>
-                  <strong>{homeZone.confidence}%</strong>
+                  <strong>{forecast.confidence}%</strong>
                 </div>
               </div>
-              <RiskChart detailed />
+              <RiskChart forecast={forecast} detailed />
               <div className="forecast-insight">
                 <Sparkles size={21} />
                 <p>
-                  <strong>Anticipez votre soirée.</strong>Dans cet exemple, le
-                  risque augmente après 16 h. Rechargez vos appareils ou
-                  explorez les offres de votre quartier.
+                  <strong>{forecast.headline}.</strong>
+                  {forecast.insight}
                 </p>
               </div>
               <Link href="/partage" className="button primary">
@@ -824,15 +825,16 @@ export function LightLinkApp({
                 en toute transparence.
               </h2>
               <p>
-                Ces chiffres illustrent le futur moteur de prévision. Ils ne
-                sont pas calculés à partir de données réelles.
+                Ces chiffres viennent des annonces officielles de l’ECG et des
+                coupures passées du quartier. Chaque paramètre est sourcé ou
+                recalibré avec les réponses des habitants.
               </p>
               <ol>
                 <li>
                   <span>01</span>
                   <div>
                     <strong>Horaires ECG</strong>
-                    <p>Calendriers officiels à intégrer par le backend.</p>
+                    <p>Coupures annoncées par l’ECG pour votre quartier.</p>
                   </div>
                 </li>
                 <li>

@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 import type { Neighborhood } from "@/lib/energy";
-import { forecastScenario } from "../../../shared/forecast";
+import type { ZoneForecast } from "../../../shared/forecast";
 
 export const statusLabels = {
   powered: "Courant disponible",
@@ -139,13 +139,19 @@ export function EnergyArtwork() {
   );
 }
 
-export function RiskChart({ detailed = false }: { detailed?: boolean }) {
-  const values = forecastScenario.riskValues;
+export function RiskChart({
+  forecast,
+  detailed = false,
+}: {
+  forecast: ZoneForecast;
+  detailed?: boolean;
+}) {
+  const values = forecast.riskValues;
   return (
     <div
       className={`risk-chart ${detailed ? "detailed" : ""}`}
       role="img"
-      aria-label={forecastScenario.chartDescription}
+      aria-label={forecast.chartDescription}
     >
       {detailed && (
         <div className="chart-grid">
@@ -159,8 +165,7 @@ export function RiskChart({ detailed = false }: { detailed?: boolean }) {
           <div
             key={index}
             className={
-              index >= forecastScenario.peakStartIndex &&
-              index <= forecastScenario.peakEndIndex
+              index >= forecast.peakStartIndex && index <= forecast.peakEndIndex
                 ? "peak"
                 : ""
             }
@@ -171,7 +176,7 @@ export function RiskChart({ detailed = false }: { detailed?: boolean }) {
         ))}
       </div>
       <div className="chart-hours">
-        {forecastScenario.hourLabels.map((hour) => (
+        {forecast.hourLabels.map((hour) => (
           <span key={hour}>{hour}</span>
         ))}
       </div>

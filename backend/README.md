@@ -9,6 +9,8 @@ LightLink uses **Supabase** (Postgres, Auth, Realtime, row level security). Deci
   - `20261014000000_init_phase2.sql`: tables `zones`, `profiles`, `outage_reports`, `ecg_schedules`, the `zone_status` view, rate limit and RLS policies.
   - `20261017000000_announcement_checks.sql`: report kinds `powered` and `unstable` (as offered by the apps), `ecg_schedules.partial`, and the `announcement_outcomes` view. During an announced outage the apps ask "Avez-vous du courant ?"; the view counts, per announcement, residents cut and residents with power. The prediction model reads it to learn how often ECG announcements are held (`python3 prediction/predict.py --outcomes <export.csv>`).
   - `20261017000100_dated_zone_groups.sql`: load-shedding groups of each zone, with source and validity period (groups change between plans).
+  - `20261017000200_phase2_live.sql`: planned or surprise outages in `zone_status`, report positions checked against the neighbourhood, re-runnable ECG schedule import.
+  - `20261020000000_predictions.sql`: daily forecasts of the rules model (`prediction/`), public and read-only for users.
 - `supabase/seed.sql`: the 10 pilot zones (same ids as `shared/energy.ts`) and the dated groups, generated from `data/` by `python3 prediction/build_zone_groups.py`.
 - `scripts/test-migrations.mjs`: applies every migration and the seed to an in-memory Postgres and checks the views, **without Docker**.
 
@@ -70,4 +72,4 @@ Check the whole chain (anonymous report, Realtime, map, access rules) on the hos
 SUPABASE_URL=https://<project-ref>.supabase.co SUPABASE_ANON_KEY=<anon key> npm run test:live
 ```
 
-For the daily ECG schedule import (`.github/workflows/ecg-schedules.yml`), add the repository secret `SUPABASE_DB_URL` (Project Settings > Database > Connection string, session pooler).
+For the daily import of ECG schedules and forecasts (`.github/workflows/daily-data.yml`), add the repository secret `SUPABASE_DB_URL` (Project Settings > Database > Connection string, session pooler).

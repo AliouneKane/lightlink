@@ -16,7 +16,7 @@ import { useDemo } from "@/providers/demo-provider";
 import { useTheme } from "@/providers/theme-provider";
 import { getOffers, formatTime } from "@/lib/energy";
 import { statusMeta } from "@/lib/theme";
-import { forecastScenario } from "@/lib/forecast";
+import { getForecast } from "@/lib/forecast";
 import {
   Card,
   DemoNote,
@@ -45,11 +45,12 @@ function Mark() {
   );
 }
 export default function Home() {
-  const { state, neighborhoods, updateProfile } = useDemo();
+  const { state, neighborhoods, updateProfile, livePredictions } = useDemo();
   const { colors } = useTheme();
   const zone = neighborhoods.find(
     (item) => item.id === state.profile.neighborhoodId,
   )!;
+  const forecast = getForecast(zone.id, livePredictions);
   const offers = getOffers(state.offers, zone.id, "all", "");
   const reports = [...state.reports]
     .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
@@ -323,7 +324,7 @@ export default function Home() {
           </Txt>
         </View>
         <View style={[styles.row, { gap: 3, alignItems: "flex-end" }]}>
-          {forecastScenario.riskValues.map((risk, i) => (
+          {forecast.riskValues.map((risk, i) => (
             <View
               key={i}
               style={{
@@ -331,8 +332,7 @@ export default function Home() {
                 width: 4,
                 borderRadius: 3,
                 backgroundColor:
-                  i >= forecastScenario.peakStartIndex &&
-                  i <= forecastScenario.peakEndIndex
+                  i >= forecast.peakStartIndex && i <= forecast.peakEndIndex
                     ? colors.accent
                     : colors.line,
               }}

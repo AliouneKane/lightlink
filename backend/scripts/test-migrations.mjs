@@ -169,5 +169,20 @@ const seeded = await db.query("select count(*)::int as n from public.ecg_schedul
 assert.ok(seeded.rows[0].n >= 50, "the real ECG schedules of data/ must be seeded");
 assert.equal(imported.rows[0].n, 1);
 
+// --- Forecasts: the SQL written by prediction/predict.py loads, is public and read-only ---
+await db.exec(readFileSync(join(root, "..", "predictions_seed.sql"), "utf8"));
+await db.exec(readFileSync(join(root, "..", "predictions_seed.sql"), "utf8")); // re-run: no duplicate
+const forecasts = await as(null, (tx) =>
+  tx.query("select zone_id, probability, basis from public.predictions order by zone_id"),
+);
+assert.equal(forecasts.rows.length, 10, "one forecast per pilot zone, readable without account");
+assert.ok(forecasts.rows.every((row) => row.basis !== ""), "every forecast says what it rests on");
+await rejects(
+  as(12, (tx) =>
+    tx.query("insert into public.predictions (zone_id, window_start, window_end, probability, confidence, expected_duration_min, method, model_version) values ('osu', now(), now() + interval '1 hour', 99, 99, 60, 'rules', 'x')"),
+  ),
+  "user writing forecasts",
+);
+
 await db.close();
-console.log(`OK: ${migrations.length} migrations + seed; positions, rate limit, row level security, zone state, planned or surprise, outcomes, groups, idempotent import`);
+console.log(`OK: ${migrations.length} migrations + seed; positions, rate limit, row level security, zone state, planned or surprise, outcomes, groups, idempotent import, forecasts`);

@@ -37,7 +37,7 @@ interface DemoContextValue {
 
 const DemoContext = createContext<DemoContextValue | null>(null);
 const idleQueue: QueueSnapshot = { pending: 0, notice: null };
-const noLiveData: LiveData = { zones: null, schedules: [] };
+const noLiveData: LiveData = { zones: null, schedules: [], predictions: [] };
 
 export function DemoProvider({
   children,
@@ -131,6 +131,7 @@ export function useDemo() {
       neighborhoods,
       liveEnabled: Boolean(queue),
       liveSchedules: live.schedules,
+      livePredictions: live.predictions,
       sync,
       /** Saved on the phone at once; in live mode also sent to Supabase, now or when back online. */
       report(input: ReportInput): string | null {
@@ -146,6 +147,14 @@ export function useDemo() {
       setNotifications: repository.setNotifications,
       reset: repository.reset,
     }),
-    [repository, queue, snapshot, neighborhoods, live.schedules, sync],
+    [
+      repository,
+      queue,
+      snapshot,
+      neighborhoods,
+      live.schedules,
+      live.predictions,
+      sync,
+    ],
   );
 }

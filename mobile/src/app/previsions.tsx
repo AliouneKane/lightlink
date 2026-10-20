@@ -25,8 +25,6 @@ import {
 } from "@/components/ui";
 import { ForecastChart } from "@/components/forecast-chart";
 import {
-  DEMO_LABEL,
-  DEMO_TIMESTAMP,
   answerReport,
   findAnswer,
   formatDay,
@@ -35,21 +33,15 @@ import {
   isActive,
   scheduleRowsToAnnouncements,
 } from "@/lib/energy";
-import { forecastScenario } from "@/lib/forecast";
+import { forecastSourceLabel, getForecast } from "@/lib/forecast";
 import { useDemo } from "@/providers/demo-provider";
 import { useTheme } from "@/providers/theme-provider";
 
-const scenarioDate = new Intl.DateTimeFormat("fr-FR", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-  timeZone: "Africa/Accra",
-}).format(new Date(DEMO_TIMESTAMP));
 const methodSources = [
   {
     number: "01",
     title: "Horaires ECG",
-    description: "Calendriers officiels à intégrer par le backend.",
+    description: "Coupures annoncées par l’ECG pour votre quartier.",
   },
   {
     number: "02",
@@ -74,8 +66,14 @@ export default function ForecastScreen() {
 function ForecastContent({ initialZone }: { initialZone: string }) {
   const router = useRouter();
   const { colors } = useTheme();
-  const { neighborhoods, state, report, liveEnabled, liveSchedules } =
-    useDemo();
+  const {
+    neighborhoods,
+    state,
+    report,
+    liveEnabled,
+    liveSchedules,
+    livePredictions,
+  } = useDemo();
   const [zoneId, setZoneId] = useState(initialZone);
   const [answerError, setAnswerError] = useState<string | null>(null);
   const homeZone =
@@ -107,6 +105,7 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
   const [linkError, setLinkError] = useState<string | null>(null);
   const zone =
     neighborhoods.find((item) => item.id === zoneId) ?? neighborhoods[0];
+  const forecast = getForecast(zone.id, livePredictions);
 
   function openEcg() {
     setLinkError(null);
@@ -124,11 +123,11 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
         <View
           style={styles.scenarioLine}
           accessible
-          accessibilityLabel={DEMO_LABEL}
+          accessibilityLabel={forecastSourceLabel(forecast)}
         >
           <View style={[styles.demoDot, { backgroundColor: colors.accent }]} />
           <Txt size={10} weight="bold" tone="muted" style={styles.eyebrow}>
-            {scenarioDate.toUpperCase()} · SCÉNARIO SIMULÉ
+            {forecastSourceLabel(forecast).toUpperCase()}
           </Txt>
         </View>
         <Txt
@@ -166,15 +165,15 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
             <ZapOff size={18} color={colors.navy} />
           </View>
           <Txt size={29} weight="extrabold" style={styles.windowTime}>
-            {forecastScenario.windowStart}
+            {forecast.windowStart}
             <Txt size={24} weight="medium" style={{ color: "#58604a" }}>
               {" "}
               –{" "}
             </Txt>
-            {forecastScenario.windowEnd}
+            {forecast.windowEnd}
           </Txt>
           <Txt size={12} weight="medium" style={{ color: "#34442d" }}>
-            Coupure possible ce soir · exemple simulé
+            {forecast.headline} · {forecast.dayLabel}
           </Txt>
         </View>
         <View style={styles.metrics}>
@@ -182,11 +181,11 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
             <View style={styles.row}>
               <Clock3 size={14} color={colors.muted} />
               <Txt size={11} tone="muted">
-                Durée estimée
+                Risque au plus fort
               </Txt>
             </View>
             <Txt size={24} weight="extrabold" style={styles.metricValue}>
-              {forecastScenario.durationLabel}
+              {forecast.probability} %
             </Txt>
           </View>
           <View
@@ -204,7 +203,7 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
               weight="extrabold"
               style={[styles.metricValue, { color: colors.green }]}
             >
-              {zone.confidence}
+              {forecast.confidence}
               <Txt size={16} weight="bold" style={{ color: colors.green }}>
                 {" "}
                 %
@@ -218,15 +217,11 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
               Risque de coupure
             </Txt>
             <Txt size={10} weight="bold" tone="muted">
-              {forecastScenario.hourLabels[0]} –{" "}
-              {
-                forecastScenario.hourLabels[
-                  forecastScenario.hourLabels.length - 1
-                ]
-              }
+              {forecast.hourLabels[0]} –{" "}
+              {forecast.hourLabels[forecast.hourLabels.length - 1]}
             </Txt>
           </View>
-          <ForecastChart />
+          <ForecastChart key={zone.id} forecast={forecast} />
         </View>
       </Card>
 
@@ -242,7 +237,7 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
           </View>
           <View style={styles.flex}>
             <Txt size={17} weight="extrabold">
-              Anticipez votre soirée.
+              {forecast.headline}.
             </Txt>
             <Txt size={11} tone="muted">
               Votre quartier · {zone.name}
@@ -250,8 +245,7 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
           </View>
         </View>
         <Txt size={13} tone="muted" style={styles.paragraph}>
-          Dans cet exemple, le risque augmente après 16 h. Rechargez vos
-          appareils ou explorez les offres de votre quartier.
+          {forecast.insight}
         </Txt>
         <Button
           label="Trouver une solution"
@@ -284,8 +278,9 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
           )}
         </Pressable>
         <Txt size={13} tone="muted" style={styles.paragraph}>
-          Ces chiffres illustrent le futur moteur de prévision. Ils ne sont pas
-          calculés à partir de données réelles.
+          Ces chiffres viennent des annonces officielles de l’ECG et des
+          coupures passées du quartier. Chaque paramètre est sourcé ou recalibré
+          avec les réponses des habitants.
         </Txt>
         {showMethod && (
           <View style={styles.methodList}>
@@ -441,11 +436,14 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
           </View>
         </View>
         <Txt size={15} weight="bold">
-          Pas encore assez de données réelles
+          {forecast.announced
+            ? "Coupure annoncée par l’ECG"
+            : "Peu de jours observés"}
         </Txt>
         <Txt size={12} tone="muted" style={styles.paragraph}>
-          La confiance réelle sera calculée après intégration des calendriers et
-          des signalements vérifiés. Le graphique ci-dessus est un exemple.
+          {forecast.announced
+            ? "La confiance mesure la part des annonces ECG réellement tenues ; vos réponses à « Avez-vous du courant ? » l’ajustent."
+            : "Sans annonce, la confiance reflète le nombre de jours de coupures observés dans le quartier. Elle monte avec vos signalements."}
         </Txt>
       </Card>
       <Button

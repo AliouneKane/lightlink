@@ -10,6 +10,11 @@ import {
   type EnergyStatus,
   type ZoneStatusRow,
 } from "./energy";
+import {
+  predictionColumns,
+  todayBounds,
+  type PredictionRow,
+} from "../../../shared/forecast";
 
 // Next.js inlines NEXT_PUBLIC_ variables at build time (web/.env.local).
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -111,12 +116,14 @@ function accountError(message: string): string {
 export function useLiveData() {
   const [zones, setZones] = useState<ZoneStatusRow[] | null>(null);
   const [schedules, setSchedules] = useState<EcgScheduleRow[]>([]);
+  const [predictions, setPredictions] = useState<PredictionRow[]>([]);
 
   const refresh = useCallback(async () => {
     const db = supabase();
     if (!db) return;
     const since = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
-    const [status, planned] = await Promise.all([
+    const [dayStart, dayEnd] = todayBounds();
+    const [status, planned, forecast] = await Promise.all([
       db.from("zone_status").select("*"),
       db
         .from("ecg_schedules")
@@ -126,10 +133,19 @@ export function useLiveData() {
         .gte("ends_at", since)
         .order("starts_at", { ascending: false })
         .limit(200),
+      // Today's forecasts, newest first: the apps keep the first row of each zone.
+      db
+        .from("predictions")
+        .select(predictionColumns)
+        .gte("window_start", dayStart)
+        .lt("window_start", dayEnd)
+        .order("generated_at", { ascending: false }),
     ]);
     if (!status.error && status.data) setZones(status.data as ZoneStatusRow[]);
     if (!planned.error && planned.data)
       setSchedules(planned.data as EcgScheduleRow[]);
+    if (!forecast.error && forecast.data)
+      setPredictions(forecast.data as PredictionRow[]);
   }, []);
 
   useEffect(() => {
@@ -163,5 +179,5 @@ export function useLiveData() {
     };
   }, [refresh]);
 
-  return { zones, schedules, refresh };
+  return { zones, schedules, predictions, refresh };
 }

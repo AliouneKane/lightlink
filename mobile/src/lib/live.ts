@@ -8,6 +8,7 @@ import {
   type EcgScheduleRow,
   type ZoneStatusRow,
 } from "./energy";
+import { predictionColumns, todayBounds, type PredictionRow } from "./forecast";
 import type { QueuedReport, SendResult } from "./report-queue";
 
 // Expo inlines EXPO_PUBLIC_ variables when bundling (mobile/.env).
@@ -69,6 +70,7 @@ export async function sendLiveReport(
 export interface LiveData {
   zones: ZoneStatusRow[] | null;
   schedules: EcgScheduleRow[];
+  predictions: PredictionRow[];
 }
 
 /** Neighbourhood states and the ECG schedules of the last 30 days and to come. */
@@ -76,7 +78,8 @@ export async function fetchLiveData(): Promise<LiveData | null> {
   const db = supabase();
   if (!db) return null;
   const since = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
-  const [status, planned] = await Promise.all([
+  const [dayStart, dayEnd] = todayBounds();
+  const [status, planned, forecast] = await Promise.all([
     db.from("zone_status").select("*"),
     db
       .from("ecg_schedules")
@@ -86,11 +89,18 @@ export async function fetchLiveData(): Promise<LiveData | null> {
       .gte("ends_at", since)
       .order("starts_at", { ascending: false })
       .limit(200),
+    db
+      .from("predictions")
+      .select(predictionColumns)
+      .gte("window_start", dayStart)
+      .lt("window_start", dayEnd)
+      .order("generated_at", { ascending: false }),
   ]);
   if (status.error) return null;
   return {
     zones: status.data as ZoneStatusRow[],
     schedules: planned.error ? [] : (planned.data as EcgScheduleRow[]),
+    predictions: forecast.error ? [] : (forecast.data as PredictionRow[]),
   };
 }
 

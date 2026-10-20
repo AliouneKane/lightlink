@@ -777,32 +777,36 @@ test("les actions fixes et la navigation restent entièrement visibles", async (
 test("les prévisions partagées restent lisibles et conservent le quartier vers les offres", async ({
   page,
 }) => {
-  await page.goto("/previsions?zone=osu");
+  // Demo mode: the rules model's output for 16 Oct 2026, when the ECG announced
+  // an outage in parts of Madina (shared/forecast-snapshot.ts).
+  await page.goto("/previsions?zone=madina");
   await expect(
     page.getByRole("button", { name: "Quartier des prévisions", exact: true }),
-  ).toHaveText("Osu");
-  await expect(page.getByText(/^18:00\s*–\s*20:30$/)).toBeVisible();
-  await expect(page.getByText("2 h 30", { exact: true })).toBeVisible();
-  await expect(page.getByText(/^92\s*%$/)).toBeVisible();
+  ).toHaveText("Madina");
   await expect(
-    page.getByText("78 % de risque illustratif", { exact: true }),
+    page.getByText("DÉMO · PRÉVISION DU 16 OCT. 2026"),
+  ).toBeVisible();
+  await expect(page.getByText(/^09:00\s*–\s*17:00$/)).toBeVisible();
+  await expect(page.getByText(/^90\s*%$/)).toBeVisible();
+  await expect(
+    page.getByText("45 % de risque de coupure", { exact: true }),
   ).toBeVisible();
 
   const chart = page.getByRole("slider", {
-    name: "Exemple simulé : le risque de coupure atteint 78 % vers 18 h, puis diminue en soirée.",
+    name: "Risque de coupure de 06 h à 23 h : au plus haut 45 % vers 10 h.",
     exact: true,
   });
-  await expect(chart).toHaveAttribute("aria-valuenow", "9");
-  await expect(chart).toHaveAttribute("aria-valuetext", /78 pour cent/);
+  await expect(chart).toHaveAttribute("aria-valuenow", "3");
+  await expect(chart).toHaveAttribute("aria-valuetext", /45 pour cent/);
   await chart.focus();
-  await page.keyboard.press("ArrowRight");
-  await expect(chart).toHaveAttribute("aria-valuenow", "10");
-  await expect(
-    page.getByText("69 % de risque illustratif", { exact: true }),
-  ).toBeVisible();
   await page.keyboard.press("ArrowLeft");
+  await expect(chart).toHaveAttribute("aria-valuenow", "2");
   await expect(
-    page.getByText("78 % de risque illustratif", { exact: true }),
+    page.getByText("0 % de risque de coupure", { exact: true }),
+  ).toBeVisible();
+  await page.keyboard.press("ArrowRight");
+  await expect(
+    page.getByText("45 % de risque de coupure", { exact: true }),
   ).toBeVisible();
 
   await page
@@ -812,9 +816,10 @@ test("les prévisions partagées restent lisibles et conservent le quartier vers
   await expect(
     page.getByRole("button", { name: "Quartier des prévisions", exact: true }),
   ).toHaveText("Labone");
-  await expect(page.getByText(/^88\s*%$/)).toBeVisible();
+  // No announcement in Labone that day: base rate only, low confidence.
+  await expect(page.getByText(/^33\s*%$/)).toBeVisible();
   await expect(
-    page.getByText("78 % de risque illustratif", { exact: true }),
+    page.getByText("2 % de risque de coupure", { exact: true }),
   ).toBeVisible();
   await page
     .getByRole("button", { name: "Trouver une solution", exact: true })
