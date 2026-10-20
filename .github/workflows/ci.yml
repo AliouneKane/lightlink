@@ -61,7 +61,7 @@ jobs:
         run: npm run typecheck
       - name: Production build
         if: steps.has.outputs.found == 'true'
-        run: npm run build
+        run: npm run build:e2e
       - name: Install browser
         if: steps.has.outputs.found == 'true'
         run: npx playwright install --with-deps chromium

@@ -970,11 +970,15 @@ export function LightLinkApp({
               </div>
               <div className="empty-state">
                 <Activity size={32} />
-                <h3>Pas encore assez de données réelles</h3>
+                <h3>
+                  {forecast.announced
+                    ? "Coupure annoncée par l’ECG"
+                    : "Peu de jours observés"}
+                </h3>
                 <p>
-                  La confiance réelle sera calculée après intégration des
-                  calendriers et des signalements vérifiés. Le graphique
-                  ci-dessus est un exemple.
+                  {forecast.announced
+                    ? "La confiance mesure la part des annonces ECG réellement tenues ; vos réponses à « Avez-vous du courant ? » l’ajustent."
+                    : "Sans annonce, la confiance reflète le nombre de jours de coupures observés dans le quartier. Elle monte avec vos signalements."}
                 </p>
               </div>
             </section>

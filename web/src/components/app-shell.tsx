@@ -30,6 +30,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Brand } from "./ui";
+import { liveEnabled } from "@/lib/live";
 import type { Neighborhood } from "@/lib/energy";
 import {
   defaultDisplay,
@@ -359,9 +360,10 @@ export function AppShell({
             >
               <Plus size={18} />
             </button>
+            {/* Live mode: reports, map and forecasts come from Supabase. Energy sharing stays simulated. */}
             <span className="demo-badge">
               <span />
-              DÉMO
+              {liveEnabled ? "EN DIRECT" : "DÉMO"}
             </span>
             {pathname === "/" && (
               <details

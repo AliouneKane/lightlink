@@ -39,7 +39,7 @@ const before = await db.from("zone_status").select("powered_reports").eq("zone_i
 assert.ifError(before.error);
 
 const received = new Promise((resolve, reject) => {
-  const timeout = setTimeout(() => reject(new Error("no Realtime event within 15 s")), 15_000);
+  const timeout = setTimeout(() => reject(new Error("no Realtime event within 20 s")), 20_000);
   const channel = db
     .channel("e2e")
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "outage_reports" }, (event) => {
@@ -51,10 +51,14 @@ const received = new Promise((resolve, reject) => {
     })
     .subscribe((status) => {
       if (status !== "SUBSCRIBED") return;
-      void db
-        .from("outage_reports")
-        .insert({ zone_id: zone, kind: "powered", description: "[test bout en bout]" })
-        .then(({ error }) => error && reject(error));
+      // The server starts listening a moment after SUBSCRIBED; the apps subscribe long before
+      // anyone reports, so the test waits like a real session would.
+      setTimeout(() => {
+        void db
+          .from("outage_reports")
+          .insert({ zone_id: zone, kind: "powered", description: "[test bout en bout]" })
+          .then(({ error }) => error && reject(error));
+      }, 3000);
     });
 });
 const event = await received;

@@ -50,3 +50,4 @@ docs/donnees/pdf/Klugman_*.pdf
 
 # Supabase CLI local state
 backend/supabase/.branches/
+backend/supabase/.temp/

@@ -15,8 +15,9 @@
     "format": "prettier --write . ../shared",
     "format:check": "prettier --check . ../shared",
     "test": "vitest run",
-    "test:e2e": "npm run export:web && playwright test",
+    "test:e2e": "npm run export:web:demo && playwright test",
     "export:web": "expo export --platform web --max-workers 1",
+    "export:web:demo": "node -e \"process.env.EXPO_PUBLIC_LIGHTLINK_MODE='demo';require('child_process').execSync('npm run export:web',{stdio:'inherit'})\"",
     "export": "expo export --platform all --max-workers 1"
   },
   "dependencies": {

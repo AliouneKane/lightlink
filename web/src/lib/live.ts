@@ -20,8 +20,13 @@ import {
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-/** Live mode needs both public values; without them the app stays a local demo. */
-export const liveEnabled = Boolean(url && anonKey);
+/**
+ * Live mode needs both public values; without them the app stays a local demo.
+ * NEXT_PUBLIC_LIGHTLINK_MODE=demo forces the demo (browser tests never touch the real database).
+ */
+export const liveEnabled =
+  Boolean(url && anonKey) &&
+  process.env.NEXT_PUBLIC_LIGHTLINK_MODE !== "demo";
 
 let client: SupabaseClient | null = null;
 function supabase(): SupabaseClient | null {
