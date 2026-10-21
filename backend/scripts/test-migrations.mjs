@@ -337,6 +337,14 @@ assert.ok(nearOsu.length >= 2);
 assert.deepEqual(nearOsu.map((row) => row.distance_km), [...nearOsu.map((row) => row.distance_km)].sort((a, b) => a - b));
 assert.ok(!nearOsu.some((row) => row.title === "Générateur complet"), "a full offer is not proposed");
 assert.ok(nearOsu.some((row) => row.title === "Recharge solaire"), "a freed offer is proposed again");
+const batteryRequest = (await as(21, (tx) => tx.query("select id from public.offer_requests where offer_id = $1", [others[1]]))).rows[0].id;
+await move(20, batteryRequest, "accepted");
+const batteries = (await as(null, (tx) => tx.query("select title, places_left from public.energy_options('labone') where title like 'Batterie%' order by title"))).rows;
+assert.deepEqual(
+  batteries.map((row) => row.places_left),
+  [2, 1, 2],
+  "places left are right even for a visitor who cannot read requests",
+);
 assert.ok(!nearOsu.some((row) => row.title === "Batterie 3"), "an ended offer is not proposed");
 assert.ok(nearOsu.every((row) => row.distance_km <= 10), "10 km around the neighbourhood");
 assert.ok(!nearOsu.some((row) => row.kind === "place"), "fixed places only when the neighbourhood is cut");

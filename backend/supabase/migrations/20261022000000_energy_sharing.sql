@@ -16,6 +16,8 @@ create table public.offers (
   id uuid primary key default gen_random_uuid(),
   host_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   zone_id text not null references public.zones (id),
+  -- First name shown on the offer (profiles stay private).
+  host_name text not null default 'Voisin' check (char_length(trim(host_name)) between 1 and 50),
   title text not null check (char_length(trim(title)) between 3 and 100),
   source text not null check (source in ('solar', 'generator', 'battery')),
   capacity text not null check (char_length(trim(capacity)) between 1 and 100),
@@ -228,6 +230,8 @@ returns table (
 )
 language sql
 stable
+-- Counts accepted requests, which residents cannot read: only the number leaves the function.
+security definer
 set search_path = ''
 as $$
   with origin as (
