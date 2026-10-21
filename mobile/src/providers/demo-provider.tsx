@@ -34,6 +34,7 @@ import {
 import {
   fetchLiveData,
   liveEnabled,
+  liveDb,
   sendLiveReport,
   sessionDb,
   subscribeToReports,
@@ -85,7 +86,8 @@ export function DemoProvider({
   const [sharingNotice, setSharingNotice] = useState<string | null>(null);
   const isLive = liveEnabled && !injectedRepository;
   const [refreshSharing] = useState(() => async () => {
-    const db = await sessionDb();
+    // Reading needs no account: a session is only opened when the resident acts.
+    const db = liveDb();
     if (!db) return;
     const zone = repository.getSnapshot().state.profile.neighborhoodId;
     const data = await loadSharing(db, zone).catch(() => null);

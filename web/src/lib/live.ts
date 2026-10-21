@@ -9,6 +9,12 @@ import {
   type EcgScheduleRow,
   type EnergyStatus,
   type ZoneStatusRow,
+  emptySharing,
+  loadNotifications,
+  loadSharing,
+  markNotificationsRead,
+  type Notification,
+  type SharingData,
 } from "./energy";
 import {
   predictionColumns,
@@ -203,4 +209,63 @@ export function useLiveData() {
   }, [refresh]);
 
   return { state, zones, schedules, predictions, refresh };
+}
+
+/**
+ * Phase 3, live mode: offers and requests around the resident's neighbourhood, the
+ * requests on their own offers, and their notification inbox. `run` performs a sharing
+ * action, shows its error if any, then reloads.
+ */
+export function useLiveSharing(zoneId: string) {
+  const [data, setData] = useState<SharingData>(emptySharing);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    // Reading needs no account: a session is only opened when the resident acts.
+    const db = supabase();
+    if (!db) return;
+    const [sharing, inbox] = await Promise.all([
+      loadSharing(db, zoneId).catch(() => null),
+      loadNotifications(db).catch(() => []),
+    ]);
+    if (sharing) setData(sharing);
+    setNotifications(inbox);
+  }, [zoneId]);
+
+  useEffect(() => {
+    if (!liveEnabled) return;
+    const first = setTimeout(() => void refresh(), 0);
+    const minute = setInterval(() => void refresh(), 60_000);
+    return () => {
+      clearTimeout(first);
+      clearInterval(minute);
+    };
+  }, [refresh]);
+
+  const run = useCallback(
+    async (action: (db: SupabaseClient) => Promise<string | null>) => {
+      const db = supabase();
+      if (!db) return "Mode démo : action non envoyée.";
+      const sessionError = await ensureSession(db).catch(
+        () => "Pas de connexion. Réessayez quand le réseau revient.",
+      );
+      const error =
+        sessionError ??
+        (await action(db).catch(() => "L’action n’a pas pu aboutir."));
+      setNotice(error);
+      await refresh();
+      return error;
+    },
+    [refresh],
+  );
+
+  const markRead = useCallback(async () => {
+    const db = supabase();
+    if (!db) return;
+    await markNotificationsRead(db).catch(() => undefined);
+    await refresh();
+  }, [refresh]);
+
+  return { data, notifications, notice, run, markRead };
 }

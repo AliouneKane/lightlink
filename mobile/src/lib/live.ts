@@ -46,6 +46,11 @@ async function ensureSession(db: SupabaseClient): Promise<SendResult | null> {
     : null;
 }
 
+/** The client without opening a session: enough to read public data. */
+export function liveDb(): SupabaseClient | null {
+  return supabase();
+}
+
 /**
  * The client with a session (anonymous if needed), for energy sharing and notifications.
  * Null in demo mode or when no session can be opened.

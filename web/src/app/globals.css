@@ -3363,3 +3363,16 @@ h3 {
     animation-iteration-count: 1 !important;
   }
 }
+
+.abuse-report {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.abuse-report summary {
+  cursor: pointer;
+}
+.abuse-report .text-button {
+  display: block;
+  margin-top: 6px;
+}
