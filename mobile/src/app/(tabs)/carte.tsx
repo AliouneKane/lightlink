@@ -32,7 +32,7 @@ import {
   Txt,
 } from "@/components/ui";
 import { NeighborhoodMap } from "@/components/neighborhood-map";
-import { formatTime } from "@/lib/energy";
+import { formatTime, isOutageForFilter } from "@/lib/energy";
 import { statusMeta } from "@/lib/theme";
 import { useDemo } from "@/providers/demo-provider";
 import { useTheme } from "@/providers/theme-provider";
@@ -77,7 +77,9 @@ function MapExplorer({ initialSelectedId }: { initialSelectedId: string }) {
     () =>
       neighborhoods.filter(
         (area) =>
-          (filter === "all" || area.status === filter) &&
+          (filter === "all" ||
+            area.status === filter ||
+            (filter === "outage" && isOutageForFilter(area))) &&
           normalize(area.name).includes(normalize(query)),
       ),
     [neighborhoods, filter, query],

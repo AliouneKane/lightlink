@@ -46,7 +46,16 @@ export const fonts = {
   bold: "Manrope_700Bold",
   extrabold: "Manrope_800ExtraBold",
 };
+/** Dashed ring around zones with an ECG outage announced now (same colour as the web map). */
+export const PLANNED_COLOR = "#b9a3f0";
+
 export const statusMeta = {
+  unknown: {
+    label: "État inconnu",
+    shortLabel: "Inconnu",
+    color: "muted" as const,
+    icon: CircleHelp,
+  },
   powered: {
     label: "Courant disponible",
     shortLabel: "Avec courant",

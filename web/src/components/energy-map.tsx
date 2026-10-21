@@ -13,6 +13,7 @@ import {
   useMapEvents,
 } from "react-leaflet";
 import { LocateFixed, Minus, Plus, RotateCcw } from "lucide-react";
+import { isOutageForFilter } from "../../../shared/live";
 
 export interface EnergyMapProps {
   neighborhoods: {
@@ -20,8 +21,9 @@ export interface EnergyMapProps {
     name: string;
     lat: number;
     lng: number;
-    status: "powered" | "outage" | "unstable";
+    status: "powered" | "outage" | "unstable" | "unknown";
     reports: number;
+    plannedUntil?: string;
   }[];
   offers: {
     id: string;
@@ -35,6 +37,8 @@ export interface EnergyMapProps {
   onSelect: (id: string) => void;
   layer: "all" | "outages" | "energy";
   focus?: [number, number] | null;
+  /** Live mode: neighbourhood colours are drawn only once the database answered. */
+  liveState?: "off" | "loading" | "ready" | "error";
 }
 
 const ACCRA: [number, number] = [5.59, -0.205];
@@ -42,7 +46,10 @@ const STATUS = {
   powered: { color: "#1b9e77", label: "Électricité disponible" },
   outage: { color: "#ee725b", label: "Coupure signalée" },
   unstable: { color: "#e9ad44", label: "Réseau instable" },
+  unknown: { color: "#8a97a1", label: "État inconnu" },
 };
+// Dashed ring around zones with an ECG outage announced now (legend: "Coupure annoncée").
+const PLANNED_COLOR = "#b9a3f0";
 const SOURCE = {
   solar: "Énergie solaire",
   generator: "Groupe électrogène",
@@ -262,6 +269,7 @@ export default function EnergyMap({
   onSelect,
   layer,
   focus,
+  liveState = "off",
 }: EnergyMapProps) {
   const [tileStatus, setTileStatus] = useState<"loading" | "ready" | "error">(
     "loading",
@@ -273,11 +281,12 @@ export default function EnergyMap({
     offers.find((item) => item.id === selectedId);
   const latitude = focus?.[0] ?? selected?.lat;
   const longitude = focus?.[1] ?? selected?.lng;
+  const liveMissing = liveState === "loading" || liveState === "error";
   const visibleNeighborhoods =
-    layer === "energy"
+    layer === "energy" || liveMissing
       ? []
       : neighborhoods.filter(
-          (item) => layer !== "outages" || item.status !== "powered",
+          (item) => layer !== "outages" || isOutageForFilter(item),
         );
   const visibleOffers = layer === "outages" ? [] : offers;
 
@@ -342,6 +351,20 @@ export default function EnergyMap({
             const selectedArea = area.id === selectedId;
             return (
               <Fragment key={area.id}>
+                {area.plannedUntil && (
+                  // Task 67: an ECG outage is announced right now in this zone.
+                  <CircleMarker
+                    center={[area.lat, area.lng]}
+                    radius={selectedArea ? 36 : 29}
+                    interactive={false}
+                    pathOptions={{
+                      color: PLANNED_COLOR,
+                      weight: 2,
+                      dashArray: "5 5",
+                      fill: false,
+                    }}
+                  />
+                )}
                 <CircleMarker
                   center={[area.lat, area.lng]}
                   radius={selectedArea ? 30 : 23}
@@ -374,6 +397,12 @@ export default function EnergyMap({
                   <Popup className="map-popup">
                     <strong>{area.name}</strong>
                     <p>{state.label}</p>
+                    {area.plannedUntil && (
+                      <p>
+                        Coupure annoncée par l’ECG jusqu’à{" "}
+                        {area.plannedUntil.slice(11, 16)}
+                      </p>
+                    )}
                     <span>
                       {area.reports} signalement{area.reports > 1 ? "s" : ""}
                     </span>
@@ -423,6 +452,16 @@ export default function EnergyMap({
         <span className="map-location-dot" aria-hidden="true" />
         ACCRA, GHANA
       </div>
+      {liveMissing && (
+        <div
+          className={`map-status ${liveState === "error" ? "map-status--error" : "map-status--loading"}`}
+          role="status"
+        >
+          {liveState === "error"
+            ? "Les données en direct sont indisponibles : l’état des quartiers n’est pas affiché. Réessayez dans un instant."
+            : "Chargement de l’état des quartiers…"}
+        </div>
+      )}
       {tileStatus === "loading" && (
         <div className="map-status map-status--loading" role="status">
           Chargement de la carte…

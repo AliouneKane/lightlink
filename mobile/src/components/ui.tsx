@@ -47,7 +47,7 @@ import { useReducedMotion } from "@/lib/use-reduced-motion";
 import {
   neighborhoods,
   type EnergyOffer,
-  type EnergyStatus,
+  type NeighborhoodStatus,
 } from "@/lib/energy";
 
 export function feedback() {
@@ -649,7 +649,7 @@ export function SectionTitle({
     </View>
   );
 }
-export function StatusPill({ status }: { status: EnergyStatus }) {
+export function StatusPill({ status }: { status: NeighborhoodStatus }) {
   const { colors } = useTheme();
   const meta = statusMeta[status];
   return (
@@ -695,14 +695,29 @@ export function DemoNote({
   );
 }
 export function StorageNotice() {
-  const { storageError } = useDemo();
-  return storageError ? (
+  const { storageError, sync } = useDemo();
+  if (!storageError && !sync.pending && !sync.notice) return null;
+  return (
     <Card>
-      <Txt tone="danger" size={12}>
-        {storageError}
-      </Txt>
+      {storageError && (
+        <Txt tone="danger" size={12}>
+          {storageError}
+        </Txt>
+      )}
+      {sync.pending > 0 && (
+        <Txt size={12} accessibilityLiveRegion="polite">
+          {sync.pending === 1
+            ? "1 signalement attend le réseau. Il partira automatiquement."
+            : `${sync.pending} signalements attendent le réseau. Ils partiront automatiquement.`}
+        </Txt>
+      )}
+      {sync.notice && (
+        <Txt tone="danger" size={12} accessibilityRole="alert">
+          {sync.notice}
+        </Txt>
+      )}
     </Card>
-  ) : null;
+  );
 }
 function ConnectivityNotice() {
   const { isConnected } = useNetInfo();

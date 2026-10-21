@@ -35,7 +35,8 @@ export function Dashboard({
   homeZone: Neighborhood;
   zones: Neighborhood[];
   selectedId: string;
-  outageCount: number;
+  /** null while the neighbourhood states are unknown (live data missing). */
+  outageCount: number | null;
   offerCount: number;
   reportCount: number;
   offers: ReactNode[];
@@ -67,7 +68,7 @@ export function Dashboard({
           <div className="stat-copy">
             <span className="stat-label">Quartiers sans courant</span>
             <strong>
-              {outageCount}
+              {outageCount ?? <span aria-label="Nombre inconnu">—</span>}
               <small> / {zones.length}</small>
             </strong>
           </div>

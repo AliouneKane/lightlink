@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev --hostname 0.0.0.0",
     "build": "next build",
+    "build:e2e": "node -e \"process.env.NEXT_PUBLIC_LIGHTLINK_MODE='demo';require('child_process').execSync('next build',{stdio:'inherit'})\"",
     "start": "next start --hostname 0.0.0.0",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

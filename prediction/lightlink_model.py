@@ -38,7 +38,11 @@ CHART_HOURS = (6, 8, 10, 12, 14, 16, 17, 18, 19, 20, 21, 23)
 # localité: chaque ligne est une annonce, exactement comme une maintenance. C'est le canal par lequel un
 # futur calendrier de délestage entrera dans le modèle (même format à 16 colonnes dans data/).
 # 3news (avril 2026) est exclu: il donne le groupe de chaque localité mais aucune heure.
-ANNOUNCEMENT_SOURCES = ("instagram", "x", "presse", "ecg_pdf")
+# saisie = annonces ECG recopiées à la main par l'équipe (tâche 64, data/saisie/README.md). Elles comptent
+# comme annonces (horaires de l'app, prévision du jour annoncé) mais pas pour l'estimation des taux: ce
+# n'est pas un balayage complet, ses jours sans annonce ne prouvent rien (voir MANUAL_SOURCE).
+ANNOUNCEMENT_SOURCES = ("instagram", "x", "presse", "ecg_pdf", "saisie")
+MANUAL_SOURCE = "saisie"
 
 # Fiabilité des annonces: prior Beta de moyenne 0,90 (PROXY Eversource, distributeur américain: travaux
 # tenus « environ 90 % du temps ») et de poids 10 observations, donc faible: 80 % de la masse entre 0,77
@@ -162,6 +166,11 @@ def load_rows(data_dir: Path = DATA_DIR, sources: Sequence[str] = ANNOUNCEMENT_S
     return rows
 
 
+def estimation_rows(rows: Iterable[dict]) -> List[dict]:
+    """Lignes qui servent à estimer les taux: tout sauf la saisie manuelle (pas un balayage complet)."""
+    return [r for r in rows if r.get("src") != MANUAL_SOURCE]
+
+
 def parse_announcements(rows: Iterable[dict], params: Params = PARAMS) -> List[Announcement]:
     """Transforme les lignes CSV en annonces par quartier pilote (dédoublonnées)."""
     seen = set()
@@ -224,7 +233,11 @@ def exposure_window(rows: Iterable[dict]) -> ExposureWindow:
     if not starts:
         raise ValueError("aucune donnée instagram: impossible de définir la fenêtre d'exposition")
     start = date.fromisoformat(min(starts))
-    published = [r["date_publication"] for r in rows if r.get("date_publication") and r.get("date_coupure", "") >= min(starts)]
+    published = [
+        r["date_publication"]
+        for r in rows
+        if r.get("date_publication") and r.get("date_coupure", "") >= min(starts) and r["src"] != MANUAL_SOURCE
+    ]
     return ExposureWindow(start, date.fromisoformat(max(published)))
 
 
@@ -332,7 +345,7 @@ def planned_hour_profile(rows: Iterable[dict]) -> List[float]:
     qui couvrent l'heure h. Mesuré, pas supposé: les maintenances ECG tombent en journée (≈ 9h-17h)."""
     windows = set()
     for r in rows:
-        if r.get("type") != "planned":
+        if r.get("type") != "planned" or r.get("src") == MANUAL_SOURCE:
             continue
         s, e = _hhmm(r.get("heure_debut", "")), _hhmm(r.get("heure_fin", ""))
         if s is not None and e is not None and e > s and r.get("date_coupure"):
@@ -461,8 +474,9 @@ def predict_all(
 ) -> Tuple[List[Prediction], ExposureWindow]:
     rows = load_rows(data_dir)
     window = exposure_window(rows)
+    # Every announcement counts for the announced day; the manual entry does not feed the rates.
     announcements = parse_announcements(rows, params)
-    rates = estimate_rates(announcements, window, params)
+    rates = estimate_rates(parse_announcements(estimation_rows(rows), params), window, params)
     profile = planned_hour_profile(rows)
     predictions = [predict_zone(z, day, rates[z], announcements, profile, params, load_shedding) for z in ZONES]
     return predictions, window
@@ -488,7 +502,7 @@ def to_sql(predictions: Sequence[Prediction], day: date, window: ExposureWindow)
         f"DELETE FROM public.predictions WHERE method = '{METHOD}' AND model_version = '{MODEL_VERSION}'"
         f" AND window_start >= '{day.isoformat()}T00:00:00Z' AND window_start < '{(day + timedelta(days=1)).isoformat()}T00:00:00Z';",
         "INSERT INTO public.predictions",
-        "    (zone_id, generated_at, window_start, window_end, probability, confidence, expected_duration_min, hourly_risks, method, model_version)",
+        "    (zone_id, generated_at, window_start, window_end, probability, confidence, expected_duration_min, hourly_risks, basis, method, model_version)",
         "VALUES",
     ]
     values = []
@@ -496,7 +510,7 @@ def to_sql(predictions: Sequence[Prediction], day: date, window: ExposureWindow)
         values.append(
             f"    ('{p.zone_id}', NOW(), '{iso_utc(p.window_start)}', '{iso_utc(p.window_end)}', "
             f"{p.probability}, {p.confidence}, {p.expected_duration_min}, '{_json_list(p.hourly_risks)}'::jsonb, "
-            f"'{p.method}', '{p.model_version}')"
+            f"'{p.basis}', '{p.method}', '{p.model_version}')"
         )
     lines.append(",\n".join(values) + ";")
     lines.append("COMMIT;")

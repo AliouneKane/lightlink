@@ -46,6 +46,7 @@ import {
 import {
   DEMO_TIMESTAMP,
   answerReport,
+  applyLiveStatus,
   findAnswer,
   formatDay,
   formatTime,
@@ -55,12 +56,21 @@ import {
   initialState,
   isActive,
   neighborhoods,
+  scheduleRowsToAnnouncements,
+  withoutLiveData,
   validateOffer,
   validateReport,
   type EnergyOffer,
 } from "@/lib/energy";
+import {
+  liveEnabled,
+  sendReport,
+  signIn,
+  signUp,
+  useLiveData,
+} from "@/lib/live";
 import { updateDemoState, useDemoState } from "@/lib/demo-store";
-import { forecastScenario } from "../../../shared/forecast";
+import { forecastSourceLabel, getForecast } from "../../../shared/forecast";
 
 const EnergyMap = dynamic(() => import("./energy-map"), {
   ssr: false,
@@ -91,7 +101,14 @@ export function LightLinkApp({
   const pathname = usePathname();
   const view = pathname === "/" ? "dashboard" : pathname.slice(1);
   const state = useDemoState();
-  const zones = getNeighborhoods(state.reports);
+  const live = useLiveData();
+  // Live mode never shows the demo states: before the first read, or if it fails,
+  // the zones carry no state and the map says why (PAN's review of #6).
+  const zones = live.zones
+    ? applyLiveStatus(getNeighborhoods(state.reports), live.zones)
+    : live.state === "loading" || live.state === "error"
+      ? withoutLiveData(neighborhoods, live.state)
+      : getNeighborhoods(state.reports);
   const [selectedOverride, setSelectedId] = useState<string | null>(
     initialNeighborhood ?? null,
   );
@@ -132,8 +149,17 @@ export function LightLinkApp({
     zone.name.toLocaleLowerCase().includes(search.toLocaleLowerCase()),
   );
   const activeOutages = zones.filter((zone) => zone.status === "outage").length;
+  const forecast = getForecast(homeZone.id, live.predictions);
   const announcementTime = new Date(now());
-  const announcements = getZoneAnnouncements(homeZone.id, announcementTime);
+  // Live mode reads the ECG schedules of the database and never adds a demo announcement.
+  const announcements = liveEnabled
+    ? getZoneAnnouncements(
+        homeZone.id,
+        announcementTime,
+        scheduleRowsToAnnouncements(live.schedules),
+        false,
+      )
+    : getZoneAnnouncements(homeZone.id, announcementTime);
   const currentAnnouncement = announcements.find((item) =>
     isActive(item, announcementTime),
   );
@@ -196,7 +222,7 @@ export function LightLinkApp({
       { timeout: 10000, maximumAge: 60000 },
     );
   }
-  function submitReport(event: FormEvent<HTMLFormElement>) {
+  async function submitReport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const report = {
@@ -207,6 +233,11 @@ export function LightLinkApp({
     const error = validateReport(report);
     if (error) {
       setFormError(error);
+      return;
+    }
+    const liveError = await sendReport(report);
+    if (liveError) {
+      setFormError(liveError);
       return;
     }
     save(
@@ -222,14 +253,23 @@ export function LightLinkApp({
           ...previous.reports,
         ],
       }),
-      "Signalement ajouté à votre démo. Merci pour votre contribution !",
+      liveEnabled
+        ? "Signalement envoyé. Merci, la carte se met à jour pour tout le quartier."
+        : "Signalement ajouté à votre démo. Merci pour votre contribution !",
     );
+    void live.refresh();
     setSelectedId(report.neighborhoodId);
     setDialog(null);
   }
-  function answerAnnouncement(hasPower: boolean) {
+  async function answerAnnouncement(hasPower: boolean) {
     if (!currentAnnouncement) return;
     const report = answerReport(currentAnnouncement, hasPower);
+    const liveError = await sendReport(report);
+    if (liveError) {
+      setToast(liveError);
+      return;
+    }
+    void live.refresh();
     save(
       (previous) => ({
         ...previous,
@@ -292,7 +332,7 @@ export function LightLinkApp({
     );
     setDialog(null);
   }
-  function submitProfile(event: FormEvent<HTMLFormElement>) {
+  async function submitProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const name = String(form.get("name") ?? state.profile.name).trim();
@@ -305,9 +345,25 @@ export function LightLinkApp({
       setFormError("Indiquez un nom de 2 à 50 caractères et un quartier.");
       return;
     }
+    if (liveEnabled && form.has("email")) {
+      const email = String(form.get("email")).trim();
+      const password = String(form.get("password") ?? "");
+      const accountError =
+        authMode === "register"
+          ? await signUp({ email, password, name, neighborhoodId })
+          : await signIn(email, password);
+      if (accountError) {
+        setFormError(accountError);
+        return;
+      }
+    }
     save(
       (previous) => ({ ...previous, profile: { name, neighborhoodId } }),
-      "Profil de démonstration enregistré. Aucun compte réel n’a été créé.",
+      liveEnabled
+        ? authMode === "register"
+          ? "Compte créé. Bienvenue sur LightLink !"
+          : "Vous êtes connecté."
+        : "Profil de démonstration enregistré. Aucun compte réel n’a été créé.",
     );
     setSelectedId(neighborhoodId);
     setDialog(null);
@@ -409,26 +465,26 @@ export function LightLinkApp({
             <ZapOff size={21} />
           </span>
           <div>
-            <strong>Coupure possible ce soir</strong>
+            <strong>{forecast.headline}</strong>
             <span>
-              {forecastScenario.windowStart} – {forecastScenario.windowEnd}{" "}
-              <i>·</i> environ {forecastScenario.durationLabel}
+              {forecast.windowStart} – {forecast.windowEnd} <i>·</i>{" "}
+              {forecast.probability} % au plus fort
             </span>
           </div>
         </div>
-        <RiskChart />
+        <RiskChart forecast={forecast} />
         <div className="confidence">
-          <span>Confiance de l’exemple</span>
+          <span>Confiance</span>
           <strong>
-            {homeZone.confidence}% <ShieldCheck size={14} />
+            {forecast.confidence}% <ShieldCheck size={14} />
           </strong>
         </div>
         <div className="confidence-track">
-          <span style={{ width: `${homeZone.confidence}%` }} />
+          <span style={{ width: `${forecast.confidence}%` }} />
         </div>
         <p className="prediction-note">
-          Prévision simulée, sans garantie. Vérifiez les annonces officielles
-          ECG.
+          {forecastSourceLabel(forecast)}. Une estimation, sans garantie :
+          vérifiez les annonces officielles ECG.
         </p>
         <Link href="/previsions" className="text-button prediction-link">
           Comprendre la prévision
@@ -571,6 +627,7 @@ export function LightLinkApp({
           }}
           layer={layer}
           focus={focus}
+          liveState={live.zones ? "ready" : live.state}
         />
         <div className="map-bottom">
           <div className="map-legend">
@@ -587,11 +644,25 @@ export function LightLinkApp({
               Coupure signalée
             </span>
             <span>
+              <i className="planned" />
+              Coupure annoncée (ECG)
+            </span>
+            <span>
               <i className="energy" />
               Énergie à partager
             </span>
           </div>
-          <span className="map-update">Données simulées</span>
+          <span className="map-update">
+            {live.state === "off"
+              ? "Données simulées"
+              : live.zones
+                ? live.zones.some((row) => Number(row.simulated_reports) > 0)
+                  ? "En direct · inclut des signalements simulés"
+                  : "Signalements des habitants, en direct"
+                : live.state === "loading"
+                  ? "Connexion aux données en direct…"
+                  : "Données en direct indisponibles"}
+          </span>
         </div>
         <div className="neighborhood-detail">
           <span className={`neighborhood-symbol ${selected.status}`}>
@@ -659,6 +730,7 @@ export function LightLinkApp({
         openDialog(next);
       }}
       profile={state.profile}
+      liveState={live.zones ? "ready" : live.state}
       sourceCounts={{
         solar: state.offers.filter(
           (offer) => offer.available && offer.source === "solar",
@@ -704,7 +776,11 @@ export function LightLinkApp({
           homeZone={homeZone}
           zones={zones}
           selectedId={selectedId}
-          outageCount={activeOutages}
+          outageCount={
+            zones.some((zone) => zone.status === "unknown")
+              ? null
+              : activeOutages
+          }
           offerCount={state.offers.filter((offer) => offer.available).length}
           reportCount={state.reports.length}
           offers={offers.map((offer) => renderOfferCard(offer))}
@@ -731,32 +807,32 @@ export function LightLinkApp({
                   </span>
                   <h2>Le rythme de votre énergie</h2>
                 </div>
-                <span className="tiny-tag">SCÉNARIO SIMULÉ</span>
+                <span className="tiny-tag">
+                  {forecastSourceLabel(forecast).toUpperCase()}
+                </span>
               </div>
               <div className="forecast-kpi">
                 <div>
                   <span>Créneau probable</span>
                   <strong>
-                    {forecastScenario.windowStart} <i>–</i>{" "}
-                    {forecastScenario.windowEnd}
+                    {forecast.windowStart} <i>–</i> {forecast.windowEnd}
                   </strong>
                 </div>
                 <div>
-                  <span>Durée estimée</span>
-                  <strong>{forecastScenario.durationLabel}</strong>
+                  <span>Risque au plus fort</span>
+                  <strong>{forecast.probability}%</strong>
                 </div>
                 <div>
                   <span>Confiance</span>
-                  <strong>{homeZone.confidence}%</strong>
+                  <strong>{forecast.confidence}%</strong>
                 </div>
               </div>
-              <RiskChart detailed />
+              <RiskChart forecast={forecast} detailed />
               <div className="forecast-insight">
                 <Sparkles size={21} />
                 <p>
-                  <strong>Anticipez votre soirée.</strong>Dans cet exemple, le
-                  risque augmente après 16 h. Rechargez vos appareils ou
-                  explorez les offres de votre quartier.
+                  <strong>{forecast.headline}.</strong>
+                  {forecast.insight}
                 </p>
               </div>
               <Link href="/partage" className="button primary">
@@ -774,15 +850,16 @@ export function LightLinkApp({
                 en toute transparence.
               </h2>
               <p>
-                Ces chiffres illustrent le futur moteur de prévision. Ils ne
-                sont pas calculés à partir de données réelles.
+                Ces chiffres viennent des annonces officielles de l’ECG et des
+                coupures passées du quartier. Chaque paramètre est sourcé ou
+                recalibré avec les réponses des habitants.
               </p>
               <ol>
                 <li>
                   <span>01</span>
                   <div>
                     <strong>Horaires ECG</strong>
-                    <p>Calendriers officiels à intégrer par le backend.</p>
+                    <p>Coupures annoncées par l’ECG pour votre quartier.</p>
                   </div>
                 </li>
                 <li>
@@ -918,11 +995,15 @@ export function LightLinkApp({
               </div>
               <div className="empty-state">
                 <Activity size={32} />
-                <h3>Pas encore assez de données réelles</h3>
+                <h3>
+                  {forecast.announced
+                    ? "Coupure annoncée par l’ECG"
+                    : "Peu de jours observés"}
+                </h3>
                 <p>
-                  La confiance réelle sera calculée après intégration des
-                  calendriers et des signalements vérifiés. Le graphique
-                  ci-dessus est un exemple.
+                  {forecast.announced
+                    ? "La confiance mesure la part des annonces ECG réellement tenues ; vos réponses à « Avez-vous du courant ? » l’ajustent."
+                    : "Sans annonce, la confiance reflète le nombre de jours de coupures observés dans le quartier. Elle monte avec vos signalements."}
                 </p>
               </div>
             </section>
@@ -1588,14 +1669,19 @@ export function LightLinkApp({
                   </p>
                 )}
                 <button className="button primary full-width" type="submit">
-                  {authMode === "register"
-                    ? "Essayer l’inscription"
-                    : "Essayer la connexion"}
+                  {liveEnabled
+                    ? authMode === "register"
+                      ? "Créer mon compte"
+                      : "Me connecter"
+                    : authMode === "register"
+                      ? "Essayer l’inscription"
+                      : "Essayer la connexion"}
                   <ArrowRight size={16} />
                 </button>
                 <p className="form-note">
-                  Aucun compte réel créé. E-mail et mot de passe ne sont ni
-                  envoyés ni enregistrés.
+                  {liveEnabled
+                    ? "Votre mot de passe est chiffré par Supabase. Votre position n’est jamais montrée aux autres."
+                    : "Aucun compte réel créé. E-mail et mot de passe ne sont ni envoyés ni enregistrés."}
                 </p>
               </form>
             </div>

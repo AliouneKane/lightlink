@@ -2,19 +2,15 @@ import { useState } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import Svg, { Circle, Line, Rect, Text as SvgText } from "react-native-svg";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
-import { forecastScenario } from "@/lib/forecast";
+import { chartHours, type ZoneForecast } from "@/lib/forecast";
 import { fonts } from "@/lib/theme";
 import { useTheme } from "@/providers/theme-provider";
 import { Txt, feedback } from "@/components/ui";
 
-const { riskValues, hourLabels, peakStartIndex, peakEndIndex } =
-  forecastScenario;
-const peakIndex = riskValues.indexOf(
-  Math.max(...riskValues) as (typeof riskValues)[number],
-);
-
-/** The twelve bars deliberately retain the web scenario's approximate time labels. */
-export function ForecastChart() {
+/** Twelve bars at the hours of chartHours (GMT), from the rules model of prediction/. */
+export function ForecastChart({ forecast }: { forecast: ZoneForecast }) {
+  const { riskValues, hourLabels, peakStartIndex, peakEndIndex, peakIndex } =
+    forecast;
   const { colors } = useTheme();
   const [width, setWidth] = useState(300);
   const [selected, setSelected] = useState(peakIndex);
@@ -31,13 +27,9 @@ export function ForecastChart() {
   const x = (index: number) => left + step * index + step / 2;
   const selectedLabel =
     selected === peakIndex
-      ? "Pic vers 18 h"
-      : selected === 0
-        ? "06 h · début du scénario"
-        : selected === riskValues.length - 1
-          ? "23 h · fin du scénario"
-          : `Repère ${selected + 1} sur ${riskValues.length}`;
-  const selectionDescription = `${selectedLabel}, risque illustratif ${riskValues[selected]} pour cent`;
+      ? `Pic vers ${chartHours[peakIndex]} h`
+      : `Vers ${chartHours[selected]} h`;
+  const selectionDescription = `${selectedLabel}, risque de coupure ${riskValues[selected]} pour cent`;
 
   function select(index: number) {
     const next = Math.max(0, Math.min(riskValues.length - 1, index));
@@ -112,7 +104,7 @@ export function ForecastChart() {
       <Pressable
         {...keyboardProps}
         accessibilityRole="adjustable"
-        accessibilityLabel={forecastScenario.chartDescription}
+        accessibilityLabel={forecast.chartDescription}
         accessibilityHint="Balayez vers le haut ou le bas pour lire les différents repères. Les boutons précédent et suivant permettent aussi de les parcourir."
         accessibilityValue={{
           min: 1,
@@ -247,7 +239,7 @@ export function ForecastChart() {
             {selectedLabel}
           </Txt>
           <Txt size={11} tone="muted">
-            {riskValues[selected]} % de risque illustratif
+            {riskValues[selected]} % de risque de coupure
           </Txt>
         </View>
         <Pressable
@@ -265,7 +257,7 @@ export function ForecastChart() {
         </Pressable>
       </View>
       <Txt size={10} tone="muted" style={styles.hint}>
-        Touchez une barre pour explorer le scénario.
+        Touchez une barre pour voir le risque à chaque heure.
       </Txt>
     </View>
   );

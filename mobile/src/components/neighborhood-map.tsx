@@ -11,7 +11,7 @@ import Svg, {
 } from "react-native-svg";
 import { Check, Compass, Maximize2, Minus, Plus, X } from "lucide-react-native";
 import type { Neighborhood } from "@/lib/energy";
-import { statusMeta } from "@/lib/theme";
+import { PLANNED_COLOR, statusMeta } from "@/lib/theme";
 import { useTheme } from "@/providers/theme-provider";
 import { Txt } from "./ui";
 
@@ -192,14 +192,27 @@ export function NeighborhoodMap({
               const point = project(area);
               const active = area.id === selectedId;
               return (
-                <Circle
-                  key={area.id}
-                  cx={point.x}
-                  cy={point.y}
-                  r={active ? 25 : 17}
-                  fill={colors[statusMeta[area.status].color]}
-                  opacity={active ? 0.2 : 0.1}
-                />
+                <G key={area.id}>
+                  <Circle
+                    cx={point.x}
+                    cy={point.y}
+                    r={active ? 25 : 17}
+                    fill={colors[statusMeta[area.status].color]}
+                    opacity={active ? 0.2 : 0.1}
+                  />
+                  {area.plannedUntil && (
+                    // Task 67: ECG outage announced right now (dashed ring).
+                    <Circle
+                      cx={point.x}
+                      cy={point.y}
+                      r={active ? 30 : 22}
+                      fill="none"
+                      stroke={PLANNED_COLOR}
+                      strokeWidth={1.5}
+                      strokeDasharray="4 4"
+                    />
+                  )}
+                </G>
               );
             })}
           </G>

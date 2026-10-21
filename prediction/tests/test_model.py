@@ -183,6 +183,121 @@ class RealData(unittest.TestCase):
         self.assertTrue(all(r.days == len(self.window.days) for r in rates.values()))
 
 
+class ImportSchedules(unittest.TestCase):
+    """Tâches 65-66: import des horaires ECG de data/ dans ecg_schedules."""
+
+    @classmethod
+    def setUpClass(cls):
+        import import_schedules
+
+        cls.module = import_schedules
+        cls.items = import_schedules.schedules()
+
+    def test_only_published_windows_no_invented_hour(self):
+        self.assertTrue(self.items)
+        for (_, start, end, kind), _item in self.items.items():
+            self.assertTrue(start.endswith("Z") and end.endswith("Z"))
+            self.assertLess(start, end)
+            self.assertIn(kind, ("planned", "emergency", "fault", "load_shedding"))
+
+    def test_known_real_windows(self):
+        keys = {(z, s) for z, s, _, _ in self.items}
+        self.assertIn(("madina", "2026-10-08T09:00:00Z"), keys)
+        self.assertIn(("east-legon", "2026-10-09T09:00:00Z"), keys)
+        self.assertIn(("tema-community-1", "2023-04-02T18:00:00Z"), keys)  # PDF ECG, groupe D
+
+    def test_localities_grouped_and_partial_flag(self):
+        madina14 = next(v for k, v in self.items.items() if k[0] == "madina" and k[1] == "2026-10-14T09:00:00Z")
+        self.assertEqual(madina14["localities"], {"Madina Washington", "UN Madina"})
+        self.assertTrue(madina14["partial"])
+
+    def test_sql_is_idempotent_and_deterministic(self):
+        sql = self.module.to_sql(self.items)
+        self.assertIn("on conflict (zone_id, starts_at, ends_at, kind) do nothing", sql)
+        self.assertEqual(sql, self.module.to_sql(self.module.schedules()))
+
+
+class ManualEntry(unittest.TestCase):
+    """Tâche 64: une annonce recopiée dans data/saisie compte comme annonce, pas pour les taux."""
+
+    def test_manual_announcement_raises_the_forecast_without_moving_the_window(self):
+        import csv
+        import shutil
+        import tempfile
+
+        import import_schedules
+
+        with tempfile.TemporaryDirectory() as tmp:
+            data = Path(tmp) / "data"
+            shutil.copytree(m.DATA_DIR, data)
+            before_window = m.exposure_window(m.load_rows(data))
+            before_profile = m.planned_hour_profile(m.load_rows(data))
+            path = data / "saisie" / "ecg_annonces.csv"
+            with path.open(encoding="utf-8") as handle:
+                header = next(csv.reader(handle))
+            row = dict.fromkeys(header, "")
+            row.update(
+                date_coupure="2026-10-27", region_ecg="Accra East", localite="Madina",
+                heure_debut="10:00", heure_fin="14:00", type="planned", motif="planned maintenance",
+                restauration="non", date_publication="2026-10-25", heure_publication="18:30",
+                compte="ECG sur X (@ECGghOfficial)", url_post="https://x.com/ECGghOfficial", source_type="image",
+            )
+            with path.open("a", encoding="utf-8", newline="") as handle:
+                csv.DictWriter(handle, fieldnames=header).writerow(row)
+
+            rows = m.load_rows(data)
+            self.assertEqual(m.exposure_window(rows), before_window)
+            self.assertEqual(m.planned_hour_profile(rows), before_profile)
+            predictions, _ = m.predict_all(date(2026, 10, 27), data_dir=data)
+            madina = next(p for p in predictions if p.zone_id == "madina")
+            self.assertTrue(madina.announced)
+            self.assertGreaterEqual(madina.probability, 80)
+            self.assertIn(
+                ("madina", "2026-10-27T10:00:00Z", "2026-10-27T14:00:00Z", "planned"),
+                import_schedules.schedules(data),
+            )
+
+    def test_manual_entry_inside_the_window_leaves_base_rates_alone(self):
+        """PAN's review of #8: an Osu entry dated 6 Oct must not raise Osu's rate."""
+        import csv
+        import shutil
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            data = Path(tmp) / "data"
+            shutil.copytree(m.DATA_DIR, data)
+            day = date(2026, 10, 28)
+            before = next(p for p in m.predict_all(day, data_dir=data)[0] if p.zone_id == "osu")
+            path = data / "saisie" / "ecg_annonces.csv"
+            with path.open(encoding="utf-8") as handle:
+                header = next(csv.reader(handle))
+            row = dict.fromkeys(header, "")
+            row.update(
+                date_coupure="2026-10-06", region_ecg="Accra West", localite="Osu",
+                heure_debut="09:00", heure_fin="17:00", type="planned", restauration="non",
+                date_publication="2026-10-05", url_post="https://x.com/ECGghOfficial",
+            )
+            with path.open("a", encoding="utf-8", newline="") as handle:
+                csv.DictWriter(handle, fieldnames=header).writerow(row)
+            after = next(p for p in m.predict_all(day, data_dir=data)[0] if p.zone_id == "osu")
+            self.assertEqual(after.probability, before.probability)
+            self.assertEqual(after.hourly_risks, before.hourly_risks)
+
+    def test_manual_file_follows_the_shared_format(self):
+        """The working file may hold entries: check its format, not that it is empty."""
+        import csv
+
+        path = m.DATA_DIR / "saisie" / "ecg_annonces.csv"
+        reference = m.DATA_DIR / "presse" / "ecg_annonces_2026.csv"
+        with path.open(encoding="utf-8-sig") as handle, reference.open(encoding="utf-8-sig") as ref:
+            self.assertEqual(next(csv.reader(handle)), next(csv.reader(ref)))
+        for row in m.load_rows(m.DATA_DIR, (m.MANUAL_SOURCE,)):
+            self.assertRegex(row["date_coupure"], r"^\d{4}-\d{2}-\d{2}$")
+            self.assertTrue(row["url_post"].startswith("http"), "every entry links its source")
+            for key in ("heure_debut", "heure_fin"):
+                self.assertRegex(row[key], r"^([01]\d|2[0-3]):[0-5]\d$")
+
+
 class Sql(unittest.TestCase):
     def test_sql_is_utc_idempotent_and_transactional(self):
         preds, window = m.predict_all(date(2026, 10, 16))
