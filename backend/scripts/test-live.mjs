@@ -127,6 +127,8 @@ const neighbourInbox = await neighbour.from("notifications").select("title").eq(
 assert.ok(hostInbox.data.length >= 1 && neighbourInbox.data[0]?.title === "Demande acceptée", "both are notified");
 assert.ifError((await neighbour.rpc("set_request_status", { request_id: asked.data.id, new_status: "finished" })).error);
 assert.ifError((await host.from("offers").update({ status: "closed" }).eq("id", offerId)).error);
+// The test offer stays closed on the project, titled "[test] Recharge": hosts cannot delete
+// offers (by design). To remove them: delete from public.offers where title like '[test]%';
 step("sharing: offer, search, request, notification, acceptance, private place, end");
 await neighbour.auth.signOut();
 

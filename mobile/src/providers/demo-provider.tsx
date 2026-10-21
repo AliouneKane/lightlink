@@ -60,6 +60,7 @@ interface DemoContextValue {
   /** Runs a sharing action against Supabase, then reloads offers and requests. */
   runSharing: (
     action: (db: unknown) => Promise<string | null>,
+    options?: { notify?: boolean },
   ) => Promise<string | null>;
 }
 
@@ -99,23 +100,28 @@ export function DemoProvider({
   // Resolves with the database's answer, so screens confirm only once it succeeded
   // (PAN's review of #9, point 1).
   const [runSharing] = useState(
-    () => async (action: (db: unknown) => Promise<string | null>) => {
-      setSharingNotice(null);
-      const db = await sessionDb();
-      if (db) {
-        // Alerts follow the neighbourhood chosen on the phone, anonymous sessions included.
-        await syncProfileZone(
-          db,
-          repository.getSnapshot().state.profile.neighborhoodId,
-        ).catch(() => undefined);
-      }
-      const error = db
-        ? await action(db).catch(() => "L’action n’a pas pu aboutir.")
-        : "Pas de connexion. Réessayez quand le réseau revient.";
-      setSharingNotice(error);
-      await refreshSharing();
-      return error;
-    },
+    () =>
+      async (
+        action: (db: unknown) => Promise<string | null>,
+        options: { notify?: boolean } = {},
+      ) => {
+        setSharingNotice(null);
+        const db = await sessionDb();
+        if (db) {
+          // Alerts follow the neighbourhood chosen on the phone, anonymous sessions included.
+          await syncProfileZone(
+            db,
+            repository.getSnapshot().state.profile.neighborhoodId,
+          ).catch(() => undefined);
+        }
+        const error = db
+          ? await action(db).catch(() => "L’action n’a pas pu aboutir.")
+          : "Pas de connexion. Réessayez quand le réseau revient.";
+        // A form shows its own error: no second message in the common notice.
+        if (options.notify !== false) setSharingNotice(error);
+        await refreshSharing();
+        return error;
+      },
   );
 
   useEffect(() => {
@@ -274,8 +280,9 @@ export function useDemo() {
         if (!isLiveMode) return repository.createOffer(input);
         const error = validateOffer(input);
         if (error) return error;
-        return runSharing((db) =>
-          createLiveOffer(db, input, snapshot.state.profile.name),
+        return runSharing(
+          (db) => createLiveOffer(db, input, snapshot.state.profile.name),
+          { notify: false },
         );
       },
       async requestOffer(offerId: string): Promise<string | null> {
