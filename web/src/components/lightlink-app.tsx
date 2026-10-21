@@ -1224,6 +1224,30 @@ export function LightLinkApp({
               })}
             </section>
           )}
+          {liveEnabled && sharing.data.places.length > 0 && (
+            // Task 91: the whole neighbourhood is cut, the database proposes fixed places.
+            <section className="panel requests-panel">
+              <div className="panel-heading">
+                <h2>Lieux d’énergie un peu plus loin</h2>
+                <span className="tiny-tag">QUARTIER COUPÉ</span>
+              </div>
+              {sharing.data.places.map((place) => (
+                <div className="request-row" key={place.id}>
+                  <span className="stat-icon amber">
+                    <MapPin size={19} />
+                  </span>
+                  <div>
+                    <strong>{place.name}</strong>
+                    <span>
+                      {zones.find((zone) => zone.id === place.zoneId)?.name ??
+                        place.zoneId}{" "}
+                      · {place.distanceKm.toFixed(1)} km
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </section>
+          )}
           {liveEnabled && sharing.data.incoming.length > 0 && (
             <section className="panel requests-panel">
               <div className="panel-heading">
@@ -1921,7 +1945,9 @@ export function LightLinkApp({
           title="Votre quartier, à l’écoute."
           onClose={() => setDialog(null)}
         >
-          {!state.notificationsEnabled ? (
+          {/* Point 8 of #9: in live mode the inbox is always readable; the demo preference
+              only concerns the demonstration alerts. */}
+          {!liveEnabled && !state.notificationsEnabled ? (
             <div className="empty-state">
               <Bell size={30} />
               <h3>Alertes de démo désactivées</h3>

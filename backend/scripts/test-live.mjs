@@ -85,14 +85,20 @@ const host = db; // already signed in anonymously
 const neighbour = createClient(url, anonKey, { auth: { persistSession: false } });
 assert.ifError((await neighbour.auth.signInAnonymously()).error);
 const endsAt = new Date(Date.now() + 2 * 3600 * 1000).toISOString();
-const created = await host
-  .from("offers")
-  .insert({ zone_id: "osu", host_name: "Test", title: "[test] Recharge", source: "battery", capacity: "1 prise", price: 0, slots: 1, ends_at: endsAt })
-  .select("id")
-  .single();
+// The offer and its private address are created together (create_offer, review of #9).
+const refused = await host.rpc("create_offer", {
+  p_zone_id: "osu", p_host_name: "Test", p_title: "[test] Refusée", p_source: "battery", p_capacity: "1 prise",
+  p_price: 0, p_slots: 1, p_description: "", p_ends_at: endsAt, p_address: "X",
+});
+assert.ok(refused.error, "an address too short is refused");
+const leftover = await host.from("offers").select("id").eq("title", "[test] Refusée");
+assert.equal(leftover.data.length, 0, "and no offer is left behind");
+const created = await host.rpc("create_offer", {
+  p_zone_id: "osu", p_host_name: "Test", p_title: "[test] Recharge", p_source: "battery", p_capacity: "1 prise",
+  p_price: 0, p_slots: 1, p_description: "", p_ends_at: endsAt, p_address: "Adresse de test",
+});
 assert.ifError(created.error);
-const offerId = created.data.id;
-assert.ifError((await host.from("offer_private_details").insert({ offer_id: offerId, address: "Adresse de test" })).error);
+const offerId = created.data;
 const found = await neighbour.rpc("energy_options", { origin_zone: "osu" });
 assert.ifError(found.error);
 assert.ok(found.data.some((row) => row.id === offerId && row.places_left === 1), "the offer is found nearby");

@@ -29,10 +29,20 @@ export interface IncomingRequest {
   createdAt: string;
 }
 
+/** A fixed energy place proposed when the whole neighbourhood is cut (task 91). */
+export interface EnergyPlace {
+  id: string;
+  name: string;
+  kind: string;
+  zoneId: string;
+  distanceKm: number;
+}
+
 export interface SharingData {
   offers: EnergyOffer[];
   bookings: Booking[];
   incoming: IncomingRequest[];
+  places: EnergyPlace[];
 }
 
 export interface Notification {
@@ -48,6 +58,7 @@ export const emptySharing: SharingData = {
   offers: [],
   bookings: [],
   incoming: [],
+  places: [],
 };
 
 async function currentUser(db: Db): Promise<string | null> {
@@ -66,8 +77,22 @@ export async function loadSharing(
   const options = (nearby.data ?? []) as {
     kind: string;
     id: string;
+    title: string;
+    source: string;
+    zone_id: string;
+    distance_km: number;
     places_left: number | null;
   }[];
+  // PAN's review of #9 (point 5): the fixed places the database proposes reach the screens.
+  const places: EnergyPlace[] = options
+    .filter((option) => option.kind === "place")
+    .map((option) => ({
+      id: option.id,
+      name: option.title,
+      kind: option.source,
+      zoneId: option.zone_id,
+      distanceKm: Number(option.distance_km),
+    }));
   const placesLeft = new Map(
     options
       .filter((option) => option.kind === "offer")
@@ -83,7 +108,8 @@ export async function loadSharing(
         .from("offers")
         .select(offerColumns)
         .eq("host_id", me)
-        .neq("status", "closed"),
+        // Suspended (closed) offers stay listed so their host can reopen them (point 2).
+        .gt("ends_at", new Date().toISOString()),
     ]);
     mine = (requests.data ?? []) as RequestRow[];
     hosted = (own.data ?? []) as OfferRow[];
@@ -141,6 +167,7 @@ export async function loadSharing(
   );
   return {
     offers,
+    places,
     bookings: mine
       .filter((row) => row.status !== "cancelled")
       .map((row) => requestRowToBooking(row, addresses.get(row.offer_id))),
@@ -169,19 +196,32 @@ export async function createLiveOffer(
   const endsAt = endsAtFromUntil(input.until);
   if (!endsAt)
     return "Une offre dure 12 heures au plus. Choisissez une heure de fin plus proche.";
-  const { data, error } = await db
-    .from("offers")
-    .insert(offerInsertRow(input, hostName, endsAt))
-    .select("id")
-    .single();
-  if (error) return sharingErrorMessage(error);
-  if (input.address?.trim()) {
-    const details = await db
-      .from("offer_private_details")
-      .insert({ offer_id: data.id, address: input.address.trim() });
-    if (details.error) return sharingErrorMessage(details.error);
-  }
-  return null;
+  // One call: the offer and its private address are created together or not at all
+  // (PAN's review of #9, point 4: a refused address used to leave a public offer behind).
+  const row = offerInsertRow(input, hostName, endsAt);
+  const { error } = await db.rpc("create_offer", {
+    p_zone_id: row.zone_id,
+    p_host_name: row.host_name,
+    p_title: row.title,
+    p_source: row.source,
+    p_capacity: row.capacity,
+    p_price: row.price,
+    p_slots: row.slots,
+    p_description: row.description,
+    p_ends_at: row.ends_at,
+    p_address: input.address?.trim() || null,
+  });
+  return error ? sharingErrorMessage(error) : null;
+}
+
+/**
+ * The neighbourhood chosen in the app becomes the profile's (point 7): alerts follow it,
+ * anonymous sessions included. Needs a session; does nothing without one.
+ */
+export async function syncProfileZone(db: Db, zoneId: string): Promise<void> {
+  const me = await currentUser(db);
+  if (!me) return;
+  await db.from("profiles").update({ zone_id: zoneId }).eq("id", me);
 }
 
 /** Suspend (closed) or reopen one of my offers. */
