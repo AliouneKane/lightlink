@@ -1,0 +1,43 @@
+name: Daily data import
+
+# Tasks 66 and phase 4: every morning, and whenever data/ changes on main, load into the
+# hosted database the official ECG schedules of data/ and the forecasts of the rules model
+# for today and tomorrow. Re-running replaces nothing twice (idempotent SQL).
+# Needs the repository secret SUPABASE_DB_URL (Supabase > Connect > Session pooler).
+# Without it, the job only builds the SQL.
+on:
+  schedule:
+    - cron: "0 5 * * *"
+  push:
+    branches: [main]
+    paths: ["data/**", "prediction/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  import:
+    name: Import ECG schedules and forecasts
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Build the SQL from data/
+        run: |
+          python prediction/import_schedules.py > schedules.sql
+          python prediction/predict.py --date "$(date -u +%F)" --output today.sql
+          python prediction/predict.py --date "$(date -u -d tomorrow +%F)" --output tomorrow.sql
+      - name: Import into Supabase
+        if: env.SUPABASE_DB_URL != ''
+        run: |
+          for file in schedules.sql today.sql tomorrow.sql; do
+            psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -q -f "$file"
+          done
+      - name: No database configured
+        if: env.SUPABASE_DB_URL == ''
+        run: echo "::notice::SUPABASE_DB_URL is not set, import skipped."

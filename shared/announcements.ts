@@ -94,17 +94,20 @@ export function isActive(announcement: EcgAnnouncement, at: Date): boolean {
 }
 
 /**
- * Announcements of one neighbourhood, newest first. When no real announcement
+ * Announcements of one neighbourhood, newest first. In demo mode, when no real announcement
  * is running, a labelled demo announcement comes first so the question can be shown.
+ * In live mode (schedules from the database), pass withDemo = false: no invented announcement.
  */
 export function getZoneAnnouncements(
   neighborhoodId: string,
   at: Date,
+  source: EcgAnnouncement[] = ecgAnnouncements,
+  withDemo = true,
 ): EcgAnnouncement[] {
-  const real = ecgAnnouncements
+  const real = source
     .filter((item) => item.neighborhoodId === neighborhoodId)
     .sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt));
-  return real.some((item) => isActive(item, at))
+  return !withDemo || real.some((item) => isActive(item, at))
     ? real
     : [demoAnnouncement(neighborhoodId, at), ...real];
 }

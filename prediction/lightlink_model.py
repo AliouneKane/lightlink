@@ -488,7 +488,7 @@ def to_sql(predictions: Sequence[Prediction], day: date, window: ExposureWindow)
         f"DELETE FROM public.predictions WHERE method = '{METHOD}' AND model_version = '{MODEL_VERSION}'"
         f" AND window_start >= '{day.isoformat()}T00:00:00Z' AND window_start < '{(day + timedelta(days=1)).isoformat()}T00:00:00Z';",
         "INSERT INTO public.predictions",
-        "    (zone_id, generated_at, window_start, window_end, probability, confidence, expected_duration_min, hourly_risks, method, model_version)",
+        "    (zone_id, generated_at, window_start, window_end, probability, confidence, expected_duration_min, hourly_risks, basis, method, model_version)",
         "VALUES",
     ]
     values = []
@@ -496,7 +496,7 @@ def to_sql(predictions: Sequence[Prediction], day: date, window: ExposureWindow)
         values.append(
             f"    ('{p.zone_id}', NOW(), '{iso_utc(p.window_start)}', '{iso_utc(p.window_end)}', "
             f"{p.probability}, {p.confidence}, {p.expected_duration_min}, '{_json_list(p.hourly_risks)}'::jsonb, "
-            f"'{p.method}', '{p.model_version}')"
+            f"'{p.basis}', '{p.method}', '{p.model_version}')"
         )
     lines.append(",\n".join(values) + ";")
     lines.append("COMMIT;")

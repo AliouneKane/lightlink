@@ -35,6 +35,8 @@ export interface EnergyMapProps {
   onSelect: (id: string) => void;
   layer: "all" | "outages" | "energy";
   focus?: [number, number] | null;
+  /** Live mode: neighbourhood colours are drawn only once the database answered. */
+  liveState?: "off" | "loading" | "ready" | "error";
 }
 
 const ACCRA: [number, number] = [5.59, -0.205];
@@ -262,6 +264,7 @@ export default function EnergyMap({
   onSelect,
   layer,
   focus,
+  liveState = "off",
 }: EnergyMapProps) {
   const [tileStatus, setTileStatus] = useState<"loading" | "ready" | "error">(
     "loading",
@@ -273,8 +276,9 @@ export default function EnergyMap({
     offers.find((item) => item.id === selectedId);
   const latitude = focus?.[0] ?? selected?.lat;
   const longitude = focus?.[1] ?? selected?.lng;
+  const liveMissing = liveState === "loading" || liveState === "error";
   const visibleNeighborhoods =
-    layer === "energy"
+    layer === "energy" || liveMissing
       ? []
       : neighborhoods.filter(
           (item) => layer !== "outages" || item.status !== "powered",
@@ -423,6 +427,16 @@ export default function EnergyMap({
         <span className="map-location-dot" aria-hidden="true" />
         ACCRA, GHANA
       </div>
+      {liveMissing && (
+        <div
+          className={`map-status ${liveState === "error" ? "map-status--error" : "map-status--loading"}`}
+          role="status"
+        >
+          {liveState === "error"
+            ? "Les données en direct sont indisponibles : l’état des quartiers n’est pas affiché. Réessayez dans un instant."
+            : "Chargement de l’état des quartiers…"}
+        </div>
+      )}
       {tileStatus === "loading" && (
         <div className="map-status map-status--loading" role="status">
           Chargement de la carte…

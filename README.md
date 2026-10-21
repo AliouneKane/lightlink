@@ -58,7 +58,7 @@ npm ci
 npm start
 ```
 
-Use an Expo Go version compatible with SDK 57 from [the Expo Go download page](https://expo.dev/go), then scan the terminal's QR code with your phone on the same network. In Windows PowerShell, use `npm.cmd` and `npx.cmd` if script execution is restricted. See [the mobile README](mobile/README.md) for browser preview, checks and native setup limits, and [PAN's mobile scope](docs/PAN_MOBILE_SCOPE.md) for delivered frontend behavior and pending validation. This is a local prototype; authentication, live data, payment and push services remain future integrations.
+Use an Expo Go version compatible with SDK 57 from [the Expo Go download page](https://expo.dev/go), then scan the terminal's QR code with your phone on the same network. In Windows PowerShell, use `npm.cmd` and `npx.cmd` if script execution is restricted. See [the mobile README](mobile/README.md) for browser preview, checks and native setup limits, and [PAN's mobile scope](docs/PAN_MOBILE_SCOPE.md) for delivered frontend behavior and pending validation. Without `mobile/.env` the app is a local demo. With the public Supabase values in `mobile/.env`, reports, the live map, ECG schedules and forecasts come from the database, and reports made offline are sent when the network is back. Payment and push notifications remain future integrations.
 
 The functional PAN web prototype runs locally with demonstration data. From the repository root:
 
@@ -68,13 +68,13 @@ npm ci
 npm run dev
 ```
 
-Open `http://localhost:3000`. The local prototype needs no API key or `.env` file. Reports, offers, requests and profile changes stay in this browser; authentication, live ECG data and the backend are future integrations. Team validation of the frontend is pending.
+Open `http://localhost:3000`. Without a `.env.local` file the app is a local demo: reports, offers, requests and profile changes stay in this browser. With the public Supabase URL and key in `web/.env.local` (see [the backend README](backend/README.md)), reports, the live map, ECG schedules, forecasts and accounts come from the database; energy sharing stays simulated.
 
 ```sh
 npm run lint
 npm run typecheck
 npm run test
-npm run build
+npm run build:e2e   # demo mode, even when web/.env.local holds Supabase keys
 npx playwright install chromium
 npm run test:e2e
 ```
