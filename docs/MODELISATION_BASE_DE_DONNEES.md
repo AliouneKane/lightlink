@@ -173,7 +173,7 @@ Qui a le droit: tout le monde lit (pour la carte). Chacun ajoute **seulement en 
 | `id` | `A`, `B`, `C`… |
 | `label` | Le nom affiché |
 
-**Attention, découverte dans [data/](../data/README.md):** un quartier n'est pas dans un seul groupe. Dans le PDF de l'ECG de 2023, Dansoman a des parties dans les groupes B, C et D, et Airport Residential dans A, C et D. Il y a aussi un groupe D, pas seulement A, B, C. On ne met donc **pas** de colonne `group_id` dans `zones`. On ajoute une petite table de liaison `zone_groups` (une ligne par couple quartier + groupe), avec une colonne `partielle` (oui si seule une partie du quartier est concernée). Les données de départ sont dans `data/ecg/zones_pilotes_vs_groupes_2023.csv`.
+**Attention, découverte dans [data/](donnees/README.md):** un quartier n'est pas dans un seul groupe. Dans le PDF de l'ECG de 2023, Dansoman a des parties dans les groupes B, C et D, et Airport Residential dans A, C et D. Il y a aussi un groupe D, pas seulement A, B, C. On ne met donc **pas** de colonne `group_id` dans `zones`. On ajoute une petite table de liaison `zone_groups` (une ligne par couple quartier + groupe), avec une colonne `partielle` (oui si seule une partie du quartier est concernée). Les données de départ sont dans `data/ecg/zones_pilotes_vs_groupes_2023.csv`.
 
 #### `ecg_schedules`: les horaires officiels de l'ECG (Existe)
 

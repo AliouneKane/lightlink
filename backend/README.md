@@ -1,89 +1,69 @@
-# backend
+# LightLink · Backend
 
-LightLink uses **Supabase** (Postgres, Auth, Realtime, row level security). Decision: [docs/DECISION_SUPABASE.md](../docs/DECISION_SUPABASE.md). Never commit secrets: use `.env`.
+The LightLink database on **Supabase** (Postgres, Auth, Realtime, row level security). The rules that must hold for everyone (anti-abuse limits, privacy of addresses, sharing rules, alerts) live here, so the web and mobile apps behave the same. Why Supabase: [DECISION_SUPABASE.md](../docs/DECISION_SUPABASE.md). How it fits together: [ARCHITECTURE.md](../docs/ARCHITECTURE.md).
 
-## Contents
+## Commands
 
-- `supabase/config.toml`: local project settings.
-- `supabase/migrations/`, applied in order:
-  - `20261014000000_init_phase2.sql`: tables `zones`, `profiles`, `outage_reports`, `ecg_schedules`, the `zone_status` view, rate limit and RLS policies.
-  - `20261017000000_announcement_checks.sql`: report kinds `powered` and `unstable` (as offered by the apps), `ecg_schedules.partial`, and the `announcement_outcomes` view. During an announced outage the apps ask "Avez-vous du courant ?"; the view counts, per announcement, residents cut and residents with power. The prediction model reads it to learn how often ECG announcements are held (`python3 prediction/predict.py --outcomes <export.csv>`).
-  - `20261017000100_dated_zone_groups.sql`: load-shedding groups of each zone, with source and validity period (groups change between plans).
-  - `20261017000200_phase2_live.sql`: planned or surprise outages in `zone_status`, report positions checked against the neighbourhood, re-runnable ECG schedule import.
-  - `20261020000000_predictions.sql`: daily forecasts of the rules model (`prediction/`), public and read-only for users.
-  - `20261021000000_offline_reports.sql`: observation time and stable id for reports sent after an offline period.
-  - `20261021000100_retry_rate_limit.sql`: a retried report skips the rate limit.
-  - `20261021000200_simulated_reports.sql`: simulated demo reports, labelled and reserved to the demo script.
-- `supabase/seed.sql`: the 10 pilot zones (same ids as `shared/energy.ts`) and the dated groups, generated from `data/` by `python3 prediction/build_zone_groups.py`.
-- `scripts/test-migrations.mjs`: applies every migration and the seed to an in-memory Postgres and checks the views, **without Docker**.
+Run from `backend/` after `npm ci`.
 
-## Test the migrations without Docker
+| Command | What it does | Needs |
+|---|---|---|
+| `npm run test:sql` | Applies every migration and the seed to an in-memory Postgres and checks access rules, views, sharing and notifications (about 2 s) | Nothing |
+| `npm run test:live` | End-to-end test on the hosted project: anonymous report, Realtime, map, access rules, full sharing flow, read speed | `SUPABASE_URL` and `SUPABASE_ANON_KEY` (public values) |
+| `npm run test:load` | 100 simulated reports at once on the hosted project, then deleted | Linked project |
+| `npm run demo:on` / `demo:off` | Adds or removes 10 labelled simulated reports for a live presentation | Linked project |
+| `npm run start:db` | Supabase Postgres alone in Docker (about 70 MB of RAM, 1.9 GB of images) | Docker |
+| `npm run start` · `reset` · `status` · `stop` | The full local stack (Postgres, Auth, REST, Realtime, Studio, about 5 GB of images) | Docker |
 
-```sh
-cd backend
-npm ci
-npm run test:sql   # about 1 second, nothing to start or stop
-```
+`supabase/config.toml` switches off the services LightLink does not use (analytics, storage, edge functions, test mailbox), which saves 3.4 GB of images.
 
-## Run locally
+## Migrations
 
-Needs Node.js and Docker running. Pick the lightest command that does the job:
+Applied in order from `supabase/migrations/`.
 
-| Command | Starts | Disk (images) | Use it to |
-|---|---|---|---|
-| `npm run test:sql` | nothing (in-memory Postgres) | 21 MB | check migrations and views, no Docker |
-| `npm run start:db` | Supabase Postgres only (~70 MB RAM) | ~1.9 GB | run migrations and seed on the real Supabase image, connect with `psql` |
-| `npm run start` | Postgres, Auth, REST API, Realtime, Studio | ~5 GB | wire the apps to the backend |
+| Migration | Adds |
+|---|---|
+| `20261014000000_init_phase2` | Zones, profiles, reports, ECG schedules, the `zone_status` view, rate limit (5 reports per 10 minutes), access rules |
+| `20261017000000_announcement_checks` | Report kinds *powered* and *unstable*, partial ECG announcements, the `announcement_outcomes` view (how many residents were cut during each announcement) |
+| `20261017000100_dated_zone_groups` | Load-shedding groups of each zone, with source and validity period |
+| `20261017000200_phase2_live` | Planned or surprise outages, positions checked against the neighbourhood (5 km), re-runnable ECG import |
+| `20261020000000_predictions` | Daily forecasts, public and read-only |
+| `20261021000000_offline_reports` | Observation time and anti-duplicate id for reports sent after an offline period |
+| `20261021000100_retry_rate_limit` | A retried report does not count against the rate limit |
+| `20261021000200_simulated_reports` | Simulated demo reports, labelled and reserved to the demo script |
+| `20261022000000_energy_sharing` | Offers, requests, private addresses, fixed energy places, abuse reports, `energy_options()` search ([rules](../docs/REGLES_PARTAGE.md)) |
+| `20261022000100_notifications` | Phones, followed zones, notification inbox, alerts written by the database and sent with `pg_net` |
 
-`supabase/config.toml` switches off the services LightLink does not use (analytics, storage, edge functions, test mailbox): 3.4 GB of images less than the default stack (storage 1.39, edge runtime 1.07, Logflare 0.70, Vector 0.21, mailbox 0.05).
+`supabase/seed.sql` holds the 10 pilot zones, their dated groups and the real ECG schedules. Its generated sections come from `data/` (`python3 prediction/build_zone_groups.py`, `python3 prediction/import_schedules.py --write-seed`); the CI checks they are up to date.
 
-```sh
-cd backend
-npm ci
-npm run start     # starts Postgres, Auth, Realtime, Studio (http://127.0.0.1:54323)
-npm run reset     # re-applies migrations and seed
-npm run status    # prints the local API URL and anon key for .env
-npm run stop
-```
+## Connect a hosted project
 
-Copy the local `API URL` and `anon key` from `npm run status` into `.env` (see `.env.example`).
-
-## Connect the apps to the hosted project
-
-Once, by a team member who owns the Supabase project:
+Once, by the project owner:
 
 ```sh
 cd backend
 npx supabase login
-npx supabase link --project-ref <project-ref>      # asks the database password
-npx supabase db push --include-seed                # migrations + zones, groups, ECG schedules
-npx supabase config push                           # auth settings, incl. anonymous sign-ins
+npx supabase link --project-ref <project-ref>   # asks the database password
+npx supabase db push --include-seed             # migrations, zones, groups, ECG schedules
+npx supabase config push                        # auth settings, including anonymous sign-ins
 ```
 
-Then give each app the two **public** values (Project Settings > API). Never the `service_role` key.
+Then give each app the two **public** values from *Project Settings → API*. Never the secret (`service_role`) key, never the database password.
 
-| App | File (git-ignored) | Variables |
+| App | File (ignored by Git) | Variables |
 |---|---|---|
 | Web | `web/.env.local` | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
 | Mobile | `mobile/.env` | `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` |
 
-Without these values both apps stay local demos. With them, reports go to the database, the map follows `zone_status` live, the ECG calendar reads `ecg_schedules`, the web creates real accounts, and the mobile keeps reports made offline until the network is back.
+**Daily import.** The *Daily data import* workflow loads the ECG schedules of `data/`, today's and tomorrow's forecasts, and queues the reminders, every morning at 05:00 GMT. It needs the repository secret `SUPABASE_DB_URL` (*Connect → Session pooler*, with the database password).
 
-Check the whole chain (anonymous report, Realtime, map, access rules) on the hosted project:
+## Demo data for a presentation
 
-```sh
-SUPABASE_URL=https://<project-ref>.supabase.co SUPABASE_ANON_KEY=<anon key> npm run test:live
-```
-
-### Demo data for a live presentation
-
-With few real reports, the live map is almost empty. For a demo (task 69):
+With few real reports the live map is almost empty. Just before presenting:
 
 ```sh
-npm run demo:on    # 10 realistic reports in Osu, Labone, Dansoman and Madina, observed in the last hour
-npm run demo:off   # removes every simulated report
+npm run demo:on    # 10 reports in Osu, Labone, Dansoman and Madina, observed in the last hour
+npm run demo:off   # removes them
 ```
 
-Simulated reports are labelled `[SIMULÉ]`, shown as "Données simulées" by the apps, never count in the measure of ECG announcements, and leave the map by themselves after 2 hours. App users cannot create them (migration `20261021000200_simulated_reports.sql`).
-
-For the daily import of ECG schedules and forecasts (`.github/workflows/daily-data.yml`), add the repository secret `SUPABASE_DB_URL` (Project Settings > Database > Connection string, session pooler).
+Simulated reports are labelled *[SIMULÉ]*, shown as *« Données simulées »* by the apps, never count in the measure of ECG announcements, trigger no alert, and leave the map by themselves after 2 hours. App users cannot create them.

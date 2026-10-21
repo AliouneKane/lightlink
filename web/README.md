@@ -1,77 +1,82 @@
-# LightLink web
+# LightLink · Web
 
-PAN's functional frontend prototype for LightLink: a responsive French interface to inspect neighborhood power status, explore an interactive map, try local outage reports and energy sharing, and review illustrative forecasts. Team approval of the prototype (task 29) is pending.
+The LightLink web app: neighbourhood power status, live map of Accra, outage forecasts and energy sharing, in French. Built with Next.js.
 
-PAN approved the logo and visual identity, then requested a denser dashboard based on Linkwarden's layout. The current design direction is a compact workspace with a French dashboard title, small statistics, energy-offer image rails and closely spaced sections. It includes a collapsible sidebar, light/dark theme and the “Modifier la disposition” dashboard-layout menu with section visibility checkboxes and reordering. The executed checks and visual inspection are described below; team approval of the prototype remains pending.
+<img src="../docs/images/web-dashboard.jpg" alt="LightLink web dashboard" width="100%" />
 
-## Run locally
-
-Use Node.js and npm. From the repository root:
+## Run it
 
 ```sh
 cd web
 npm ci
-npm run dev
+npm run dev      # http://localhost:3000
 ```
 
-Open `http://localhost:3000`. No API key or `.env` file is needed for this local demonstration.
+No key is needed: without `web/.env.local` the app runs in **demo mode**, with data kept in the browser.
+
+For **live mode**, create `web/.env.local` with the project's public values (never the secret key):
 
 ```sh
-npm run lint
-npm run typecheck
-npm run test
-npm run build
-npx playwright install chromium
-npm run test:e2e
+NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<publishable key>
 ```
 
-The browser tests use Playwright with Chromium. To run a production build locally, use `npm run build` followed by `npm run start`. Formatting commands are `npm run format` and `npm run format:check`.
+The badge at the top right shows the mode: **DÉMO**, **CONNEXION…**, **EN DIRECT** or **HORS LIGNE**.
 
-## Stack and routes
+## Pages
 
-- Next.js 16.3.8 App Router, React 19.3.0 and TypeScript.
-- Self-hosted Manrope, Lucide icons and a temporary SVG identity in `public/lightlink-mark.svg`.
-- Leaflet/react-leaflet with OpenStreetMap tiles for the prototype, without an API key. The planned production choice between Google Maps and Mapbox still needs team approval (task 17).
+| Route         | Page                                                                                                                                     |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`           | Dashboard: my neighbourhood, neighbourhoods without power, nearby offers, map, forecast, community. Sections can be reordered and hidden |
+| `/carte`      | Map of the 10 pilot neighbourhoods: reported outages, announced ECG outages (dashed ring), energy offers                                 |
+| `/previsions` | Forecast of the day, risk by hour, confidence, ECG calendar and the _« Avez-vous du courant ? »_ question                                |
+| `/partage`    | Energy offers by source and distance, my requests, requests received on my offers                                                        |
+| `/communaute` | Recent reports by neighbourhood                                                                                                          |
+| `/parametres` | Profile, light or dark theme, reset                                                                                                      |
 
-The local Linkwarden clone at commit `474dd11632b32db30cde52460b2711ecadb1886e` was inspected for dashboard proportions: 288 px expanded sidebar, 12 px content spacing, approximately 84 px statistics, and 240 px offer cards with 160 px-high images. The implementation in `web` is original; no Linkwarden source component or stylesheet is copied. The existing Next.js architecture, routes and demonstration domain logic remain in place. No Linkwarden Yarn workspace, Prisma client, worker or backend is installed. The intact reference clone is ignored by the root `.gitignore` rule `/linkwarden/`; its AGPL-3.0 license remains with that clone. See [DESIGN_REFERENCE.md](../docs/DESIGN_REFERENCE.md) for provenance, layout mapping and the read-before-install inspection.
+Dialogs: report an outage, publish an offer, account (sign up and sign in in live mode), notifications, help.
 
-Energy illustrations in `public/images/solar.png`, `generator.png` and `battery.png` are original AI-generated assets served locally. They illustrate demonstration energy sources; they do not depict actual hosts or their addresses.
+## Demo mode and live mode
 
-| Route         | Prototype behavior                                                                                  |
-| ------------- | --------------------------------------------------------------------------------------------------- |
-| `/`           | Dashboard, selected neighborhood, map, local activity and nearby offers.                            |
-| `/carte`      | Interactive map, search, filters and neighborhood details.                                          |
-| `/previsions` | Illustrative risk, confidence, time windows and duration estimates.                                 |
-| `/partage`    | Solar, generator and battery offers; distance sorting; local offer creation and simulated requests. |
-| `/communaute` | Demonstration reports and local power-status contributions.                                         |
-| `/parametres` | Local name/neighborhood profile, demonstration alert preference and data reset.                     |
+|                           | Demo mode                                             | Live mode                                                        |
+| ------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------- |
+| Neighbourhood states      | Demonstration scenario                                | `zone_status` view, refreshed on every report (Realtime)         |
+| Forecast                  | Model output for 16 Oct 2026, labelled with its date  | Today's row of `predictions`                                     |
+| ECG calendar              | Real October 2026 announcements + a labelled demo one | `ecg_schedules`                                                  |
+| Reports, offers, requests | Kept in this browser (`localStorage`)                 | Supabase; an anonymous session opens only when the resident acts |
+| Accounts                  | Demonstration screens                                 | E-mail sign-up and sign-in                                       |
+| Notifications             | Demonstration list                                    | The resident's inbox                                             |
 
-Sign-in and registration interfaces open from the profile button. They are demonstration screens; they do not authenticate users, create a remote account or store a password. Student, merchant and generator-owner personas describe user journeys, not authorization roles.
+When the database does not answer, the app never shows invented states: neighbourhoods read _« État inconnu »_ and the map explains why.
 
-## Demonstration data and boundaries
+## Checks
 
-`src/lib/energy.ts` defines ten zones: Osu, Labone, East Legon, Adabraka, Cantonments, Dansoman, Airport Residential, Achimota, Madina and Tema Community 1. The reference scenario is dated 4 October 2026, 15:42 GMT. Neighborhood status, reports, hosts, offers, forecast percentages, estimates and schedules are simulated; no official ECG schedule is imported and no production prediction model runs.
+```sh
+npm run format:check
+npm run lint
+npm run typecheck
+npm test                       # unit tests (Vitest)
+npm run build:e2e              # production build, forced to demo mode
+npx playwright install chromium
+npm run test:e2e               # 46 browser journeys, desktop and mobile sizes, with Axe accessibility audits
+```
 
-`localStorage` key `lightlink.demo.v1` stores reports, offers, simulated requests, the local profile and the alert preference. Updates appear across tabs on the same browser origin. Stored input is validated on read. If storage is unavailable, the current session can continue without persistence across reloads. Reset the scenario in Settings.
+`build:e2e` forces demo mode so browser tests never write to the real database, even if `web/.env.local` holds keys.
 
-`lightlink.display.v1` separately stores the light/dark theme, collapsed sidebar, expanded/collapsed pilot-neighborhood group, section visibility and section order. Click the yellow arrow beside “Quartiers pilotes” to toggle its links, or use Enter/Space while the button is focused. Preferences survive reloads and synchronize across tabs on the same origin; existing stored preferences remain compatible. Resetting local data in Settings restores display defaults: dark theme, expanded sidebar and neighborhood group, and all dashboard sections visible in their original order. If browser storage is unavailable, display changes remain usable for the current session without persistence across reloads.
+## Structure
 
-Map coordinates point to approximate neighborhood centers, never a host's address. Distances are straight-line distances between centers, not travel routes. The initial offers suggest contributions of 5–20 GHS; no payment is collected. A request remains a local pending simulation: no owner is contacted, no address is disclosed, and acceptance/refusal/completion are future backend work.
+| Path                | Content                                                |
+| ------------------- | ------------------------------------------------------ |
+| `src/app/`          | Routes (App Router)                                    |
+| `src/components/`   | App shell, dashboard, map (Leaflet), dialogs           |
+| `src/lib/live.ts`   | Supabase client and live hooks                         |
+| `src/lib/energy.ts` | Re-exports the shared logic of `../shared/`            |
+| `tests/`            | Playwright journeys                                    |
+| `public/`           | Logo and energy illustrations (original, AI-generated) |
 
-There is no real authentication, backend write, report delivery, push notification or synchronization queue. Offline contributions stay on the device. OpenStreetMap tiles require internet access; tile loading and failure states are shown, while local information remains available. The app also includes an offline banner, form errors, an application error page, keyboard dialog handling and reduced-motion support.
+## Notes
 
-## Review and future deployment
-
-The PDF sources and PAN task status are documented in [PAN_WEB_SCOPE.md](../docs/PAN_WEB_SCOPE.md). The scope separates technically delivered frontend work from team acceptance and future integrations. Run the checks on the commit being reviewed.
-
-Checks executed on 5 October 2026: ESLint, TypeScript, the production build and all 16 unit tests pass. The complete browser suite has 48 cases: 46 pass and two are intentionally skipped by viewport (mobile navigation on desktop, desktop sidebar collapse on mobile). The 16 Axe audits using WCAG A/AA tags are included in the 46 passing cases, not additional tests. They cover the six pages and inspected dialogs at 1440 × 1000 and 360 × 800. The new neighborhood-group tests cover arrow clicks, keyboard activation, persistence and neighborhood navigation on both viewports. The Leaflet map surface is excluded from these audits; map controls and the neighborhood list remain covered. These targeted automated checks do not establish general WCAG conformance.
-
-Screenshots were inspected at 1440 px desktop and 390 px mobile widths for dark/light themes, the collapsed 56 px sidebar and the reporting form. Secondary pages were also inspected at 1440 and 360 px widths: introductory copy is muted and 13 px, the Sharing page's `sharing-banner` remains intentionally commented out, and the no-payment reminder is compact and placed beside the filters. No horizontal overflow was observed, and the mobile chart was corrected. The 404 page and its return to the dashboard were verified.
-
-The last CSS adjustment applies `align-items: start` to `community-page-grid` to prevent the activity panel from stretching. The production build and four targeted checks pass after this change: Community accessibility and overflow across all six routes on desktop and mobile. Updated screenshots were inspected. The demonstration scenario deliberately remains dated 4 October, separate from the verification date.
-
-Dependency audit for the dashboard revision: `npm audit --omit=dev` reported zero vulnerabilities. The full audit still reported five high-severity findings in development tooling through `eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch` → `braces`. The automatic suggestion to downgrade to Next.js 14.2.35 using `--force` was not applied. Keep a compatible tooling update in the maintenance backlog; team acceptance remains pending.
-
-Task 46 is not deployed. For a future Vercel deployment with Salam, import the repository, set Root Directory to `web`, select the Next.js preset, and use `npm ci` / `npm run build`. Configure pull-request previews and verify the resulting URL. Add backend environment variables only when their integration is ready; never commit secrets.
-
-The planning PDFs disagree on the contest deadline: 31 October in the implementation plan versus 18 December reported from DoraHacks in the task distribution. Confirm the official date with Tech Hub Africa.
+- **Stack**: Next.js 16 (App Router), React 19, TypeScript, Leaflet with OpenStreetMap tiles, Manrope, Lucide icons.
+- **Privacy**: map markers sit on neighbourhood centres, never on a home; distances are straight lines between centres.
+- **Design**: dashboard proportions inspired by Linkwarden, original implementation; see [DESIGN_REFERENCE.md](../docs/DESIGN_REFERENCE.md).
+- **Deployment**: on Vercel, set _Root Directory_ to `web`, build with `npm ci` and `npm run build`, and add the two public variables above.

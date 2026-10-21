@@ -1,6 +1,6 @@
-# Module de prédiction LightLink (rules-v2.0)
+# LightLink · Prédiction (modèle rules-v2.0)
 
-Estime le risque de coupure par quartier et par heure. **Aucune donnée simulée.** Tout vient des annonces officielles de l'ECG rangées dans [data/](../data/README.md) ou d'une étude citée.
+Estime le risque de coupure par quartier et par heure. **Aucune donnée simulée.** Tout vient des annonces officielles de l'ECG rangées dans [data/](../docs/donnees/README.md) ou d'une étude citée.
 
 ```sh
 python3 prediction/predict.py                  # prévisions du jour (UTC), écrit backend/predictions_seed.sql
