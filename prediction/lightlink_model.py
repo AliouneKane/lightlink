@@ -38,7 +38,11 @@ CHART_HOURS = (6, 8, 10, 12, 14, 16, 17, 18, 19, 20, 21, 23)
 # localité: chaque ligne est une annonce, exactement comme une maintenance. C'est le canal par lequel un
 # futur calendrier de délestage entrera dans le modèle (même format à 16 colonnes dans data/).
 # 3news (avril 2026) est exclu: il donne le groupe de chaque localité mais aucune heure.
-ANNOUNCEMENT_SOURCES = ("instagram", "x", "presse", "ecg_pdf")
+# saisie = annonces ECG recopiées à la main par l'équipe (tâche 64, data/saisie/README.md). Elles comptent
+# comme annonces (horaires de l'app, prévision du jour annoncé) mais pas pour l'estimation des taux: ce
+# n'est pas un balayage complet, ses jours sans annonce ne prouvent rien (voir MANUAL_SOURCE).
+ANNOUNCEMENT_SOURCES = ("instagram", "x", "presse", "ecg_pdf", "saisie")
+MANUAL_SOURCE = "saisie"
 
 # Fiabilité des annonces: prior Beta de moyenne 0,90 (PROXY Eversource, distributeur américain: travaux
 # tenus « environ 90 % du temps ») et de poids 10 observations, donc faible: 80 % de la masse entre 0,77
@@ -224,7 +228,11 @@ def exposure_window(rows: Iterable[dict]) -> ExposureWindow:
     if not starts:
         raise ValueError("aucune donnée instagram: impossible de définir la fenêtre d'exposition")
     start = date.fromisoformat(min(starts))
-    published = [r["date_publication"] for r in rows if r.get("date_publication") and r.get("date_coupure", "") >= min(starts)]
+    published = [
+        r["date_publication"]
+        for r in rows
+        if r.get("date_publication") and r.get("date_coupure", "") >= min(starts) and r["src"] != MANUAL_SOURCE
+    ]
     return ExposureWindow(start, date.fromisoformat(max(published)))
 
 
@@ -332,7 +340,7 @@ def planned_hour_profile(rows: Iterable[dict]) -> List[float]:
     qui couvrent l'heure h. Mesuré, pas supposé: les maintenances ECG tombent en journée (≈ 9h-17h)."""
     windows = set()
     for r in rows:
-        if r.get("type") != "planned":
+        if r.get("type") != "planned" or r.get("src") == MANUAL_SOURCE:
             continue
         s, e = _hhmm(r.get("heure_debut", "")), _hhmm(r.get("heure_fin", ""))
         if s is not None and e is not None and e > s and r.get("date_coupure"):

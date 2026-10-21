@@ -217,6 +217,51 @@ class ImportSchedules(unittest.TestCase):
         self.assertEqual(sql, self.module.to_sql(self.module.schedules()))
 
 
+class ManualEntry(unittest.TestCase):
+    """Tâche 64: une annonce recopiée dans data/saisie compte comme annonce, pas pour les taux."""
+
+    def test_manual_announcement_raises_the_forecast_without_moving_the_window(self):
+        import csv
+        import shutil
+        import tempfile
+
+        import import_schedules
+
+        with tempfile.TemporaryDirectory() as tmp:
+            data = Path(tmp) / "data"
+            shutil.copytree(m.DATA_DIR, data)
+            before_window = m.exposure_window(m.load_rows(data))
+            before_profile = m.planned_hour_profile(m.load_rows(data))
+            path = data / "saisie" / "ecg_annonces.csv"
+            with path.open(encoding="utf-8") as handle:
+                header = next(csv.reader(handle))
+            row = dict.fromkeys(header, "")
+            row.update(
+                date_coupure="2026-10-27", region_ecg="Accra East", localite="Madina",
+                heure_debut="10:00", heure_fin="14:00", type="planned", motif="planned maintenance",
+                restauration="non", date_publication="2026-10-25", heure_publication="18:30",
+                compte="ECG sur X (@ECGghOfficial)", url_post="https://x.com/ECGghOfficial", source_type="image",
+            )
+            with path.open("a", encoding="utf-8", newline="") as handle:
+                csv.DictWriter(handle, fieldnames=header).writerow(row)
+
+            rows = m.load_rows(data)
+            self.assertEqual(m.exposure_window(rows), before_window)
+            self.assertEqual(m.planned_hour_profile(rows), before_profile)
+            predictions, _ = m.predict_all(date(2026, 10, 27), data_dir=data)
+            madina = next(p for p in predictions if p.zone_id == "madina")
+            self.assertTrue(madina.announced)
+            self.assertGreaterEqual(madina.probability, 80)
+            self.assertIn(
+                ("madina", "2026-10-27T10:00:00Z", "2026-10-27T14:00:00Z", "planned"),
+                import_schedules.schedules(data),
+            )
+
+    def test_manual_file_is_empty_until_the_team_fills_it(self):
+        rows = m.load_rows(m.DATA_DIR, (m.MANUAL_SOURCE,))
+        self.assertEqual(rows, [])
+
+
 class Sql(unittest.TestCase):
     def test_sql_is_utc_idempotent_and_transactional(self):
         preds, window = m.predict_all(date(2026, 10, 16))
