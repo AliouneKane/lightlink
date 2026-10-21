@@ -116,7 +116,7 @@ cd ../mobile && npm ci && npm start   # scan the QR code with Expo Go (SDK 57)
 
 | Check | Result |
 |---|---|
-| Automated tests | SQL (access rules, sharing, notifications), 32 Python, 45 web unit + 46 browser journeys, 21 mobile unit + 37 browser journeys, on every pull request |
+| Automated tests | SQL (access rules, sharing, notifications), 32 Python, 47 web unit + 46 browser journeys, 21 mobile unit + 37 browser journeys, on every pull request |
 | End-to-end on the hosted project | Anonymous report, realtime map, full energy-sharing flow between two residents |
 | Speed | 10 forecasts computed in 32 ms; the app reads them in 170 ms |
 | Load | 100 reports at once in 11 ms |
