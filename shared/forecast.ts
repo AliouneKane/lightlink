@@ -35,6 +35,12 @@ export interface ZoneForecast {
   probability: number;
   confidence: number;
   headline: string;
+  /** Task 116: "Coupure probable entre X et Y (confiance Z %)". */
+  summary: string;
+  /** Task 105: forte from 70 %, moyenne from 40 %, faible below. */
+  confidenceLevel: "forte" | "moyenne" | "faible";
+  /** Task 119: no ECG announcement and too few observed days to be confident. */
+  lowData: boolean;
   insight: string;
   chartDescription: string;
   announced: boolean;
@@ -92,9 +98,19 @@ export function toForecast(
         : "Risque faible";
   const start = time(row.window_start);
   const end = time(row.window_end);
+  const confidence = Math.round(row.confidence);
+  const confidenceLevel =
+    confidence >= 70 ? "forte" : confidence >= 40 ? "moyenne" : "faible";
+  const lowData = !announced && confidence < 40;
+  const summary =
+    probability < 20
+      ? `Risque faible aujourd’hui (confiance ${confidence} %)`
+      : `${headline} entre ${start} et ${end} (confiance ${confidence} %)`;
   const insight = announced
     ? `L’ECG a annoncé une coupure dans le quartier entre ${start} et ${end}. Rechargez vos appareils avant ${start} ou explorez les offres de votre quartier.`
-    : `Aucune annonce ECG : c’est le risque habituel du quartier, ${probability} % au plus fort de la journée. Les signalements des habitants affinent cette estimation.`;
+    : lowData
+      ? `Estimation : pas assez de données pour ce quartier. Sans annonce ECG, le risque habituel est de ${probability} % au plus fort de la journée ; la confiance montera avec les signalements des habitants.`
+      : `Aucune annonce ECG : c’est le risque habituel du quartier, ${probability} % au plus fort de la journée. Les signalements des habitants affinent cette estimation.`;
   return {
     riskValues: values,
     hourLabels,
@@ -106,8 +122,11 @@ export function toForecast(
     windowEnd: end,
     durationLabel: durationLabel(row.expected_duration_min),
     probability,
-    confidence: Math.round(row.confidence),
+    confidence,
     headline,
+    summary,
+    confidenceLevel,
+    lowData,
     insight,
     chartDescription: `Risque de coupure de 06 h à 23 h : au plus haut ${max} % vers ${chartHours[peakIndex]} h.`,
     announced,

@@ -25,6 +25,18 @@ const { count: schedules } = await db
 assert.ok(schedules >= 50, `expected the ECG schedules, found ${schedules}`);
 step(`map public: 10 zones, ${schedules} ECG schedules`);
 
+// Task 122: what the forecast screen reads answers in under 2 seconds.
+const started = performance.now();
+const [stateRead, forecastRead] = await Promise.all([
+  db.from("zone_status").select("*"),
+  db.from("predictions").select("zone_id, probability, confidence").limit(50),
+]);
+const elapsed = performance.now() - started;
+assert.ifError(stateRead.error);
+assert.ifError(forecastRead.error);
+assert.ok(elapsed < 2000, `forecast data read in ${Math.round(elapsed)} ms`);
+step(`forecast data read in ${Math.round(elapsed)} ms (limit 2 s)`);
+
 // 2. Without a session, reporting is refused.
 const anonymousInsert = await db
   .from("outage_reports")
