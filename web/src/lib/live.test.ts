@@ -7,6 +7,7 @@ import {
   neighborhoods,
   reportRow,
   scheduleRowsToAnnouncements,
+  isOutageForFilter,
   newClientId,
   withoutLiveData,
   type ZoneStatusRow,
@@ -216,5 +217,20 @@ describe("PAN's review of #6", () => {
       observed_at: "2026-10-20T07:00:00.000Z",
       client_id: clientId,
     });
+  });
+});
+
+describe("outage filter of the maps (PAN's review of #8)", () => {
+  it("keeps ECG outages announced now, even without any report", () => {
+    expect(
+      isOutageForFilter({
+        status: "powered",
+        plannedUntil: "2026-10-21T17:00:00Z",
+      }),
+    ).toBe(true);
+    expect(isOutageForFilter({ status: "outage" })).toBe(true);
+    expect(isOutageForFilter({ status: "unstable" })).toBe(true);
+    expect(isOutageForFilter({ status: "powered" })).toBe(false);
+    expect(isOutageForFilter({ status: "unknown" })).toBe(false);
   });
 });

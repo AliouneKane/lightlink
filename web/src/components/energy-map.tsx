@@ -13,6 +13,7 @@ import {
   useMapEvents,
 } from "react-leaflet";
 import { LocateFixed, Minus, Plus, RotateCcw } from "lucide-react";
+import { isOutageForFilter } from "../../../shared/live";
 
 export interface EnergyMapProps {
   neighborhoods: {
@@ -285,7 +286,7 @@ export default function EnergyMap({
     layer === "energy" || liveMissing
       ? []
       : neighborhoods.filter(
-          (item) => layer !== "outages" || item.status !== "powered",
+          (item) => layer !== "outages" || isOutageForFilter(item),
         );
   const visibleOffers = layer === "outages" ? [] : offers;
 
