@@ -11,6 +11,9 @@ LightLink uses **Supabase** (Postgres, Auth, Realtime, row level security). Deci
   - `20261017000100_dated_zone_groups.sql`: load-shedding groups of each zone, with source and validity period (groups change between plans).
   - `20261017000200_phase2_live.sql`: planned or surprise outages in `zone_status`, report positions checked against the neighbourhood, re-runnable ECG schedule import.
   - `20261020000000_predictions.sql`: daily forecasts of the rules model (`prediction/`), public and read-only for users.
+  - `20261021000000_offline_reports.sql`: observation time and stable id for reports sent after an offline period.
+  - `20261021000100_retry_rate_limit.sql`: a retried report skips the rate limit.
+  - `20261021000200_simulated_reports.sql`: simulated demo reports, labelled and reserved to the demo script.
 - `supabase/seed.sql`: the 10 pilot zones (same ids as `shared/energy.ts`) and the dated groups, generated from `data/` by `python3 prediction/build_zone_groups.py`.
 - `scripts/test-migrations.mjs`: applies every migration and the seed to an in-memory Postgres and checks the views, **without Docker**.
 
@@ -71,5 +74,16 @@ Check the whole chain (anonymous report, Realtime, map, access rules) on the hos
 ```sh
 SUPABASE_URL=https://<project-ref>.supabase.co SUPABASE_ANON_KEY=<anon key> npm run test:live
 ```
+
+### Demo data for a live presentation
+
+With few real reports, the live map is almost empty. For a demo (task 69):
+
+```sh
+npm run demo:on    # 10 realistic reports in Osu, Labone, Dansoman and Madina, observed in the last hour
+npm run demo:off   # removes every simulated report
+```
+
+Simulated reports are labelled `[SIMULÉ]`, shown as "Données simulées" by the apps, never count in the measure of ECG announcements, and leave the map by themselves after 2 hours. App users cannot create them (migration `20261021000200_simulated_reports.sql`).
 
 For the daily import of ECG schedules and forecasts (`.github/workflows/daily-data.yml`), add the repository secret `SUPABASE_DB_URL` (Project Settings > Database > Connection string, session pooler).

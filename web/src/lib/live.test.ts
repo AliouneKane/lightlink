@@ -72,9 +72,32 @@ describe("live neighbourhood state", () => {
       row({ planned_now: true, planned_until: "2026-10-17T17:00:00Z" }),
     ]);
     expect(announcedOnly.status).toBe("powered");
+    // Task 67: the map draws a dashed ring while the ECG outage is announced.
+    expect(announcedOnly.plannedUntil).toBe("2026-10-17T17:00:00Z");
+    expect(
+      applyLiveStatus(neighborhoods, [row({})])[0].plannedUntil,
+    ).toBeUndefined();
     expect(announcedOnly.restoration).toBe(
       "Coupure annoncée par l’ECG jusqu’à 17:00",
     );
+  });
+});
+
+describe("simulated demo reports (task 69)", () => {
+  it("labels a zone whose state includes simulated reports", () => {
+    const [osu] = applyLiveStatus(neighborhoods, [
+      row({
+        status: "confirmed_outage",
+        outage_reports: 4,
+        simulated_reports: 4,
+        outage_origin: "surprise",
+      }),
+    ]);
+    expect(osu.restoration).toMatch(/^Données simulées · /);
+    const [real] = applyLiveStatus(neighborhoods, [
+      row({ simulated_reports: 0 }),
+    ]);
+    expect(real.restoration).not.toContain("simulées");
   });
 });
 

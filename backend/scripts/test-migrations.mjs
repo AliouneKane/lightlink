@@ -6,6 +6,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
+import { deleteSql, insertSql, scenario } from "./demo-data.mjs";
 
 const root = fileURLToPath(new URL("../supabase/", import.meta.url));
 const migrations = readdirSync(join(root, "migrations"))
@@ -227,6 +228,39 @@ await rejects(
   "a genuinely new 6th report",
 );
 
+// --- Task 69: simulated demo reports -------------------------------------------------------
+await rejects(
+  as(16, (tx) => tx.query("insert into public.outage_reports (zone_id, kind, simulated) values ('osu', 'outage', true)")),
+  "an app user writing a simulated report",
+);
+await rejects(db.exec("insert into public.outage_reports (zone_id, kind) values ('osu', 'outage')"), "a resident report without user");
+await db.exec("delete from public.outage_reports"); // the scenario alone, without earlier fixtures
+await db.exec(insertSql());
+const demoState = Object.fromEntries(
+  (
+    await db.query(
+      "select zone_id, status, simulated_reports::int from public.zone_status where zone_id in ('osu','labone','dansoman','madina')",
+    )
+  ).rows.map((row) => [row.zone_id, row]),
+);
+assert.equal(demoState.osu.status, "confirmed_outage");
+assert.equal(demoState.osu.simulated_reports, 4);
+assert.equal(demoState.labone.status, "probable_outage");
+assert.equal(demoState.dansoman.status, "probable_outage");
+assert.equal(demoState.madina.status, "powered");
+const labelled = await db.query("select count(*)::int as n from public.outage_reports where simulated and description like '[SIMULÉ]%'");
+assert.equal(labelled.rows[0].n, scenario.length, "every simulated report is labelled");
+// A simulated outage during an announcement never measures it.
+await db.exec(`insert into public.ecg_schedules (zone_id, starts_at, ends_at, kind)
+  values ('labone', now() - interval '1 hour', now() + interval '1 hour', 'planned')`);
+const labone = (
+  await db.query("select residents_cut::int from public.announcement_outcomes where zone_id = 'labone' and starts_at > now() - interval '2 hours'")
+).rows[0];
+assert.equal(labone.residents_cut, 0, "simulated reports must not count as residents' answers");
+await db.exec(deleteSql);
+const left = await db.query("select count(*)::int as n from public.outage_reports where simulated");
+assert.equal(left.rows[0].n, 0);
+
 // --- Forecasts: the SQL written by prediction/predict.py loads, is public and read-only ---
 await db.exec(readFileSync(join(root, "..", "predictions_seed.sql"), "utf8"));
 await db.exec(readFileSync(join(root, "..", "predictions_seed.sql"), "utf8")); // re-run: no duplicate
@@ -243,4 +277,4 @@ await rejects(
 );
 
 await db.close();
-console.log(`OK: ${migrations.length} migrations + seed; positions, rate limit, row level security, zone state, planned or surprise, outcomes, groups, idempotent import, forecasts, offline reports`);
+console.log(`OK: ${migrations.length} migrations + seed; positions, rate limit, row level security, zone state, planned or surprise, outcomes, groups, idempotent import, forecasts, offline reports, simulated demo`);

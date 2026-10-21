@@ -18,6 +18,8 @@ export interface ZoneStatusRow {
   planned_now: boolean;
   planned_until: string | null;
   outage_origin: "planned" | "surprise" | null;
+  /** Reports from the demo script among those counted (task 69). */
+  simulated_reports?: number;
 }
 
 /** A row of the ecg_schedules table. */
@@ -55,7 +57,13 @@ export function applyLiveStatus(
         Number(row.outage_reports) +
         Number(row.restored_reports) +
         Number(row.powered_reports),
-      restoration: restorationLabel(row, status),
+      // Task 69: the demo script's reports are always labelled as such.
+      restoration:
+        Number(row.simulated_reports ?? 0) > 0
+          ? `Données simulées · ${restorationLabel(row, status)}`
+          : restorationLabel(row, status),
+      plannedUntil:
+        row.planned_now && row.planned_until ? row.planned_until : undefined,
     };
   });
 }

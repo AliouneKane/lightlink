@@ -22,6 +22,7 @@ export interface EnergyMapProps {
     lng: number;
     status: "powered" | "outage" | "unstable" | "unknown";
     reports: number;
+    plannedUntil?: string;
   }[];
   offers: {
     id: string;
@@ -46,6 +47,8 @@ const STATUS = {
   unstable: { color: "#e9ad44", label: "Réseau instable" },
   unknown: { color: "#8a97a1", label: "État inconnu" },
 };
+// Dashed ring around zones with an ECG outage announced now (legend: "Coupure annoncée").
+const PLANNED_COLOR = "#b9a3f0";
 const SOURCE = {
   solar: "Énergie solaire",
   generator: "Groupe électrogène",
@@ -347,6 +350,20 @@ export default function EnergyMap({
             const selectedArea = area.id === selectedId;
             return (
               <Fragment key={area.id}>
+                {area.plannedUntil && (
+                  // Task 67: an ECG outage is announced right now in this zone.
+                  <CircleMarker
+                    center={[area.lat, area.lng]}
+                    radius={selectedArea ? 36 : 29}
+                    interactive={false}
+                    pathOptions={{
+                      color: PLANNED_COLOR,
+                      weight: 2,
+                      dashArray: "5 5",
+                      fill: false,
+                    }}
+                  />
+                )}
                 <CircleMarker
                   center={[area.lat, area.lng]}
                   radius={selectedArea ? 30 : 23}
@@ -379,6 +396,12 @@ export default function EnergyMap({
                   <Popup className="map-popup">
                     <strong>{area.name}</strong>
                     <p>{state.label}</p>
+                    {area.plannedUntil && (
+                      <p>
+                        Coupure annoncée par l’ECG jusqu’à{" "}
+                        {area.plannedUntil.slice(11, 16)}
+                      </p>
+                    )}
                     <span>
                       {area.reports} signalement{area.reports > 1 ? "s" : ""}
                     </span>

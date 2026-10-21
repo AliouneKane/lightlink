@@ -18,7 +18,7 @@ import {
   Plus,
   RotateCcw,
 } from "lucide-react-native";
-import { statusMeta } from "@/lib/theme";
+import { PLANNED_COLOR, statusMeta } from "@/lib/theme";
 import { useTheme } from "@/providers/theme-provider";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { Txt } from "./ui";
@@ -316,8 +316,10 @@ function NativeMap({
               center={{ latitude: area.lat, longitude: area.lng }}
               radius={active ? 350 : 230}
               fillColor={`${color}22`}
-              strokeColor={`${color}55`}
-              strokeWidth={1}
+              // Task 67: ECG outage announced right now (dashed ring).
+              strokeColor={area.plannedUntil ? PLANNED_COLOR : `${color}55`}
+              strokeWidth={area.plannedUntil ? 2 : 1}
+              lineDashPattern={area.plannedUntil ? [6, 6] : undefined}
             />
           );
         })}
@@ -327,7 +329,11 @@ function NativeMap({
             identifier={area.id}
             coordinate={{ latitude: area.lat, longitude: area.lng }}
             title={area.name}
-            description={statusMeta[area.status].label}
+            description={
+              area.plannedUntil
+                ? `${statusMeta[area.status].label} · coupure annoncée par l’ECG jusqu’à ${area.plannedUntil.slice(11, 16)}`
+                : statusMeta[area.status].label
+            }
             pinColor={colors[statusMeta[area.status].color]}
             onPress={() => onSelect(area.id)}
             accessibilityLabel={`${area.name}, ${statusMeta[area.status].label}`}

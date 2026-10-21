@@ -1695,6 +1695,12 @@ h3 {
 .map-legend i.energy {
   background: var(--blue);
 }
+.map-legend i.planned {
+  width: 8px;
+  height: 8px;
+  border: 1px dashed #b9a3f0;
+  background: transparent;
+}
 .map-update {
   color: var(--muted);
   font-size: 10px;

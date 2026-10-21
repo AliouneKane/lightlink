@@ -644,6 +644,10 @@ export function LightLinkApp({
               Coupure signalée
             </span>
             <span>
+              <i className="planned" />
+              Coupure annoncée (ECG)
+            </span>
+            <span>
               <i className="energy" />
               Énergie à partager
             </span>
@@ -652,7 +656,9 @@ export function LightLinkApp({
             {live.state === "off"
               ? "Données simulées"
               : live.zones
-                ? "Signalements des habitants, en direct"
+                ? live.zones.some((row) => Number(row.simulated_reports) > 0)
+                  ? "En direct · inclut des signalements simulés"
+                  : "Signalements des habitants, en direct"
                 : live.state === "loading"
                   ? "Connexion aux données en direct…"
                   : "Données en direct indisponibles"}

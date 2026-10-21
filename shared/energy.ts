@@ -16,6 +16,8 @@ export interface Neighborhood {
   status: NeighborhoodStatus;
   reports: number;
   restoration: string;
+  /** End of the ECG outage announced right now in this zone (live mode, task 67). */
+  plannedUntil?: string;
   risk: number;
   confidence: number;
 }
