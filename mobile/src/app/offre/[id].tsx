@@ -86,12 +86,13 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
   );
   const available = offer.available && offer.slots > 0;
 
-  function act() {
+  // Waits for the database before confirming anything (PAN's review of #9, point 1).
+  async function act() {
     setError(null);
     setMessage(null);
     if (!offer) return;
     if (own) {
-      const result = setOfferAvailability(offer.id, !offer.available);
+      const result = await setOfferAvailability(offer.id, !offer.available);
       setError(result);
       if (!result)
         setMessage(
@@ -100,11 +101,16 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
             : "Offre réactivée dans les offres locales.",
         );
     } else if (activeBooking) {
-      cancelRequest(activeBooking.id);
-      setMessage(liveEnabled ? "Demande annulée." : "Demande simulée annulée.");
+      const result = await cancelRequest(activeBooking.id);
+      setError(result);
+      if (!result)
+        setMessage(
+          liveEnabled ? "Demande annulée." : "Demande simulée annulée.",
+        );
     } else {
-      setError(requestOffer(offer.id));
-      if (liveEnabled) setMessage("Demande envoyée à l’hôte.");
+      const result = await requestOffer(offer.id);
+      setError(result);
+      if (!result && liveEnabled) setMessage("Demande envoyée à l’hôte.");
     }
   }
 

@@ -650,8 +650,8 @@ export default function ProfileScreen() {
                     icon={offer.available ? Pause : Play}
                     variant="secondary"
                     disabled={!ready}
-                    onPress={() => {
-                      const result = setOfferAvailability(
+                    onPress={async () => {
+                      const result = await setOfferAvailability(
                         offer.id,
                         !offer.available,
                       );

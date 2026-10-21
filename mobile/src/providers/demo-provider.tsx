@@ -26,6 +26,7 @@ import {
   requestLiveOffer,
   setLiveOfferOpen,
   setLiveRequestStatus,
+  syncProfileZone,
   validateOffer,
   withoutLiveData,
   type RequestStatus,
@@ -57,7 +58,9 @@ interface DemoContextValue {
   sharing: SharingData;
   sharingNotice: string | null;
   /** Runs a sharing action against Supabase, then reloads offers and requests. */
-  runSharing: (action: (db: unknown) => Promise<string | null>) => void;
+  runSharing: (
+    action: (db: unknown) => Promise<string | null>,
+  ) => Promise<string | null>;
 }
 
 const DemoContext = createContext<DemoContextValue | null>(null);
@@ -93,17 +96,25 @@ export function DemoProvider({
     const data = await loadSharing(db, zone).catch(() => null);
     if (data) setSharing(data);
   });
+  // Resolves with the database's answer, so screens confirm only once it succeeded
+  // (PAN's review of #9, point 1).
   const [runSharing] = useState(
-    () => (action: (db: unknown) => Promise<string | null>) => {
+    () => async (action: (db: unknown) => Promise<string | null>) => {
       setSharingNotice(null);
-      void (async () => {
-        const db = await sessionDb();
-        const error = db
-          ? await action(db).catch(() => "L’action n’a pas pu aboutir.")
-          : "Pas de connexion. Réessayez quand le réseau revient.";
-        setSharingNotice(error);
-        await refreshSharing();
-      })();
+      const db = await sessionDb();
+      if (db) {
+        // Alerts follow the neighbourhood chosen on the phone, anonymous sessions included.
+        await syncProfileZone(
+          db,
+          repository.getSnapshot().state.profile.neighborhoodId,
+        ).catch(() => undefined);
+      }
+      const error = db
+        ? await action(db).catch(() => "L’action n’a pas pu aboutir.")
+        : "Pas de connexion. Réessayez quand le réseau revient.";
+      setSharingNotice(error);
+      await refreshSharing();
+      return error;
     },
   );
 
@@ -255,39 +266,56 @@ export function useDemo() {
       },
       incomingRequests: sharing.incoming,
       sharingNotice,
-      createOffer(input: OfferInput & { address?: string }): string | null {
+      places: sharing.places,
+      // In live mode every action resolves with the database's answer (null = done).
+      async createOffer(
+        input: OfferInput & { address?: string },
+      ): Promise<string | null> {
         if (!isLiveMode) return repository.createOffer(input);
         const error = validateOffer(input);
         if (error) return error;
-        runSharing((db) =>
+        return runSharing((db) =>
           createLiveOffer(db, input, snapshot.state.profile.name),
         );
-        return null;
       },
-      requestOffer(offerId: string): string | null {
+      async requestOffer(offerId: string): Promise<string | null> {
         if (!isLiveMode) return repository.requestOffer(offerId);
-        runSharing((db) => requestLiveOffer(db, offerId));
-        return null;
+        return runSharing((db) => requestLiveOffer(db, offerId));
       },
-      cancelRequest(bookingId: string): void {
-        if (!isLiveMode) return repository.cancelRequest(bookingId);
-        runSharing((db) => setLiveRequestStatus(db, bookingId, "cancelled"));
+      async cancelRequest(bookingId: string): Promise<string | null> {
+        if (!isLiveMode) {
+          repository.cancelRequest(bookingId);
+          return null;
+        }
+        return runSharing((db) =>
+          setLiveRequestStatus(db, bookingId, "cancelled"),
+        );
       },
-      setOfferAvailability(offerId: string, available: boolean): string | null {
+      async setOfferAvailability(
+        offerId: string,
+        available: boolean,
+      ): Promise<string | null> {
         if (!isLiveMode)
           return repository.setOfferAvailability(offerId, available);
-        runSharing((db) => setLiveOfferOpen(db, offerId, available));
-        return null;
+        return runSharing((db) => setLiveOfferOpen(db, offerId, available));
       },
       /** Host: accept, refuse or finish a request; requester: finish it. */
-      answerRequest(requestId: string, status: RequestStatus): void {
-        runSharing((db) => setLiveRequestStatus(db, requestId, status));
+      answerRequest(requestId: string, status: RequestStatus) {
+        return runSharing((db) => setLiveRequestStatus(db, requestId, status));
       },
       /** Task 90: report an abusive offer (live mode). */
-      reportAbuse(offerId: string, reason: string): void {
-        runSharing((db) => reportLiveAbuse(db, offerId, reason));
+      reportAbuse(offerId: string, reason: string) {
+        return runSharing((db) => reportLiveAbuse(db, offerId, reason));
       },
-      updateProfile: repository.updateProfile,
+      updateProfile(profile: Parameters<typeof repository.updateProfile>[0]) {
+        const error = repository.updateProfile(profile);
+        // Point 7 of #9: the server profile follows the neighbourhood chosen here.
+        if (!error && isLiveMode)
+          void sessionDb().then(
+            (db) => db && syncProfileZone(db, profile.neighborhoodId),
+          );
+        return error;
+      },
       setNotifications: repository.setNotifications,
       reset: repository.reset,
     }),
@@ -298,6 +326,7 @@ export function useDemo() {
       state,
       isLiveMode,
       sharing.incoming,
+      sharing.places,
       sharingNotice,
       runSharing,
       neighborhoods,

@@ -44,7 +44,7 @@ export default function Sharing() {
   return <SharingResults key={initialOrigin} initialOrigin={initialOrigin} />;
 }
 function SharingResults({ initialOrigin }: { initialOrigin: string }) {
-  const { state } = useDemo();
+  const { state, places, liveEnabled, neighborhoods } = useDemo();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
@@ -216,7 +216,29 @@ function SharingResults({ initialOrigin }: { initialOrigin: string }) {
         variant="secondary"
         onPress={() => router.push("/publier")}
       />
-      <DemoNote text="Offres de démonstration, sans paiement. Distances entre centres de quartiers, à vol d’oiseau." />
+      {places.length > 0 && (
+        // Task 91: the whole neighbourhood is cut, the database proposes fixed places.
+        <Card>
+          <Txt size={15} weight="bold">
+            Lieux d’énergie un peu plus loin
+          </Txt>
+          {places.map((place) => (
+            <Txt key={place.id} size={12} tone="muted">
+              {place.name} ·{" "}
+              {neighborhoods.find((zone) => zone.id === place.zoneId)?.name ??
+                place.zoneId}{" "}
+              · {place.distanceKm.toFixed(1)} km
+            </Txt>
+          ))}
+        </Card>
+      )}
+      <DemoNote
+        text={
+          liveEnabled
+            ? "Offres des voisins, sans paiement via LightLink. Distances entre centres de quartiers, à vol d’oiseau."
+            : "Offres de démonstration, sans paiement. Distances entre centres de quartiers, à vol d’oiseau."
+        }
+      />
       <Modal
         transparent
         visible={sortOpen}
