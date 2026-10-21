@@ -37,7 +37,7 @@ await db.exec(`
 `);
 
 const user = (n) => `00000000-0000-0000-0000-0000000000${String(n).padStart(2, "0")}`;
-for (let n = 1; n <= 24; n++) {
+for (let n = 1; n <= 26; n++) {
   await db.query("insert into auth.users (id) values ($1)", [user(n)]);
 }
 // Fixtures are written as the owner (row level security does not apply).
@@ -376,5 +376,47 @@ await rejects(
   "user writing forecasts",
 );
 
+// --- Phase 3: notifications (tasks 93-98, 118) -------------------------------------------
+const inbox = (who, kind) =>
+  as(who, (tx) => tx.query("select kind, title, body from public.notifications where kind = $1", [kind])).then((r) => r.rows);
+// 97: the host was told about the request, the requester about the answer.
+assert.equal((await inbox(17, "request_received")).length, 1);
+const answerAlert = await inbox(18, "request_answered");
+assert.equal(answerAlert.length, 1);
+assert.equal(answerAlert[0].title, "Demande acceptée");
+// 94: residents register their phone and follow neighbourhoods; invalid tokens are refused.
+await as(25, (tx) => tx.query("insert into public.push_tokens (token, platform) values ('ExponentPushToken[abc]', 'android')"));
+await rejects(as(25, (tx) => tx.query("insert into public.push_tokens (token, platform) values ('not-a-token', 'android')")), "an invalid push token");
+await as(25, (tx) => tx.query("insert into public.zone_follows (zone_id) values ('adabraka')"));
+await rejects(
+  as(25, (tx) => tx.query("insert into public.zone_follows (user_id, zone_id) values ($1, 'osu')", [user(26)])),
+  "following a zone for someone else",
+);
+// 95: one alert when the neighbourhood becomes a confirmed outage, not one per report.
+await db.exec("delete from public.outage_reports");
+for (const n of [1, 2, 3, 4]) await report(n, "adabraka", "outage", now);
+const alerts = await inbox(25, "outage_in_zone");
+assert.equal(alerts.length, 1, "one alert per confirmed outage");
+assert.match(alerts[0].title, /Coupure à Adabraka/);
+assert.equal((await inbox(26, "outage_in_zone")).length, 0, "only followers are alerted");
+// 96 and 118: ECG reminders and high forecasts, once each, for followers only.
+await db.exec(`insert into public.ecg_schedules (zone_id, starts_at, ends_at, kind)
+  values ('adabraka', now() + interval '3 hours', now() + interval '8 hours', 'planned')`);
+await db.exec(`insert into public.predictions (zone_id, window_start, window_end, probability, confidence,
+    expected_duration_min, method, model_version, basis)
+  values ('adabraka', date_trunc('day', now()) + interval '1 day 9 hours', date_trunc('day', now()) + interval '1 day 17 hours',
+    60, 90, 480, 'rules', 'test', 'annonce ECG')`);
+await db.query("select public.queue_daily_notifications()");
+await db.query("select public.queue_daily_notifications()"); // the daily job may run twice
+assert.equal((await inbox(25, "ecg_reminder")).length, 1, "one reminder per ECG outage");
+const forecastAlert = await inbox(25, "prediction");
+assert.equal(forecastAlert.length, 1, "one alert per high forecast");
+assert.match(forecastAlert[0].body, /estimation/);
+// The inbox is private; residents can only mark their own notifications read.
+const notMine = await as(26, (tx) => tx.query("select id from public.notifications"));
+assert.equal(notMine.rows.length, 0);
+const marked = await as(26, (tx) => tx.query("update public.notifications set read_at = now()"));
+assert.equal(marked.affectedRows, 0);
+
 await db.close();
-console.log(`OK: ${migrations.length} migrations + seed; positions, rate limit, row level security, zone state, planned or surprise, outcomes, groups, idempotent import, forecasts, offline reports, simulated demo, energy sharing`);
+console.log(`OK: ${migrations.length} migrations + seed; positions, rate limit, row level security, zone state, planned or surprise, outcomes, groups, idempotent import, forecasts, offline reports, simulated demo, energy sharing, notifications`);
