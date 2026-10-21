@@ -44,3 +44,6 @@ web/artifacts/
 
 # Reviewed upstream design reference (independent checkout)
 /linkwarden/
+
+# Third-party research PDFs (author copyright, public repo)
+docs/donnees/pdf/Klugman_*.pdf

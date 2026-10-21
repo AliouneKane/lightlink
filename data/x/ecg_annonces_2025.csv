@@ -1,0 +1,65 @@
+date_coupure,region_ecg,localite,heure_debut,heure_fin,type,groupe,motif,restauration,heure_restauration,date_publication,heure_publication,compte,url_post,source_type,remarque
+2025-03-21,Accra East,Behind Animwaa Apartments,,,fault,,transformer fault at Ability,non,,2025-03-22,09:24,@ECGghOfficial,https://x.com/ECGghOfficial/status/1903377345232179283,image,et zones environnantes
+2025-03-21,Accra East,Catapilla Junction,,,fault,,transformer fault at Ability,non,,2025-03-22,09:24,@ECGghOfficial,https://x.com/ECGghOfficial/status/1903377345232179283,image,et zones environnantes (post daté 21 mars dans l’image)
+2025-03-21,Accra East,Cedar Point Chemist,,,fault,,transformer fault at Ability,non,,2025-03-22,09:24,@ECGghOfficial,https://x.com/ECGghOfficial/status/1903377345232179283,image,et zones environnantes
+2025-03-21,Accra East,Justice by Grace Hotel,,,fault,,transformer fault at Ability,non,,2025-03-22,09:24,@ECGghOfficial,https://x.com/ECGghOfficial/status/1903377345232179283,image,et zones environnantes
+2025-03-22,Accra East,Dzen Ayor,,,fault,,fault on Twumasewaa Feeder,oui,14:00,2025-03-22,10:24,@ECGghOfficial,https://x.com/ECGghOfficial/status/1903392295371583706,image,et zones environnantes
+2025-03-22,Accra East,Otienshie,,,fault,,fault on Twumasewaa Feeder,oui,14:00,2025-03-22,10:24,@ECGghOfficial,https://x.com/ECGghOfficial/status/1903392295371583706,image,et zones environnantes
+2025-03-22,Accra East,Part of Ogbojo,,,fault,,fault on Twumasewaa Feeder,oui,14:00,2025-03-22,10:24,@ECGghOfficial,https://x.com/ECGghOfficial/status/1903392295371583706,image,et zones environnantes
+2025-03-22,Accra East,St. Thomas guest house,,,fault,,fault on Twumasewaa Feeder,oui,14:00,2025-03-22,10:24,@ECGghOfficial,https://x.com/ECGghOfficial/status/1903392295371583706,image,et zones environnantes
+2025-03-22,Accra East,Twumasewaa hospital,,,fault,,fault on Twumasewaa Feeder,oui,14:00,2025-03-22,10:24,@ECGghOfficial,https://x.com/ECGghOfficial/status/1903392295371583706,image,et zones environnantes
+2025-03-22,Accra East,part of Ability,,,fault,,fault on Twumasewaa Feeder,oui,14:00,2025-03-22,10:24,@ECGghOfficial,https://x.com/ECGghOfficial/status/1903392295371583706,image,et zones environnantes
+2025-03-25,,parts of Accra and its environs,,,fault,,heavy rainstorm,non,,2025-03-26,06:40,@ECGghOfficial,https://x.com/ECGghOfficial/status/1904785402487017859,image,localités précises non listées
+2025-05-04,Accra East,Achimota,,,fault,,fire outbreak on Earthing Transformer at Achimota BSP,oui,14:00,2025-05-04,13:04,@ECGghOfficial,https://x.com/ECGghOfficial/status/1919015253909643770,image,restauration annoncée pour 14:00 le même jour
+2025-05-04,Accra East,Adabraka,,,fault,,fire outbreak on Earthing Transformer at Achimota BSP,oui,14:00,2025-05-04,13:04,@ECGghOfficial,https://x.com/ECGghOfficial/status/1919015253909643770,image,
+2025-05-04,Accra East,Asylum Down,,,fault,,fire outbreak on Earthing Transformer at Achimota BSP,oui,14:00,2025-05-04,13:04,@ECGghOfficial,https://x.com/ECGghOfficial/status/1919015253909643770,image,
+2025-05-04,Accra East,Circle,,,fault,,fire outbreak on Earthing Transformer at Achimota BSP,oui,14:00,2025-05-04,13:04,@ECGghOfficial,https://x.com/ECGghOfficial/status/1919015253909643770,image,
+2025-05-04,Accra East,Gimpa,,,fault,,fire outbreak on Earthing Transformer at Achimota BSP,oui,14:00,2025-05-04,13:04,@ECGghOfficial,https://x.com/ECGghOfficial/status/1919015253909643770,image,
+2025-05-04,Accra East,Kaneshie,,,fault,,fire outbreak on Earthing Transformer at Achimota BSP,oui,14:00,2025-05-04,13:04,@ECGghOfficial,https://x.com/ECGghOfficial/status/1919015253909643770,image,
+2025-05-04,Accra East,Keseiman,,,fault,,fire outbreak on Earthing Transformer at Achimota BSP,oui,14:00,2025-05-04,13:04,@ECGghOfficial,https://x.com/ECGghOfficial/status/1919015253909643770,image,
+2025-05-04,Accra East,Kokomlemle,,,fault,,fire outbreak on Earthing Transformer at Achimota BSP,oui,14:00,2025-05-04,13:04,@ECGghOfficial,https://x.com/ECGghOfficial/status/1919015253909643770,image,
+2025-05-04,Accra East,Kotobabi,,,fault,,fire outbreak on Earthing Transformer at Achimota BSP,oui,14:00,2025-05-04,13:04,@ECGghOfficial,https://x.com/ECGghOfficial/status/1919015253909643770,image,
+2025-05-04,Accra East,New Town,,,fault,,fire outbreak on Earthing Transformer at Achimota BSP,oui,14:00,2025-05-04,13:04,@ECGghOfficial,https://x.com/ECGghOfficial/status/1919015253909643770,image,
+2025-05-04,Accra East,Nima,,,fault,,fire outbreak on Earthing Transformer at Achimota BSP,oui,14:00,2025-05-04,13:04,@ECGghOfficial,https://x.com/ECGghOfficial/status/1919015253909643770,image,
+2025-05-04,Accra East,North Industrial area,,,fault,,fire outbreak on Earthing Transformer at Achimota BSP,oui,14:00,2025-05-04,13:04,@ECGghOfficial,https://x.com/ECGghOfficial/status/1919015253909643770,image,
+2025-05-04,Accra East,Pig Farm,,,fault,,fire outbreak on Earthing Transformer at Achimota BSP,oui,14:00,2025-05-04,13:04,@ECGghOfficial,https://x.com/ECGghOfficial/status/1919015253909643770,image,
+2025-05-04,Accra East,UGMC,,,fault,,fire outbreak on Earthing Transformer at Achimota BSP,oui,14:00,2025-05-04,13:04,@ECGghOfficial,https://x.com/ECGghOfficial/status/1919015253909643770,image,
+2025-05-18,Accra West,Ablekuma,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,Anyaa,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,Awoshie,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,Bortianor,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,Dansoman,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,Darkuman,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,Dunkonaa,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,Gbawe,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,Joma,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,Kwashioman,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,Mallam,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,Mandela,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,Manhian,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,McCarthy Hills,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,Oblogo,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,Odorkor,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,Sakaman,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,Santamaria,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,Sowutuom,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,Sunda industries,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,Tabora,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,Tuba,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,Weija,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-18,Accra West,West Hills Mall,09:00,16:00,planned,,GRIDCo planned maintenance at Mallam BSP,non,,2025-05-15,09:25,@ECGghOfficial,https://x.com/ECGghOfficial/status/1922946329862402550,image,
+2025-05-25,,Adaakope,09:00,16:00,planned,,GRIDCo planned maintenance at Kasoa BSP,non,,2025-05-23,14:27,@ECGghOfficial,https://x.com/ECGghOfficial/status/1925921593970114717,image,et zones environnantes
+2025-05-25,,Adam Nana,09:00,16:00,planned,,GRIDCo planned maintenance at Kasoa BSP,non,,2025-05-23,14:27,@ECGghOfficial,https://x.com/ECGghOfficial/status/1925921593970114717,image,et zones environnantes
+2025-05-25,,Amanfrom,09:00,16:00,planned,,GRIDCo planned maintenance at Kasoa BSP,non,,2025-05-23,14:27,@ECGghOfficial,https://x.com/ECGghOfficial/status/1925921593970114717,image,et zones environnantes
+2025-05-25,,Amuzu Kope,09:00,16:00,planned,,GRIDCo planned maintenance at Kasoa BSP,non,,2025-05-23,14:27,@ECGghOfficial,https://x.com/ECGghOfficial/status/1925921593970114717,image,et zones environnantes
+2025-05-25,,Ashalaja,09:00,16:00,planned,,GRIDCo planned maintenance at Kasoa BSP,non,,2025-05-23,14:27,@ECGghOfficial,https://x.com/ECGghOfficial/status/1925921593970114717,image,et zones environnantes
+2025-05-25,,Broadcasting,09:00,16:00,planned,,GRIDCo planned maintenance at Kasoa BSP,non,,2025-05-23,14:27,@ECGghOfficial,https://x.com/ECGghOfficial/status/1925921593970114717,image,et zones environnantes
+2025-05-25,,Denchira,09:00,16:00,planned,,GRIDCo planned maintenance at Kasoa BSP,non,,2025-05-23,14:27,@ECGghOfficial,https://x.com/ECGghOfficial/status/1925921593970114717,image,et zones environnantes
+2025-05-25,,Fulani,09:00,16:00,planned,,GRIDCo planned maintenance at Kasoa BSP,non,,2025-05-23,14:27,@ECGghOfficial,https://x.com/ECGghOfficial/status/1925921593970114717,image,et zones environnantes
+2025-05-25,,Kalabule,09:00,16:00,planned,,GRIDCo planned maintenance at Kasoa BSP,non,,2025-05-23,14:27,@ECGghOfficial,https://x.com/ECGghOfficial/status/1925921593970114717,image,et zones environnantes
+2025-05-25,,Kpormotey,09:00,16:00,planned,,GRIDCo planned maintenance at Kasoa BSP,non,,2025-05-23,14:27,@ECGghOfficial,https://x.com/ECGghOfficial/status/1925921593970114717,image,et zones environnantes (Kasoa area)
+2025-05-25,,Kuwait,09:00,16:00,planned,,GRIDCo planned maintenance at Kasoa BSP,non,,2025-05-23,14:27,@ECGghOfficial,https://x.com/ECGghOfficial/status/1925921593970114717,image,et zones environnantes
+2025-05-25,,Kwame Anum,09:00,16:00,planned,,GRIDCo planned maintenance at Kasoa BSP,non,,2025-05-23,14:27,@ECGghOfficial,https://x.com/ECGghOfficial/status/1925921593970114717,image,et zones environnantes
+2025-05-25,,Lamgma,09:00,16:00,planned,,GRIDCo planned maintenance at Kasoa BSP,non,,2025-05-23,14:27,@ECGghOfficial,https://x.com/ECGghOfficial/status/1925921593970114717,image,et zones environnantes
+2025-05-25,,Mama Africa,09:00,16:00,planned,,GRIDCo planned maintenance at Kasoa BSP,non,,2025-05-23,14:27,@ECGghOfficial,https://x.com/ECGghOfficial/status/1925921593970114717,image,et zones environnantes
+2025-05-25,,Nurses Quarters,09:00,16:00,planned,,GRIDCo planned maintenance at Kasoa BSP,non,,2025-05-23,14:27,@ECGghOfficial,https://x.com/ECGghOfficial/status/1925921593970114717,image,et zones environnantes

@@ -45,10 +45,15 @@ import {
 } from "./ui";
 import {
   DEMO_TIMESTAMP,
+  answerReport,
+  findAnswer,
+  formatDay,
   formatTime,
   getNeighborhoods,
   getOffers,
+  getZoneAnnouncements,
   initialState,
+  isActive,
   neighborhoods,
   validateOffer,
   validateReport,
@@ -127,6 +132,15 @@ export function LightLinkApp({
     zone.name.toLocaleLowerCase().includes(search.toLocaleLowerCase()),
   );
   const activeOutages = zones.filter((zone) => zone.status === "outage").length;
+  const announcementTime = new Date(now());
+  const announcements = getZoneAnnouncements(homeZone.id, announcementTime);
+  const currentAnnouncement = announcements.find((item) =>
+    isActive(item, announcementTime),
+  );
+  const currentAnswer = currentAnnouncement
+    ? findAnswer(state.reports, currentAnnouncement, state.profile.name)
+    : undefined;
+  const pastAnnouncements = announcements.filter((item) => !item.demo);
 
   useEffect(() => {
     const refresh = () => setOnline(navigator.onLine);
@@ -212,6 +226,25 @@ export function LightLinkApp({
     );
     setSelectedId(report.neighborhoodId);
     setDialog(null);
+  }
+  function answerAnnouncement(hasPower: boolean) {
+    if (!currentAnnouncement) return;
+    const report = answerReport(currentAnnouncement, hasPower);
+    save(
+      (previous) => ({
+        ...previous,
+        reports: [
+          {
+            ...report,
+            id: crypto.randomUUID(),
+            author: previous.profile.name,
+            createdAt: now(),
+          },
+          ...previous.reports,
+        ],
+      }),
+      "Merci ! Votre réponse aide à vérifier si les annonces ECG sont tenues.",
+    );
   }
   function submitOffer(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -779,25 +812,101 @@ export function LightLinkApp({
                   <Clock3 size={18} />
                   Calendrier ECG
                 </h2>
-                <span className="tiny-tag">NON CONNECTÉ</span>
+                <span className="tiny-tag">{homeZone.name}</span>
               </div>
-              <div className="empty-state">
-                <Clock3 size={32} />
-                <h3>Les horaires officiels arrivent bientôt</h3>
-                <p>
-                  Aucun calendrier officiel n’est chargé. Consultez directement
-                  ECG pour les annonces vérifiées.
-                </p>
-                <a
-                  href="https://www.ecg.com.gh/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-button"
+              {currentAnnouncement && (
+                <div
+                  className="announcement-question"
+                  role="group"
+                  aria-labelledby="announcement-question-title"
                 >
-                  Consulter ECG
-                  <ArrowUpRight size={16} />
-                </a>
-              </div>
+                  <p className="announcement-meta">
+                    {currentAnnouncement.demo && (
+                      <span className="tiny-tag">DÉMO</span>
+                    )}
+                    {currentAnnouncement.demo
+                      ? "Aujourd’hui · scénario de démonstration"
+                      : `${formatDay(currentAnnouncement.startsAt)} · ${formatTime(currentAnnouncement.startsAt)}–${formatTime(currentAnnouncement.endsAt)} GMT`}
+                  </p>
+                  <h3 id="announcement-question-title">
+                    Avez-vous du courant ?
+                  </h3>
+                  <p>
+                    {currentAnnouncement.demo
+                      ? "Annonce de démonstration : l’ECG n’a rien publié pour votre quartier aujourd’hui."
+                      : `Coupure annoncée par l’ECG : ${currentAnnouncement.localities}.`}
+                  </p>
+                  <div className="announcement-actions">
+                    <button
+                      type="button"
+                      className="button secondary"
+                      aria-pressed={currentAnswer?.status === "powered"}
+                      onClick={() => answerAnnouncement(true)}
+                    >
+                      Oui, j’ai du courant
+                    </button>
+                    <button
+                      type="button"
+                      className="button secondary"
+                      aria-pressed={currentAnswer?.status === "outage"}
+                      onClick={() => answerAnnouncement(false)}
+                    >
+                      Non, c’est coupé
+                    </button>
+                  </div>
+                  {currentAnswer && (
+                    <p className="announcement-answer" role="status">
+                      Réponse enregistrée :{" "}
+                      {currentAnswer.status === "powered"
+                        ? "courant disponible"
+                        : "coupure"}
+                      . Vous pouvez la modifier.
+                    </p>
+                  )}
+                  <span className="method-note">
+                    Vos réponses vérifient si les annonces sont tenues. Seul le
+                    nombre de réponses sert au calcul.
+                  </span>
+                </div>
+              )}
+              {pastAnnouncements.length > 0 ? (
+                <ul className="announcement-list">
+                  {pastAnnouncements.map((item) => (
+                    <li key={item.id}>
+                      <strong>
+                        {formatDay(item.startsAt)} · {formatTime(item.startsAt)}
+                        –{formatTime(item.endsAt)}
+                      </strong>
+                      <span>
+                        {item.localities}
+                        {item.partial ? " (partiel)" : ""}
+                      </span>
+                      <a
+                        href={item.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-button"
+                      >
+                        Source ECG
+                        <ArrowUpRight size={14} />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="announcement-empty">
+                  Aucune annonce ECG récente pour {homeZone.name}.
+                </p>
+              )}
+              <a
+                href="https://www.ecg.com.gh/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-button"
+              >
+                Consulter ECG
+                <ArrowUpRight size={16} />
+              </a>
             </section>
             <section className="panel schedule-panel">
               <div className="panel-heading">

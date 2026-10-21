@@ -1,0 +1,21 @@
+{
+  "name": "lightlink-backend",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Supabase project for LightLink: database, auth, realtime and row level security.",
+  "scripts": {
+    "supabase": "supabase",
+    "start": "supabase start",
+    "stop": "supabase stop",
+    "status": "supabase status",
+    "reset": "supabase db reset",
+    "lint": "supabase db lint",
+    "types": "supabase gen types typescript --local > types/database.ts",
+    "test:sql": "node scripts/test-migrations.mjs",
+    "start:db": "supabase start -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.3.16",
+    "supabase": "^2.0.0"
+  }
+}

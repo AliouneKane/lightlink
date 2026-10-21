@@ -1,0 +1,3 @@
+type_evenement,date_debut,date_fin,heure_debut,heure_fin,groupe,quartier,cause_annoncee,detail,url_source
+panne_nationale,2026-08-20,,04:30,,,"","major fault on the Akosombo–Volta transmission line","Second nationwide outage in under a month. Automatic tripping of Akosombo units and some thermal plants. Restoration ongoing.",https://www.graphic.com.gh/news/general-news/gridco-on-why-there-is-a-second-nationwide-electric-power-outage.html
+panne_nationale,2026-07-29,,,"","","","similar incident","Mentioned by GRIDCo as previous widespread outage at dawn.",https://www.graphic.com.gh/news/general-news/gridco-on-why-there-is-a-second-nationwide-electric-power-outage.html

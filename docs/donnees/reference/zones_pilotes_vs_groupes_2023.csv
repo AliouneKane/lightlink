@@ -1,0 +1,30 @@
+zone_id_lightlink,region_ecg,groupe,localite_ecg,partielle
+osu,Accra,B,Osu Oxford Street,oui
+osu,Accra,C,Osu Oxford Street,oui
+osu,Accra,D,Osu Police Station,non
+labone,Accra,A,Labone,oui
+labone,Accra,B,Labone SHS,non
+labone,Accra,B,Labone Police Barracks,non
+labone,Accra,B,Labone,oui
+east-legon,Accra,A,East Legon,non
+adabraka,Accra,A,Adabraka Free Town,non
+adabraka,Accra,B,Adabraka,oui
+adabraka,Accra,D,Adabraka,oui
+cantonments,Accra,B,East Cantonments,oui
+cantonments,Accra,D,Cantonments,oui
+dansoman,Accra,B,Dansoman SSNIT Flats,oui
+dansoman,Accra,C,Dansoman Keep Fit,non
+dansoman,Accra,C,Dansoman,oui
+dansoman,Accra,D,Dansoman Last Stop,non
+airport-residential,Accra,A,Airport Residential Area,oui
+airport-residential,Accra,C,Airport Residential Area,oui
+airport-residential,Accra,D,Airport Residential Area,oui
+achimota,Accra,B,New Achimota Station,non
+achimota,Accra,C,Achimota Market,non
+achimota,Accra,D,Achimota Police Station,non
+achimota,Accra,D,Achimota School,non
+achimota,Accra,D,New Achimota,oui
+madina,Accra,A,Madina,non
+madina,Accra,B,Madina Zongo Junction,non
+tema-community-1,Tema,D,Comm. 1 Market,non
+tema-community-1,Tema,D,Presby Church Comm. 1 Casino,non
