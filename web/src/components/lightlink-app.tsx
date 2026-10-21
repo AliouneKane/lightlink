@@ -770,7 +770,11 @@ export function LightLinkApp({
           homeZone={homeZone}
           zones={zones}
           selectedId={selectedId}
-          outageCount={activeOutages}
+          outageCount={
+            zones.some((zone) => zone.status === "unknown")
+              ? null
+              : activeOutages
+          }
           offerCount={state.offers.filter((offer) => offer.available).length}
           reportCount={state.reports.length}
           offers={offers.map((offer) => renderOfferCard(offer))}

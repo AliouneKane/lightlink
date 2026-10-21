@@ -61,8 +61,8 @@ export function applyLiveStatus(
 }
 
 /**
- * Live mode before the database answered: no demo state may pass for a live one.
- * Reports are zeroed and the label says why; screens hide the state colours.
+ * Live mode before the database answered: no demo state may pass for a live one,
+ * and "no data" must not read as "power is on". Every zone is explicitly "unknown".
  */
 export function withoutLiveData(
   zones: Neighborhood[],
@@ -74,7 +74,7 @@ export function withoutLiveData(
       : "Données en direct indisponibles";
   return zones.map((zone) => ({
     ...zone,
-    status: "powered",
+    status: "unknown",
     reports: 0,
     restoration: label,
   }));

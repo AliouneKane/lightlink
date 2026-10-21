@@ -47,7 +47,7 @@ import { useReducedMotion } from "@/lib/use-reduced-motion";
 import {
   neighborhoods,
   type EnergyOffer,
-  type EnergyStatus,
+  type NeighborhoodStatus,
 } from "@/lib/energy";
 
 export function feedback() {
@@ -649,7 +649,7 @@ export function SectionTitle({
     </View>
   );
 }
-export function StatusPill({ status }: { status: EnergyStatus }) {
+export function StatusPill({ status }: { status: NeighborhoodStatus }) {
   const { colors } = useTheme();
   const meta = statusMeta[status];
   return (

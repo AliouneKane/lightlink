@@ -3,6 +3,8 @@
  * Offer coordinates always identify a neighbourhood centre, never a host address.
  */
 export type EnergyStatus = "powered" | "outage" | "unstable";
+/** A neighbourhood is "unknown" in live mode while the database has not answered. */
+export type NeighborhoodStatus = EnergyStatus | "unknown";
 export type EnergySource = "solar" | "generator" | "battery";
 export type OfferFilter = "all" | EnergySource;
 
@@ -11,7 +13,7 @@ export interface Neighborhood {
   name: string;
   lat: number;
   lng: number;
-  status: EnergyStatus;
+  status: NeighborhoodStatus;
   reports: number;
   restoration: string;
   risk: number;

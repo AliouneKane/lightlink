@@ -56,11 +56,14 @@ export default function Home() {
     .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
     .slice(0, 3);
   const powered = zone.status === "powered";
+  const unknown = zone.status === "unknown";
   const headline = powered
     ? "Le courant est là."
     : zone.status === "outage"
       ? `Coupure à ${zone.name}`
-      : "Le courant est instable.";
+      : unknown
+        ? "État du quartier inconnu."
+        : "Le courant est instable.";
   const initials = state.profile.name
     .trim()
     .split(/\s+/)
@@ -204,7 +207,9 @@ export default function Home() {
             >
               {powered
                 ? "Votre énergie peut aider un voisin."
-                : "L’entraide, elle, reste allumée."}
+                : unknown
+                  ? zone.restoration
+                  : "L’entraide, elle, reste allumée."}
             </Txt>
           </View>
         </View>

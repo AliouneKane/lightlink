@@ -36,7 +36,7 @@ await db.exec(`
 `);
 
 const user = (n) => `00000000-0000-0000-0000-0000000000${String(n).padStart(2, "0")}`;
-for (let n = 1; n <= 15; n++) {
+for (let n = 1; n <= 16; n++) {
   await db.query("insert into auth.users (id) values ($1)", [user(n)]);
 }
 // Fixtures are written as the owner (row level security does not apply).
@@ -207,6 +207,25 @@ const stored = await db.query("select count(*)::int as n from public.outage_repo
 assert.equal(stored.rows[0].n, 1, "a retried report must be stored once");
 const airport = (await db.query("select status from public.zone_status where zone_id = 'airport-residential'")).rows[0];
 assert.equal(airport.status, "probable_outage", "one resident must not confirm an outage alone");
+
+// 3. Retrying the 5th report of a user is not refused by the rate limit.
+const fifthId = "22222222-3333-4444-8555-666666666666";
+for (let i = 0; i < 4; i++) await report(15, "achimota", "powered", now);
+const fifth = () =>
+  as(15, (tx) =>
+    tx.query(
+      "insert into public.outage_reports (zone_id, kind, client_id) values ('achimota', 'powered', $1) on conflict (client_id) do nothing",
+      [fifthId],
+    ),
+  );
+await fifth();
+await fifth(); // retry after a lost answer: must not raise "Too many reports"
+const fifthRows = await db.query("select count(*)::int as n from public.outage_reports where user_id = $1", [user(15)]);
+assert.equal(fifthRows.rows[0].n, 5);
+await rejects(
+  as(15, (tx) => tx.query("insert into public.outage_reports (zone_id, kind) values ('achimota', 'powered')")),
+  "a genuinely new 6th report",
+);
 
 // --- Forecasts: the SQL written by prediction/predict.py loads, is public and read-only ---
 await db.exec(readFileSync(join(root, "..", "predictions_seed.sql"), "utf8"));

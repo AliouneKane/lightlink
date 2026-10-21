@@ -95,6 +95,42 @@ describe("offline report queue", () => {
     ).toBe(true);
   });
 
+  it("migrates a queue saved by an older version (PAN's second review)", async () => {
+    // Saved before this version: no clientId, one item with and one without time.
+    const storage = memoryStorage(
+      JSON.stringify([
+        { ...report("old-with-time"), observedAt: "2026-10-20T07:00:00.000Z" },
+        report("old-without-time"),
+      ]),
+    );
+    const attempts: QueuedReport[] = [];
+    let answers = 0;
+    // The insert succeeds but the first two answers are lost on the network.
+    const send = vi.fn(async (item: QueuedReport) => {
+      attempts.push(item);
+      answers += 1;
+      return answers <= 2 ? offline : ({ ok: true } as SendResult);
+    });
+    const first = createReportQueue(storage, send);
+    await first.load();
+    expect(first.getSnapshot().notice).toContain("sans heure");
+    await first.flush();
+    // The app restarts between retries.
+    const second = createReportQueue(storage, send);
+    await second.load();
+    await second.flush();
+    await second.flush();
+    expect(attempts.map((item) => item.description)).toEqual([
+      "old-with-time",
+      "old-with-time",
+      "old-with-time",
+    ]);
+    // Same id every time: the database stores the report once.
+    expect(new Set(attempts.map((item) => item.clientId)).size).toBe(1);
+    expect(attempts[0].clientId).toBeDefined();
+    expect(second.getSnapshot().pending).toBe(0);
+  });
+
   it("does not retry a refusal and tells why", async () => {
     const queue = createReportQueue(memoryStorage(), async () => refused);
     await queue.load();

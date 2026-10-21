@@ -15,7 +15,11 @@ import {
   type DemoRepository,
   type ReportInput,
 } from "../lib/demo-repository";
-import { applyLiveStatus, getNeighborhoods } from "../lib/energy";
+import {
+  applyLiveStatus,
+  getNeighborhoods,
+  withoutLiveData,
+} from "../lib/energy";
 import {
   fetchLiveData,
   liveEnabled,
@@ -29,10 +33,14 @@ import {
   type ReportQueue,
 } from "../lib/report-queue";
 
+/** "off": demo mode; "loading": first read pending; "error": no live data could be read. */
+type LiveState = "off" | "loading" | "ready" | "error";
+
 interface DemoContextValue {
   repository: DemoRepository;
   queue: ReportQueue | null;
   live: LiveData;
+  liveState: LiveState;
 }
 
 const DemoContext = createContext<DemoContextValue | null>(null);
@@ -53,6 +61,9 @@ export function DemoProvider({
       : null,
   );
   const [live, setLive] = useState<LiveData>(noLiveData);
+  const [liveState, setLiveState] = useState<LiveState>(
+    liveEnabled && !injectedRepository ? "loading" : "off",
+  );
 
   useEffect(() => {
     void repository.hydrate();
@@ -80,7 +91,19 @@ export function DemoProvider({
       if (timer) return;
       timer = setTimeout(() => {
         timer = undefined;
-        void fetchLiveData().then((data) => data && setLive(data));
+        void fetchLiveData()
+          .catch(() => null)
+          .then((data) => {
+            if (data) {
+              setLive(data);
+              setLiveState("ready");
+            } else {
+              // Keep the last live data if there is some (PAN's review of #6).
+              setLiveState((previous) =>
+                previous === "ready" ? previous : "error",
+              );
+            }
+          });
       }, 1000);
     };
     refresh();
@@ -94,8 +117,8 @@ export function DemoProvider({
   }, [injectedRepository]);
 
   const value = useMemo(
-    () => ({ repository, queue, live }),
-    [repository, queue, live],
+    () => ({ repository, queue, live, liveState }),
+    [repository, queue, live, liveState],
   );
   return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>;
 }
@@ -108,7 +131,7 @@ const noQueue = {
 export function useDemo() {
   const context = useContext(DemoContext);
   if (!context) throw new Error("useDemo must be used inside DemoProvider.");
-  const { repository, queue, live } = context;
+  const { repository, queue, live, liveState } = context;
   const snapshot = useSyncExternalStore(
     repository.subscribe,
     repository.getSnapshot,
@@ -120,10 +143,14 @@ export function useDemo() {
     source.getSnapshot,
     source.getSnapshot,
   );
+  // Live mode never shows demo states: until the database answers, zones are "unknown".
   const neighborhoods = useMemo(() => {
     const local = getNeighborhoods(snapshot.state.reports);
-    return live.zones ? applyLiveStatus(local, live.zones) : local;
-  }, [snapshot.state.reports, live.zones]);
+    if (live.zones) return applyLiveStatus(local, live.zones);
+    return liveState === "loading" || liveState === "error"
+      ? withoutLiveData(local, liveState)
+      : local;
+  }, [snapshot.state.reports, live.zones, liveState]);
 
   return useMemo(
     () => ({

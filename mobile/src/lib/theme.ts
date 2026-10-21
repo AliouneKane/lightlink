@@ -47,6 +47,12 @@ export const fonts = {
   extrabold: "Manrope_800ExtraBold",
 };
 export const statusMeta = {
+  unknown: {
+    label: "État inconnu",
+    shortLabel: "Inconnu",
+    color: "muted" as const,
+    icon: CircleHelp,
+  },
   powered: {
     label: "Courant disponible",
     shortLabel: "Avec courant",

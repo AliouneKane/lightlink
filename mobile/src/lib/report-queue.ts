@@ -97,12 +97,31 @@ export function createReportQueue(
       };
     },
     async load() {
+      let loaded: QueuedReport[];
       try {
-        items = parse(await storage.getItem(queueKey));
+        loaded = parse(await storage.getItem(queueKey));
       } catch {
-        items = [];
+        loaded = [];
       }
-      publish();
+      // Reports queued by an older version have no observation time nor id
+      // (PAN's review of #6). Without a time we cannot tell a current outage from
+      // one hours old, so they are not sent and the resident is told.
+      const unknownTime = loaded.filter((item) => !item.observedAt).length;
+      items = loaded
+        .filter((item) => item.observedAt)
+        .map((item) =>
+          item.clientId ? item : { ...item, clientId: newClientId() },
+        );
+      // Store the new ids at once, so every retry, even after a restart, uses the same one.
+      if (unknownTime > 0 || loaded.some((item) => !item.clientId))
+        await persist();
+      publish(
+        unknownTime === 0
+          ? null
+          : unknownTime === 1
+            ? "Un ancien signalement sans heure n’a pas été envoyé. Refaites-le si la coupure continue."
+            : `${unknownTime} anciens signalements sans heure n’ont pas été envoyés. Refaites-les si la coupure continue.`,
+      );
     },
     /** Sends now, or keeps the report for later when the network is missing. */
     async submit(report: QueuedReport) {

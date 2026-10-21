@@ -10,6 +10,7 @@ export const statusLabels = {
   powered: "Courant disponible",
   outage: "Coupure signalée",
   unstable: "Coupure probable",
+  unknown: "État inconnu",
 };
 export function Brand({ compact = false }: { compact?: boolean }) {
   return (

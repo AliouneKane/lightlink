@@ -162,7 +162,8 @@ describe("PAN's review of #6", () => {
     for (const state of ["loading", "error"] as const) {
       const zones = withoutLiveData(neighborhoods, state);
       expect(zones.every((zone) => zone.reports === 0)).toBe(true);
-      expect(zones.some((zone) => zone.status !== "powered")).toBe(false);
+      // Unknown, not "powered": no data must not read as "power is on".
+      expect(zones.every((zone) => zone.status === "unknown")).toBe(true);
     }
     expect(withoutLiveData(neighborhoods, "error")[0].restoration).toBe(
       "Données en direct indisponibles",

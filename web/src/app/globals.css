@@ -565,6 +565,9 @@ h3 {
 .zone-color.unstable {
   background: var(--amber);
 }
+.zone-color.unknown {
+  background: var(--line);
+}
 .sidebar-zone-links svg,
 .source-nav svg {
   width: 15px;
@@ -945,6 +948,10 @@ h3 {
   color: var(--amber);
   background: #d4ab4c13;
 }
+.status-pill.unknown {
+  color: var(--muted);
+  background: var(--surface-soft);
+}
 .status-dot,
 .red-dot {
   width: 5px;
@@ -962,6 +969,9 @@ h3 {
 }
 .status-dot.unstable {
   background: var(--amber);
+}
+.status-dot.unknown {
+  background: var(--muted);
 }
 .dashboard-section {
   display: flex;
@@ -1714,6 +1724,9 @@ h3 {
 }
 .neighborhood-symbol.powered {
   color: var(--green);
+}
+.neighborhood-symbol.unknown {
+  color: var(--muted);
 }
 .neighborhood-detail > div {
   flex: 1;

@@ -20,7 +20,7 @@ export interface EnergyMapProps {
     name: string;
     lat: number;
     lng: number;
-    status: "powered" | "outage" | "unstable";
+    status: "powered" | "outage" | "unstable" | "unknown";
     reports: number;
   }[];
   offers: {
@@ -44,6 +44,7 @@ const STATUS = {
   powered: { color: "#1b9e77", label: "Électricité disponible" },
   outage: { color: "#ee725b", label: "Coupure signalée" },
   unstable: { color: "#e9ad44", label: "Réseau instable" },
+  unknown: { color: "#8a97a1", label: "État inconnu" },
 };
 const SOURCE = {
   solar: "Énergie solaire",
