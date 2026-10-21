@@ -30,7 +30,7 @@ LightLink combines three pillars:
 - Backend, auth, realtime: Supabase (Postgres, row level security, Realtime)
 - Maps: Leaflet on the web, native maps on mobile
 - Prediction: rules model in Python (standard library only), daily forecasts written to Supabase by GitHub Actions
-- Notifications: not built yet (simulated)
+- Notifications: written by the database (in-app inbox on the web) and sent through the Expo push service (Firebase Cloud Messaging on Android); phone registration needs an installable build
 
 ## Repository structure
 
@@ -108,11 +108,28 @@ The same checks run on GitHub Actions for every pull request. Never commit secre
 
 ## Documentation
 
-- [Screens and user journeys](docs/PARCOURS_ET_ECRANS.md)
+- [Architecture and technical choices](docs/ARCHITECTURE.md)
+- [Forecast: what, how, measured quality](docs/prediction.md) and [every parameter with its source](prediction/README.md)
+- [Energy sharing rules](docs/REGLES_PARTAGE.md)
+- [Running the tests](docs/TESTS.md) and [quality, performance and security](docs/QUALITE_ET_SECURITE.md)
+- [Screens and user journeys](docs/PARCOURS_ET_ECRANS.md), [user test protocol](docs/TESTS_UTILISATEURS.md)
 - [Where the ECG publishes its schedules](docs/SOURCES_HORAIRES_ECG.md)
-- [User test protocol](docs/TESTS_UTILISATEURS.md)
 - [Database model](docs/MODELISATION_BASE_DE_DONNEES.md) and [why Supabase](docs/DECISION_SUPABASE.md)
-- [Forecast model](prediction/README.md), [backend](backend/README.md), [web](web/README.md), [mobile](mobile/README.md)
+- [Backend](backend/README.md), [web](web/README.md), [mobile](mobile/README.md)
+
+## Known limits
+
+- **Few outage data**: 21 dated days of ECG outages. The forecast is mostly reliable on days the ECG announces an outage; elsewhere the app says "not enough data" and shows a low confidence.
+- **Announcement reliability is a prior** (0.90) until residents answer "Avez-vous du courant ?" during announced outages.
+- **ECG details published as images** (Accra East, Tema) are not read automatically; they are copied by hand into `data/saisie/`.
+- **Simulated data is always labelled**: the demo mode shows the model's output for 16 Oct 2026 with its date, and `npm run demo:on` adds reports marked "[SIMULÉ]" for presentations.
+- **Energy sharing has no payment**: the contribution is indicative.
+- **Push notifications** need an installable build (Expo account); until then alerts are in the in-app inbox.
+- **10 pilot neighbourhoods** in Greater Accra.
+
+## What comes next
+
+Read the ECG images automatically, extend to all neighbourhoods of an ECG region, learn the forecast from residents' reports once enough days are collected, and ship the Android build with push notifications.
 
 ## License
 
