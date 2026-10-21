@@ -166,6 +166,11 @@ def load_rows(data_dir: Path = DATA_DIR, sources: Sequence[str] = ANNOUNCEMENT_S
     return rows
 
 
+def estimation_rows(rows: Iterable[dict]) -> List[dict]:
+    """Lignes qui servent à estimer les taux: tout sauf la saisie manuelle (pas un balayage complet)."""
+    return [r for r in rows if r.get("src") != MANUAL_SOURCE]
+
+
 def parse_announcements(rows: Iterable[dict], params: Params = PARAMS) -> List[Announcement]:
     """Transforme les lignes CSV en annonces par quartier pilote (dédoublonnées)."""
     seen = set()
@@ -469,8 +474,9 @@ def predict_all(
 ) -> Tuple[List[Prediction], ExposureWindow]:
     rows = load_rows(data_dir)
     window = exposure_window(rows)
+    # Every announcement counts for the announced day; the manual entry does not feed the rates.
     announcements = parse_announcements(rows, params)
-    rates = estimate_rates(announcements, window, params)
+    rates = estimate_rates(parse_announcements(estimation_rows(rows), params), window, params)
     profile = planned_hour_profile(rows)
     predictions = [predict_zone(z, day, rates[z], announcements, profile, params, load_shedding) for z in ZONES]
     return predictions, window

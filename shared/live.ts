@@ -185,3 +185,18 @@ export function liveErrorMessage(error: {
 export function isRetryable(error: { message?: string }): boolean {
   return /fetch|network|Failed to fetch|timeout/i.test(error.message ?? "");
 }
+
+/**
+ * The "Coupures" filter of the maps: reported outages, and ECG outages announced now
+ * even before any resident reports them (PAN's review of #8).
+ */
+export function isOutageForFilter(zone: {
+  status: string;
+  plannedUntil?: string;
+}): boolean {
+  return (
+    zone.status === "outage" ||
+    zone.status === "unstable" ||
+    Boolean(zone.plannedUntil)
+  );
+}

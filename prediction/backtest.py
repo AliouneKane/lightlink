@@ -17,6 +17,7 @@ from lightlink_model import (
     ZONES,
     brier,
     estimate_rates,
+    estimation_rows,
     exposure_window,
     load_rows,
     log_loss,
@@ -38,7 +39,7 @@ def evaluate(prior_strength: float, announcements, window):
 
 
 def main() -> None:
-    rows = load_rows()
+    rows = estimation_rows(load_rows())  # the manual entry is not part of the evaluation
     window = exposure_window(rows)
     announcements = parse_announcements(rows)
     in_window = [a for a in announcements if window.start <= a.day <= window.end]

@@ -7,7 +7,8 @@
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 // One line per report: zone, kind, minutes ago, what a resident would write.
@@ -40,14 +41,25 @@ export function insertSql(rows = scenario) {
 
 export const deleteSql = "delete from public.outage_reports where simulated;";
 
+/**
+ * The Supabase CLI run with Node itself, not through `npx`: spawning `npx` fails on Windows
+ * (ENOENT, PAN's review of #8). Works the same on macOS, Linux and Windows.
+ */
+export function cliCommand(args) {
+  const require = createRequire(import.meta.url);
+  const manifest = require.resolve("supabase/package.json");
+  const { bin } = require(manifest);
+  const entry = typeof bin === "string" ? bin : bin.supabase;
+  return [process.execPath, [join(dirname(manifest), entry), ...args]];
+}
+
 function run(sql) {
   const dir = mkdtempSync(join(tmpdir(), "lightlink-demo-"));
   const file = join(dir, "demo.sql");
   try {
     writeFileSync(file, sql);
-    execFileSync("npx", ["supabase", "db", "query", "--linked", "-f", file], {
-      stdio: ["ignore", "ignore", "inherit"],
-    });
+    const [command, args] = cliCommand(["db", "query", "--linked", "-f", file]);
+    execFileSync(command, args, { stdio: ["ignore", "ignore", "inherit"] });
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

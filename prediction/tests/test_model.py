@@ -257,9 +257,45 @@ class ManualEntry(unittest.TestCase):
                 import_schedules.schedules(data),
             )
 
-    def test_manual_file_is_empty_until_the_team_fills_it(self):
-        rows = m.load_rows(m.DATA_DIR, (m.MANUAL_SOURCE,))
-        self.assertEqual(rows, [])
+    def test_manual_entry_inside_the_window_leaves_base_rates_alone(self):
+        """PAN's review of #8: an Osu entry dated 6 Oct must not raise Osu's rate."""
+        import csv
+        import shutil
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            data = Path(tmp) / "data"
+            shutil.copytree(m.DATA_DIR, data)
+            day = date(2026, 10, 28)
+            before = next(p for p in m.predict_all(day, data_dir=data)[0] if p.zone_id == "osu")
+            path = data / "saisie" / "ecg_annonces.csv"
+            with path.open(encoding="utf-8") as handle:
+                header = next(csv.reader(handle))
+            row = dict.fromkeys(header, "")
+            row.update(
+                date_coupure="2026-10-06", region_ecg="Accra West", localite="Osu",
+                heure_debut="09:00", heure_fin="17:00", type="planned", restauration="non",
+                date_publication="2026-10-05", url_post="https://x.com/ECGghOfficial",
+            )
+            with path.open("a", encoding="utf-8", newline="") as handle:
+                csv.DictWriter(handle, fieldnames=header).writerow(row)
+            after = next(p for p in m.predict_all(day, data_dir=data)[0] if p.zone_id == "osu")
+            self.assertEqual(after.probability, before.probability)
+            self.assertEqual(after.hourly_risks, before.hourly_risks)
+
+    def test_manual_file_follows_the_shared_format(self):
+        """The working file may hold entries: check its format, not that it is empty."""
+        import csv
+
+        path = m.DATA_DIR / "saisie" / "ecg_annonces.csv"
+        reference = m.DATA_DIR / "presse" / "ecg_annonces_2026.csv"
+        with path.open(encoding="utf-8-sig") as handle, reference.open(encoding="utf-8-sig") as ref:
+            self.assertEqual(next(csv.reader(handle)), next(csv.reader(ref)))
+        for row in m.load_rows(m.DATA_DIR, (m.MANUAL_SOURCE,)):
+            self.assertRegex(row["date_coupure"], r"^\d{4}-\d{2}-\d{2}$")
+            self.assertTrue(row["url_post"].startswith("http"), "every entry links its source")
+            for key in ("heure_debut", "heure_fin"):
+                self.assertRegex(row[key], r"^([01]\d|2[0-3]):[0-5]\d$")
 
 
 class Sql(unittest.TestCase):

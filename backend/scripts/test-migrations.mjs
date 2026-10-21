@@ -6,7 +6,9 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
-import { deleteSql, insertSql, scenario } from "./demo-data.mjs";
+import { cliCommand, deleteSql, insertSql, scenario } from "./demo-data.mjs";
+import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
 
 const root = fileURLToPath(new URL("../supabase/", import.meta.url));
 const migrations = readdirSync(join(root, "migrations"))
@@ -229,6 +231,15 @@ await rejects(
 );
 
 // --- Task 69: simulated demo reports -------------------------------------------------------
+// demo:on / demo:off reach the Supabase CLI through Node, without npx (works on Windows).
+const [cli, cliArgs] = cliCommand(["--version"]);
+assert.equal(cli, process.execPath);
+assert.ok(existsSync(cliArgs[0]), "the Supabase CLI entry exists");
+assert.match(execFileSync(cli, cliArgs, { encoding: "utf8" }), /\d+\.\d+\.\d+/);
+assert.match(
+  execFileSync(process.execPath, [fileURLToPath(new URL("./demo-data.mjs", import.meta.url)), "print"], { encoding: "utf8" }),
+  /\[SIMULÉ\]/,
+);
 await rejects(
   as(16, (tx) => tx.query("insert into public.outage_reports (zone_id, kind, simulated) values ('osu', 'outage', true)")),
   "an app user writing a simulated report",
