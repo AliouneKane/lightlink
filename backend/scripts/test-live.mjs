@@ -80,6 +80,38 @@ const forged = await db.from("outage_reports").insert({
 assert.ok(forged.error, "a report in another user's name must be refused");
 step("report in another user's name refused");
 
+// 6. Task 100: energy sharing from offer to the end, with two residents.
+const host = db; // already signed in anonymously
+const neighbour = createClient(url, anonKey, { auth: { persistSession: false } });
+assert.ifError((await neighbour.auth.signInAnonymously()).error);
+const endsAt = new Date(Date.now() + 2 * 3600 * 1000).toISOString();
+const created = await host
+  .from("offers")
+  .insert({ zone_id: "osu", host_name: "Test", title: "[test] Recharge", source: "battery", capacity: "1 prise", price: 0, slots: 1, ends_at: endsAt })
+  .select("id")
+  .single();
+assert.ifError(created.error);
+const offerId = created.data.id;
+assert.ifError((await host.from("offer_private_details").insert({ offer_id: offerId, address: "Adresse de test" })).error);
+const found = await neighbour.rpc("energy_options", { origin_zone: "osu" });
+assert.ifError(found.error);
+assert.ok(found.data.some((row) => row.id === offerId && row.places_left === 1), "the offer is found nearby");
+const hidden = await neighbour.from("offer_private_details").select("address").eq("offer_id", offerId);
+assert.equal(hidden.data.length, 0, "the place is hidden before acceptance");
+const asked = await neighbour.from("offer_requests").insert({ offer_id: offerId }).select("id").single();
+assert.ifError(asked.error);
+const accepted = await host.rpc("set_request_status", { request_id: asked.data.id, new_status: "accepted" });
+assert.ifError(accepted.error);
+const shown = await neighbour.from("offer_private_details").select("address").eq("offer_id", offerId);
+assert.deepEqual(shown.data, [{ address: "Adresse de test" }], "the accepted neighbour sees the place");
+const hostInbox = await host.from("notifications").select("kind").eq("kind", "request_received");
+const neighbourInbox = await neighbour.from("notifications").select("title").eq("kind", "request_answered");
+assert.ok(hostInbox.data.length >= 1 && neighbourInbox.data[0]?.title === "Demande acceptée", "both are notified");
+assert.ifError((await neighbour.rpc("set_request_status", { request_id: asked.data.id, new_status: "finished" })).error);
+assert.ifError((await host.from("offers").update({ status: "closed" }).eq("id", offerId)).error);
+step("sharing: offer, search, request, notification, acceptance, private place, end");
+await neighbour.auth.signOut();
+
 await db.auth.signOut();
 console.log("OK: end-to-end on the hosted project");
 process.exit(0);

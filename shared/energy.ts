@@ -52,11 +52,7 @@ export interface CommunityReport {
 }
 
 export type RequestStatus =
-  | "pending"
-  | "accepted"
-  | "refused"
-  | "cancelled"
-  | "finished";
+  "pending" | "accepted" | "refused" | "cancelled" | "finished";
 
 export interface Booking {
   id: string;
