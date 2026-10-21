@@ -37,7 +37,7 @@ await db.exec(`
 `);
 
 const user = (n) => `00000000-0000-0000-0000-0000000000${String(n).padStart(2, "0")}`;
-for (let n = 1; n <= 16; n++) {
+for (let n = 1; n <= 24; n++) {
   await db.query("insert into auth.users (id) values ($1)", [user(n)]);
 }
 // Fixtures are written as the owner (row level security does not apply).
@@ -261,6 +261,106 @@ await db.exec(deleteSql);
 const left = await db.query("select count(*)::int as n from public.outage_reports where simulated");
 assert.equal(left.rows[0].n, 0);
 
+// --- Phase 3: energy sharing (tasks 78-82, 89-91, 99, 102) -------------------------------
+const offer = async (host, zone, extra = {}) =>
+  (
+    await as(host, (tx) =>
+      tx.query(
+        `insert into public.offers (zone_id, title, source, capacity, price, slots, ends_at)
+         values ($1, $2, $3, '2 prises', $4, $5, now() + $6::interval) returning id`,
+        [zone, extra.title ?? "Recharge solaire", extra.source ?? "solar", extra.price ?? 5, extra.slots ?? 1, extra.lasts ?? "2 hours"],
+      ),
+    )
+  ).rows[0].id;
+const request = (who, offerId) =>
+  as(who, (tx) => tx.query("insert into public.offer_requests (offer_id) values ($1) returning id", [offerId])).then(
+    (result) => result.rows[0].id,
+  );
+const move = (who, requestId, status) =>
+  as(who, (tx) => tx.query("select public.set_request_status($1, $2) as s", [requestId, status]));
+const address = (who, offerId) =>
+  as(who, (tx) => tx.query("select address from public.offer_private_details where offer_id = $1", [offerId])).then(
+    (result) => result.rows.map((row) => row.address),
+  );
+
+// 80: a resident creates an offer, with its exact place kept private (89).
+const solar = await offer(17, "osu", { slots: 1 });
+await as(17, (tx) => tx.query("insert into public.offer_private_details values ($1, 'Maison bleue, Oxford Street')", [solar]));
+await rejects(offer(17, "osu", { lasts: "13 hours" }), "an offer longer than 12 hours");
+await rejects(
+  as(18, (tx) => tx.query("update public.offers set price = 999 where id = $1 returning id", [solar])).then((r) => {
+    if (r.rows.length === 0) throw new Error("no row updated");
+  }),
+  "changing someone else's offer",
+);
+assert.deepEqual(await address(18, solar), [], "the exact place is hidden before acceptance");
+assert.deepEqual(await address(null, solar), [], "and from visitors");
+
+// 82: request, accept, finish; nobody but the host decides.
+await rejects(request(17, solar), "requesting one's own offer");
+const firstRequest = await request(18, solar);
+await rejects(request(18, solar), "a second request on the same offer");
+await rejects(move(18, firstRequest, "accepted"), "a requester accepting their own request");
+await rejects(move(19, firstRequest, "refused"), "a stranger refusing a request");
+await move(17, firstRequest, "accepted");
+assert.deepEqual(await address(18, solar), ["Maison bleue, Oxford Street"], "the accepted requester sees the place");
+const full = (await db.query("select status from public.offers where id = $1", [solar])).rows[0].status;
+assert.equal(full, "full", "an offer with every place taken is full");
+await rejects(request(19, solar), "requesting a full offer");
+assert.deepEqual(await address(19, solar), [], "other residents still do not see the place");
+const visible = await as(19, (tx) => tx.query("select id from public.offer_requests where offer_id = $1", [solar]));
+assert.equal(visible.rows.length, 0, "requests are private to the requester and the host");
+await move(18, firstRequest, "finished");
+await rejects(move(17, firstRequest, "accepted"), "reopening a finished request");
+const freed = (await db.query("select status from public.offers where id = $1", [solar])).rows[0].status;
+assert.equal(freed, "available", "a finished request frees its place");
+// An offer that stays full, for the search test below.
+const busy = await offer(23, "osu", { title: "Générateur complet", source: "generator", slots: 1 });
+await move(23, await request(24, busy), "accepted");
+
+// At most 3 pending requests per resident.
+const others = [];
+for (let i = 0; i < 4; i++) others.push(await offer(20, "labone", { title: `Batterie ${i}`, source: "battery", slots: 2 }));
+for (let i = 0; i < 3; i++) await request(21, others[i]);
+await rejects(request(21, others[3]), "a 4th pending request");
+// A cancelled request frees a place in the limit.
+const cancelled = (await as(21, (tx) => tx.query("select id from public.offer_requests where offer_id = $1", [others[0]]))).rows[0].id;
+await move(21, cancelled, "cancelled");
+await request(21, others[3]);
+
+// 81: nearest open offers first; full, closed and ended offers are not proposed.
+await offer(22, "achimota", { title: "Générateur Achimota", source: "generator" });
+await db.exec(`update public.offers set ends_at = now() - interval '1 minute', starts_at = now() - interval '2 hours'
+  where title = 'Batterie 3'`);
+const nearOsu = (await as(null, (tx) => tx.query("select kind, title, zone_id, distance_km from public.energy_options('osu')"))).rows;
+assert.ok(nearOsu.length >= 2);
+assert.deepEqual(nearOsu.map((row) => row.distance_km), [...nearOsu.map((row) => row.distance_km)].sort((a, b) => a - b));
+assert.ok(!nearOsu.some((row) => row.title === "Générateur complet"), "a full offer is not proposed");
+assert.ok(nearOsu.some((row) => row.title === "Recharge solaire"), "a freed offer is proposed again");
+assert.ok(!nearOsu.some((row) => row.title === "Batterie 3"), "an ended offer is not proposed");
+assert.ok(nearOsu.every((row) => row.distance_km <= 10), "10 km around the neighbourhood");
+assert.ok(!nearOsu.some((row) => row.kind === "place"), "fixed places only when the neighbourhood is cut");
+
+// 91: the whole neighbourhood is cut: farther offers (25 km) and fixed energy places.
+await db.exec(`insert into public.energy_places (name, kind, zone_id, lat, lng, source_url, verified_at)
+  values ('Point de recharge test', 'charging_hub', 'airport-residential', 5.6052, -0.1718, 'https://example.org', '2026-10-21')`);
+await db.exec("delete from public.outage_reports");
+for (const n of [1, 2, 3]) await report(n, "tema-community-1", "outage", now);
+const fromTema = (await as(null, (tx) => tx.query("select kind, distance_km from public.energy_options('tema-community-1')"))).rows;
+assert.ok(fromTema.some((row) => row.kind === "place"), "fixed places are proposed when the neighbourhood is cut");
+assert.ok(fromTema.some((row) => row.distance_km > 10), "the radius grows beyond 10 km");
+const fromOsu = (await as(null, (tx) => tx.query("select kind from public.energy_options('osu')"))).rows;
+assert.ok(!fromOsu.some((row) => row.kind === "place"));
+
+// 90: residents report abuse; nobody else reads the reports.
+await as(19, (tx) => tx.query("insert into public.abuse_reports (offer_id, reason) values ($1, 'Prix abusif')", [others[1]]));
+await rejects(
+  as(19, (tx) => tx.query("insert into public.abuse_reports (reason) values ('Rien')")),
+  "an abuse report about nothing",
+);
+const readAbuse = await as(20, (tx) => tx.query("select id from public.abuse_reports"));
+assert.equal(readAbuse.rows.length, 0, "abuse reports are not public");
+
 // --- Forecasts: the SQL written by prediction/predict.py loads, is public and read-only ---
 await db.exec(readFileSync(join(root, "..", "predictions_seed.sql"), "utf8"));
 await db.exec(readFileSync(join(root, "..", "predictions_seed.sql"), "utf8")); // re-run: no duplicate
@@ -277,4 +377,4 @@ await rejects(
 );
 
 await db.close();
-console.log(`OK: ${migrations.length} migrations + seed; positions, rate limit, row level security, zone state, planned or surprise, outcomes, groups, idempotent import, forecasts, offline reports, simulated demo`);
+console.log(`OK: ${migrations.length} migrations + seed; positions, rate limit, row level security, zone state, planned or surprise, outcomes, groups, idempotent import, forecasts, offline reports, simulated demo, energy sharing`);
