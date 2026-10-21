@@ -12,10 +12,12 @@
     "lint": "supabase db lint",
     "types": "supabase gen types typescript --local > types/database.ts",
     "test:sql": "node scripts/test-migrations.mjs",
-    "start:db": "supabase start -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor"
+    "start:db": "supabase start -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor",
+    "test:live": "node scripts/test-live.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.3.16",
+    "@supabase/supabase-js": "^2.118.0",
     "supabase": "^2.0.0"
   }
 }
