@@ -46,6 +46,20 @@ async function ensureSession(db: SupabaseClient): Promise<SendResult | null> {
     : null;
 }
 
+/**
+ * The client with a session (anonymous if needed), for energy sharing and notifications.
+ * Null in demo mode or when no session can be opened.
+ */
+export async function sessionDb(): Promise<SupabaseClient | null> {
+  const db = supabase();
+  if (!db) return null;
+  try {
+    return (await ensureSession(db)) ? null : db;
+  } catch {
+    return null;
+  }
+}
+
 export async function sendLiveReport(
   report: QueuedReport,
 ): Promise<SendResult> {

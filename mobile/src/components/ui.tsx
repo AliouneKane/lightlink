@@ -695,8 +695,9 @@ export function DemoNote({
   );
 }
 export function StorageNotice() {
-  const { storageError, sync } = useDemo();
-  if (!storageError && !sync.pending && !sync.notice) return null;
+  const { storageError, sync, sharingNotice } = useDemo();
+  if (!storageError && !sync.pending && !sync.notice && !sharingNotice)
+    return null;
   return (
     <Card>
       {storageError && (
@@ -709,6 +710,11 @@ export function StorageNotice() {
           {sync.pending === 1
             ? "1 signalement attend le réseau. Il partira automatiquement."
             : `${sync.pending} signalements attendent le réseau. Ils partiront automatiquement.`}
+        </Txt>
+      )}
+      {sharingNotice && (
+        <Txt tone="danger" size={12} accessibilityRole="alert">
+          {sharingNotice}
         </Txt>
       )}
       {sync.notice && (

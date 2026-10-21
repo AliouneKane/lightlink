@@ -119,7 +119,9 @@ export default function ProfileScreen() {
   const changed =
     name.trim() !== state.profile.name ||
     zoneId !== state.profile.neighborhoodId;
-  const ownedOffers = state.offers.filter((offer) => isOwnedOffer(offer.id));
+  const ownedOffers = state.offers.filter(
+    (offer) => offer.own || isOwnedOffer(offer.id),
+  );
   const contributions = state.reports.filter((report) =>
     report.id.startsWith("mobile-report-"),
   ).length;
