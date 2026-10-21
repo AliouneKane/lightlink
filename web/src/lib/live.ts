@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   isRetryable,
   liveErrorMessage,
@@ -13,6 +13,7 @@ import {
   loadNotifications,
   loadSharing,
   markNotificationsRead,
+  syncProfileZone,
   type Notification,
   type SharingData,
 } from "./energy";
@@ -221,10 +222,20 @@ export function useLiveSharing(zoneId: string) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
 
+  // Which session and neighbourhood the profile was last synced for (point 7 of #9).
+  const synced = useRef<string | null>(null);
+
   const refresh = useCallback(async () => {
     // Reading needs no account: a session is only opened when the resident acts.
     const db = supabase();
     if (!db) return;
+    const { data: session } = await db.auth.getSession();
+    const me = session.session?.user.id;
+    if (me && synced.current !== `${me}:${zoneId}`) {
+      // Alerts follow the profile's neighbourhood, anonymous sessions included.
+      await syncProfileZone(db, zoneId).catch(() => undefined);
+      synced.current = `${me}:${zoneId}`;
+    }
     const [sharing, inbox] = await Promise.all([
       loadSharing(db, zoneId).catch(() => null),
       loadNotifications(db).catch(() => []),
@@ -237,9 +248,25 @@ export function useLiveSharing(zoneId: string) {
     if (!liveEnabled) return;
     const first = setTimeout(() => void refresh(), 0);
     const minute = setInterval(() => void refresh(), 60_000);
+    // Point 3 of #9: another account must never see the previous one's requests or
+    // private addresses, even for a moment. Clear, then reload for the new session.
+    const db = supabase();
+    let currentUser: string | null | undefined;
+    const subscription = db?.auth.onAuthStateChange((_event, session) => {
+      const next = session?.user.id ?? null;
+      if (currentUser !== undefined && next !== currentUser) {
+        setData(emptySharing);
+        setNotifications([]);
+        setNotice(null);
+        synced.current = null;
+        void refresh();
+      }
+      currentUser = next;
+    });
     return () => {
       clearTimeout(first);
       clearInterval(minute);
+      subscription?.data.subscription.unsubscribe();
     };
   }, [refresh]);
 

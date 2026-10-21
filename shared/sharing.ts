@@ -170,6 +170,8 @@ export function sharingErrorMessage(error: { message?: string }): string {
     return "Vous avez déjà fait une demande pour cette offre.";
   if (/offers_check|12 hours|ends_at/i.test(message))
     return "Une offre dure 12 heures au plus. Choisissez une heure de fin plus proche.";
+  if (/offer_private_details_address_check|address/i.test(message))
+    return "L’adresse précise doit contenir entre 3 et 200 caractères.";
   if (/fetch|network|timeout/i.test(message))
     return "Pas de connexion. Réessayez quand le réseau revient.";
   return "L’action n’a pas pu aboutir. Réessayez dans un instant.";

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   endsAtFromUntil,
   initials,
+  loadSharing,
   offerInsertRow,
   offerRowToOffer,
   requestRowToBooking,
@@ -117,5 +118,95 @@ describe("live offers", () => {
       sharingErrorMessage({ message: "Every place is already taken" }),
     ).toContain("places");
     expect(initials("")).toBe("LL");
+  });
+});
+
+/** A tiny stand-in for the Supabase client: tables, filters and RPC results. */
+function fakeDb(
+  me: string | null,
+  tables: Record<string, object[]>,
+  options: Record<string, unknown>[],
+) {
+  const query = (rows: object[]) => {
+    let result = rows as Record<string, unknown>[];
+    const builder = {
+      select: () => builder,
+      eq: (column: string, value: unknown) => {
+        result = result.filter((row) => row[column] === value);
+        return builder;
+      },
+      gt: (column: string, value: string) => {
+        result = result.filter((row) => String(row[column]) > value);
+        return builder;
+      },
+      in: (column: string, values: unknown[]) => {
+        result = result.filter((row) => values.includes(row[column]));
+        return builder;
+      },
+      then: (resolve: (value: { data: unknown; error: null }) => unknown) =>
+        resolve({ data: result, error: null }),
+    };
+    return builder;
+  };
+  return {
+    auth: {
+      getSession: async () => ({
+        data: { session: me ? { user: { id: me } } : null },
+      }),
+    },
+    rpc: async () => ({ data: options, error: null }),
+    from: (table: string) => query(tables[table] ?? []),
+  };
+}
+
+describe("loading sharing data (PAN's review of #9)", () => {
+  const future = new Date(Date.now() + 3600 * 1000).toISOString();
+
+  it("keeps a suspended offer and its requests for its host (point 2)", async () => {
+    const db = fakeDb(
+      "host",
+      {
+        offers: [row({ status: "closed", ends_at: future })],
+        offer_requests: [
+          {
+            id: "r1",
+            offer_id: "o1",
+            requester_id: "n",
+            status: "pending",
+            message: "",
+            created_at: future,
+          },
+        ],
+      },
+      [],
+    );
+    const data = await loadSharing(db, "osu");
+    expect(data?.offers).toHaveLength(1);
+    expect(data?.offers[0]).toMatchObject({ own: true, available: false });
+    expect(data?.incoming).toHaveLength(1);
+  });
+
+  it("passes the fixed energy places to the screens (point 5)", async () => {
+    const db = fakeDb(null, {}, [
+      {
+        kind: "place",
+        id: "p1",
+        title: "Solar hub",
+        source: "solar_hub",
+        zone_id: "airport-residential",
+        distance_km: 12.4,
+        places_left: null,
+      },
+    ]);
+    const data = await loadSharing(db, "tema-community-1");
+    expect(data?.places).toEqual([
+      {
+        id: "p1",
+        name: "Solar hub",
+        kind: "solar_hub",
+        zoneId: "airport-residential",
+        distanceKm: 12.4,
+      },
+    ]);
   });
 });

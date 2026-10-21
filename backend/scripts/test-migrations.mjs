@@ -39,7 +39,7 @@ await db.exec(`
 `);
 
 const user = (n) => `00000000-0000-0000-0000-0000000000${String(n).padStart(2, "0")}`;
-for (let n = 1; n <= 26; n++) {
+for (let n = 1; n <= 40; n++) {
   await db.query("insert into auth.users (id) values ($1)", [user(n)]);
 }
 // Fixtures are written as the owner (row level security does not apply).
@@ -437,5 +437,47 @@ assert.equal(notMine.rows.length, 0);
 const marked = await as(26, (tx) => tx.query("update public.notifications set read_at = now()"));
 assert.equal(marked.affectedRows, 0);
 
+// --- PAN's review of #9 -------------------------------------------------------------------
+const createOffer = (who, address) =>
+  as(who, (tx) =>
+    tx.query(
+      `select public.create_offer('osu', 'Test', 'Offre atomique', 'battery', '1 prise', 0, 1, '',
+        now() + interval '1 hour', $1) as id`,
+      [address],
+    ),
+  ).then((r) => r.rows[0].id);
+// 4. An address refused by the database leaves no public offer behind.
+await rejects(createOffer(30, "X"), "an offer whose address is refused");
+const leftOffers = await db.query("select count(*)::int as n from public.offers where host_id = $1", [user(30)]);
+assert.equal(leftOffers.rows[0].n, 0, "no half-created offer");
+const atomic = await createOffer(30, "Maison bleue");
+const atomicDetails = await db.query("select address from public.offer_private_details where offer_id = $1", [atomic]);
+assert.deepEqual(atomicDetails.rows, [{ address: "Maison bleue" }]);
+// 6. A pending request cannot be accepted once the offer has ended.
+const expiring = await createOffer(31, "Rue des tests");
+const late = await request(32, expiring);
+await db.exec(`update public.offers set starts_at = now() - interval '3 hours', ends_at = now() - interval '1 minute'
+  where id = '${expiring}'`);
+await rejects(move(31, late, "accepted"), "accepting a request after the offer ended");
+assert.deepEqual(await address(32, expiring), [], "the place stays hidden");
+// 9. Simulated reports never count in a real alert.
+await as(34, (tx) => tx.query("insert into public.zone_follows (zone_id) values ('cantonments')"));
+await db.exec("delete from public.outage_reports where zone_id = 'cantonments'");
+await db.exec(insertSql([
+  ["cantonments", "outage", 5, "a"], ["cantonments", "outage", 6, "b"], ["cantonments", "outage", 7, "c"],
+]));
+await report(35, "cantonments", "outage", now);
+assert.equal((await inbox(34, "outage_in_zone")).length, 0, "3 simulated + 1 real is not a confirmed outage");
+await report(36, "cantonments", "outage", now);
+await report(37, "cantonments", "outage", now);
+const realAlert = await inbox(34, "outage_in_zone");
+assert.equal(realAlert.length, 1);
+assert.match(realAlert[0].body, /confirmée par 3 habitants/, "the number counts residents only");
+// 7. A resident (anonymous accounts included) who sets their neighbourhood is alerted.
+await as(38, (tx) => tx.query("update public.profiles set zone_id = 'dansoman'"));
+await db.exec("delete from public.outage_reports where zone_id = 'dansoman'");
+for (const n of [1, 2, 3]) await report(n, "dansoman", "outage", now);
+assert.equal((await inbox(38, "outage_in_zone")).length, 1, "the profile's neighbourhood is followed");
+
 await db.close();
-console.log(`OK: ${migrations.length} migrations + seed; positions, rate limit, row level security, zone state, planned or surprise, outcomes, groups, idempotent import, forecasts, offline reports, simulated demo, energy sharing, notifications`);
+console.log(`OK: ${migrations.length} migrations + seed; positions, rate limit, row level security, zone state, planned or surprise, outcomes, groups, idempotent import, forecasts, offline reports, simulated demo, energy sharing, notifications, review of #9`);
