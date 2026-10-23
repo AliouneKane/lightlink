@@ -307,3 +307,39 @@ export async function markNotificationsRead(db: Db): Promise<void> {
     .update({ read_at: new Date().toISOString() })
     .is("read_at", null);
 }
+
+/**
+ * Opens a session for an action, anonymous if needed. When it creates one, the
+ * neighbourhood chosen in the app becomes the profile's at once, so a resident whose
+ * first action is a report already receives that neighbourhood's alerts (PAN's review
+ * of #9). Returns the error message, or null.
+ */
+export async function openSession(
+  db: Db,
+  homeZoneId: string | null,
+): Promise<{ error: string | null; created: boolean }> {
+  const { data } = await db.auth.getSession();
+  if (data.session) return { error: null, created: false };
+  const { error } = await db.auth.signInAnonymously();
+  if (error) return { error: error.message ?? "session", created: false };
+  if (homeZoneId) await syncProfileZone(db, homeZoneId).catch(() => undefined);
+  return { error: null, created: true };
+}
+
+/**
+ * Keeps only the answer of the latest read. Each read takes a ticket; when the account
+ * changes, every ticket issued before becomes stale and its result must be dropped, so a
+ * slow read started under account A can never show A's data to B (PAN's review of #9).
+ */
+export function createLatestGate() {
+  let current = 0;
+  return {
+    /** Ticket for a read starting now. */
+    take: () => current,
+    /** Invalidate every read started before (account change). */
+    invalidate: () => {
+      current += 1;
+    },
+    isCurrent: (ticket: number) => ticket === current,
+  };
+}

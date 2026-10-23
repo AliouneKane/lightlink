@@ -72,6 +72,7 @@ export default function ProfileScreen() {
     cancelRequest,
     setOfferAvailability,
     reset,
+    liveEnabled,
   } = useDemo();
   const [name, setName] = useState(state.profile.name);
   const [zoneId, setZoneId] = useState(state.profile.neighborhoodId);
@@ -534,9 +535,15 @@ export default function ProfileScreen() {
                       label="Annuler cette demande"
                       icon={X}
                       variant="ghost"
-                      onPress={() => {
-                        cancelRequest(booking.id);
-                        setRequestMessage("Demande simulée annulée.");
+                      onPress={async () => {
+                        // Waits for the database before saying it is done (PAN's review of #9).
+                        const error = await cancelRequest(booking.id);
+                        setRequestMessage(
+                          error ??
+                            (liveEnabled
+                              ? "Demande annulée."
+                              : "Demande simulée annulée."),
+                        );
                       }}
                     />
                   </Card>

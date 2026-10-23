@@ -17,7 +17,7 @@
     "test": "vitest run",
     "test:e2e": "npm run export:web:demo && playwright test",
     "export:web": "expo export --platform web --max-workers 1",
-    "export:web:demo": "node -e \"process.env.EXPO_PUBLIC_LIGHTLINK_MODE='demo';require('child_process').execSync('npm run export:web',{stdio:'inherit'})\"",
+    "export:web:demo": "node -e \"process.env.EXPO_PUBLIC_LIGHTLINK_MODE='demo';require('child_process').execSync('npm run export:web -- --clear',{stdio:'inherit'})\"",
     "export": "expo export --platform all --max-workers 1"
   },
   "dependencies": {
