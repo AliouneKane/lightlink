@@ -14,6 +14,8 @@ import {
   loadSharing,
   markNotificationsRead,
   syncProfileZone,
+  createLatestGate,
+  openSession,
   type Notification,
   type SharingData,
 } from "./energy";
@@ -45,11 +47,12 @@ function supabase(): SupabaseClient | null {
  * Reporting must take two taps: a resident without an account gets an anonymous session,
  * which the database treats as a signed-in user (one user id, same rate limit).
  */
+/** The neighbourhood of this browser's profile, written to a session when it opens. */
+let homeZone: string | null = null;
+
 async function ensureSession(db: SupabaseClient): Promise<string | null> {
-  const { data } = await db.auth.getSession();
-  if (data.session) return null;
-  const { error } = await db.auth.signInAnonymously();
-  return error ? liveErrorMessage(error) : null;
+  const { error } = await openSession(db, homeZone);
+  return error ? liveErrorMessage({ message: error }) : null;
 }
 
 export interface LiveReport {
@@ -224,8 +227,14 @@ export function useLiveSharing(zoneId: string) {
 
   // Which session and neighbourhood the profile was last synced for (point 7 of #9).
   const synced = useRef<string | null>(null);
+  // Reads started under a previous account are dropped when they answer (review of #9).
+  const [gate] = useState(createLatestGate);
+  useEffect(() => {
+    homeZone = zoneId;
+  }, [zoneId]);
 
   const refresh = useCallback(async () => {
+    const ticket = gate.take();
     // Reading needs no account: a session is only opened when the resident acts.
     const db = supabase();
     if (!db) return;
@@ -240,9 +249,10 @@ export function useLiveSharing(zoneId: string) {
       loadSharing(db, zoneId).catch(() => null),
       loadNotifications(db).catch(() => []),
     ]);
+    if (!gate.isCurrent(ticket)) return; // the account changed meanwhile
     if (sharing) setData(sharing);
     setNotifications(inbox);
-  }, [zoneId]);
+  }, [zoneId, gate]);
 
   useEffect(() => {
     if (!liveEnabled) return;
@@ -255,6 +265,7 @@ export function useLiveSharing(zoneId: string) {
     const subscription = db?.auth.onAuthStateChange((_event, session) => {
       const next = session?.user.id ?? null;
       if (currentUser !== undefined && next !== currentUser) {
+        gate.invalidate();
         setData(emptySharing);
         setNotifications([]);
         setNotice(null);
@@ -268,7 +279,7 @@ export function useLiveSharing(zoneId: string) {
       clearInterval(minute);
       subscription?.data.subscription.unsubscribe();
     };
-  }, [refresh]);
+  }, [refresh, gate]);
 
   const run = useCallback(
     async (action: (db: SupabaseClient) => Promise<string | null>) => {
