@@ -37,6 +37,7 @@ import {
   liveEnabled,
   liveDb,
   sendLiveReport,
+  setHomeZone,
   sessionDb,
   subscribeToReports,
   type LiveData,
@@ -123,6 +124,14 @@ export function DemoProvider({
         return error;
       },
   );
+
+  // The session module writes this neighbourhood to the profile when a session opens.
+  useEffect(() => {
+    const follow = () =>
+      setHomeZone(repository.getSnapshot().state.profile.neighborhoodId);
+    follow();
+    return repository.subscribe(follow);
+  }, [repository]);
 
   useEffect(() => {
     void repository.hydrate();

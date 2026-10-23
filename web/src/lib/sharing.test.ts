@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   endsAtFromUntil,
+  createLatestGate,
   initials,
   loadSharing,
+  openSession,
   offerInsertRow,
   offerRowToOffer,
   requestRowToBooking,
@@ -208,5 +210,61 @@ describe("loading sharing data (PAN's review of #9)", () => {
         distanceKm: 12.4,
       },
     ]);
+  });
+});
+
+describe("PAN's second review of #9", () => {
+  it("drops a slow read started under the previous account (point 1)", async () => {
+    const gate = createLatestGate();
+    const shown: string[] = [];
+    let releaseA!: () => void;
+    const slowA = new Promise<string>((resolve) => {
+      releaseA = () => resolve("adresse privée de A");
+    });
+    // Same steps as the hook: take a ticket, read, apply only if still current.
+    const read = async (answer: Promise<string>) => {
+      const ticket = gate.take();
+      const data = await answer;
+      if (gate.isCurrent(ticket)) shown.push(data);
+    };
+    const pendingA = read(slowA); // started while A is signed in
+    gate.invalidate(); // A signs out, B signs in
+    await read(Promise.resolve("données de B"));
+    releaseA(); // A's answer arrives last
+    await pendingA;
+    expect(shown).toEqual(["données de B"]);
+  });
+
+  it("saves the neighbourhood when an action opens an anonymous session (point 2)", async () => {
+    const updates: unknown[] = [];
+    let session: { user: { id: string } } | null = null;
+    const db = {
+      auth: {
+        getSession: async () => ({ data: { session } }),
+        signInAnonymously: async () => {
+          session = { user: { id: "anon" } };
+          return { error: null };
+        },
+      },
+      from: () => ({
+        update: (values: unknown) => ({
+          eq: async (_column: string, id: string) => {
+            updates.push({ values, id });
+            return { error: null };
+          },
+        }),
+      }),
+    };
+    expect(await openSession(db, "madina")).toEqual({
+      error: null,
+      created: true,
+    });
+    expect(updates).toEqual([{ values: { zone_id: "madina" }, id: "anon" }]);
+    // An existing session is left as it is.
+    expect(await openSession(db, "osu")).toEqual({
+      error: null,
+      created: false,
+    });
+    expect(updates).toHaveLength(1);
   });
 });
