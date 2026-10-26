@@ -218,10 +218,23 @@ export async function createLiveOffer(
  * The neighbourhood chosen in the app becomes the profile's (point 7): alerts follow it,
  * anonymous sessions included. Needs a session; does nothing without one.
  */
-export async function syncProfileZone(db: Db, zoneId: string): Promise<void> {
+/**
+ * Writes the neighbourhood to my profile. Returns null only once the row really changed:
+ * an UPDATE refused by the network, or matching no row, is a failure the caller can retry.
+ */
+export async function syncProfileZone(
+  db: Db,
+  zoneId: string,
+): Promise<string | null> {
   const me = await currentUser(db);
-  if (!me) return;
-  await db.from("profiles").update({ zone_id: zoneId }).eq("id", me);
+  if (!me) return "Pas de session.";
+  const { data, error } = await db
+    .from("profiles")
+    .update({ zone_id: zoneId })
+    .eq("id", me)
+    .select("id");
+  if (error) return sharingErrorMessage(error);
+  return data?.length ? null : "Profil introuvable.";
 }
 
 /** Suspend (closed) or reopen one of my offers. */
@@ -308,22 +321,38 @@ export async function markNotificationsRead(db: Db): Promise<void> {
     .is("read_at", null);
 }
 
+/** Per client, the `user:zone` pair the server profile is known to hold. */
+const syncedZones = new WeakMap<object, string>();
+
 /**
- * Opens a session for an action, anonymous if needed. When it creates one, the
- * neighbourhood chosen in the app becomes the profile's at once, so a resident whose
- * first action is a report already receives that neighbourhood's alerts (PAN's review
- * of #9). Returns the error message, or null.
+ * Opens a session for an action, anonymous if needed, and makes sure the neighbourhood
+ * chosen in the app is the profile's, so a resident whose first action is a report
+ * already receives that neighbourhood's alerts (PAN's review of #9). A failed sync does
+ * not block the action: the next call retries it with the session already open (PAN's
+ * third review of #9). Returns the error message, or null.
  */
 export async function openSession(
   db: Db,
   homeZoneId: string | null,
 ): Promise<{ error: string | null; created: boolean }> {
   const { data } = await db.auth.getSession();
-  if (data.session) return { error: null, created: false };
-  const { error } = await db.auth.signInAnonymously();
-  if (error) return { error: error.message ?? "session", created: false };
-  if (homeZoneId) await syncProfileZone(db, homeZoneId).catch(() => undefined);
-  return { error: null, created: true };
+  let created = false;
+  if (!data.session) {
+    const { error } = await db.auth.signInAnonymously();
+    if (error) return { error: error.message ?? "session", created: false };
+    created = true;
+  }
+  if (homeZoneId) {
+    const me = await currentUser(db);
+    const key = `${me}:${homeZoneId}`;
+    if (me && syncedZones.get(db) !== key) {
+      const failed = await syncProfileZone(db, homeZoneId).catch(
+        () => "réseau",
+      );
+      if (!failed) syncedZones.set(db, key);
+    }
+  }
+  return { error: null, created };
 }
 
 /**

@@ -242,8 +242,9 @@ export function useLiveSharing(zoneId: string) {
     const me = session.session?.user.id;
     if (me && synced.current !== `${me}:${zoneId}`) {
       // Alerts follow the profile's neighbourhood, anonymous sessions included.
-      await syncProfileZone(db, zoneId).catch(() => undefined);
-      synced.current = `${me}:${zoneId}`;
+      // Marked only once written, so a refused update is retried on the next refresh.
+      const failed = await syncProfileZone(db, zoneId).catch(() => "réseau");
+      if (!failed) synced.current = `${me}:${zoneId}`;
     }
     const [sharing, inbox] = await Promise.all([
       loadSharing(db, zoneId).catch(() => null),
