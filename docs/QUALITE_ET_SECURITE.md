@@ -49,17 +49,18 @@ Le poids de l'APK final n'est pas encore mesuré : il ajoute le moteur natif de 
 |---|---|---|
 | Backend | 0 faille | — |
 | Web | 0 faille | Le 26 octobre au matin, l'audit signalait `next` 16.3.8 comme **critique** dans les dépendances de production. `main` est passé à `next` 16.4.1 (PR Dependabot #14) : l'audit ne signale plus rien. Avant cette mise à jour, nous n'avions pas démontré d'exploitation dans LightLink : le lockfile contenait déjà `sharp` 0.35.5, mesure prévue par l'avis de Next.js sur les images, et le code n'utilise ni `use cache` ni les Server Actions visés par les autres avis |
-| Mobile | 8 alertes, issues de **4 failles** | Voir ci-dessous |
+| Mobile | 7 alertes, issues de **2 failles** | Voir ci-dessous |
 
-Les 4 failles mobiles :
+Corrigé le 26 octobre : `zod` (mémoire épuisée en validant une très grande collection), utilisé par l'outil en ligne de commande d'Expo et par ESLint, est forcé en 4.6.7 (`overrides` dans `mobile/package.json`). Vérifié : lint, types, tests, compatibilité Expo, export Android, iOS et web, 37 parcours navigateur, démarrage du serveur Expo et validation des extensions par `@expo/cli`.
+
+Les 2 failles restantes :
 
 | Paquet | Faille | Où il sert | Décision |
 |---|---|---|---|
-| `node-forge` 1.4.0 | Vérification de signature RSA trop permissive | Outil Expo de signature des mises à jour (`@expo/cli`), sur l'ordinateur | Pas de version corrigée publiée ; LightLink n'utilise pas les mises à jour signées |
-| `zod` 3.25 (via `@expo/cli`) | Mémoire épuisée en validant une très grande collection | Outil en ligne de commande d'Expo, sur l'ordinateur ; absent de l'app installée | La correction est dans zod 4.6.6, que le SDK Expo 57 n'utilise pas : à revoir avec le SDK 58, après la soumission |
-| `decode-uri-component` 0.2.2 (modérée, via `query-string`) | Blocage par un lien mal encodé | Lecture des liens par `expo-router`, **dans l'app** | Risque faible (un lien piégé ferait au pire planter l'app chez celui qui l'ouvre). La correction exige expo-router 58, donc le SDK Expo 58 : à faire après la soumission (la PR Dependabot #3, qui imposait ce saut, a été fermée) |
+| `node-forge` 1.4.0 (4 alertes) | Vérification de signature RSA trop permissive | Outil Expo de signature des mises à jour (`@expo/cli`), sur l'ordinateur ; absent de l'app installée | **Aucune version corrigée publiée** (1.4.0 est la dernière). LightLink n'utilise pas les mises à jour signées |
+| `decode-uri-component` 0.2.2 (modérée, 3 alertes via `query-string` 7) | Blocage par un lien mal encodé | Lecture des liens par `expo-router`, **dans l'app** | Risque faible (un lien piégé ferait au pire planter l'app chez celui qui l'ouvre). Essayé : forcer `query-string` 9.5.1 (corrigé) casse l'app, car cette version n'existe qu'en module ESM et Metro la charge mal (`stringify is not a function` dans 3 parcours). La vraie correction est expo-router 58, donc le SDK Expo 58 : à faire après la soumission |
 
-`braces`, signalé le 21 octobre, n'apparaît plus. Les « corrections » proposées par `npm audit` (Expo 44) sont des **retours en arrière** de plusieurs années : à ne pas appliquer. Nous ne disons donc pas « zéro faille » : le web et le backend n'en ont aucune connue, le mobile en garde une dans l'app (modérée) et deux dans les outils de l'ordinateur.
+Les « corrections » proposées par `npm audit` (Expo 44) sont des **retours en arrière** de plusieurs années : à ne pas appliquer. Nous ne disons donc pas « zéro faille » : le web et le backend n'en ont aucune connue ; le mobile en garde une modérée dans l'app et une dans les outils de l'ordinateur, faute de version corrigée compatible.
 
 ## Sécurité et vie privée (102)
 
@@ -72,4 +73,4 @@ Vérifié par `npm run test:sql` avec les vrais rôles de Supabase, et par `npm 
 - Les signalements d'abus ne sont lisibles que par l'équipe.
 - La position GPS d'un signalement sert seulement à vérifier qu'il vient du quartier, puis **n'est pas conservée** ; les positions enregistrées avant ont été effacées. Auparavant, la table des signalements étant publique, n'importe qui pouvait lire ces coordonnées par l'API, même sans compte : défaut corrigé par la migration du 26 octobre, après la relecture de PAN sur la #10.
 
-**Pas encore vérifié** : la migration du 26 octobre est testée sur une base locale (`test:sql`) ; tant qu'elle n'est pas appliquée au projet hébergé, les deux défauts ci-dessus y restent présents.
+La migration du 26 octobre est testée sur une base locale (`test:sql`) et **appliquée au projet hébergé le 26 octobre**. Vérifié en ligne par l'API : un signalement envoyé avec `created_at` au 1er janvier est enregistré à l'heure du serveur, et un visiteur sans compte lit `lat` et `lng` vides. Rejoué en ligne avec Realtime : le visiteur sans compte reçoit toujours l'événement du nouveau signalement (la carte se met à jour), sans position et avec l'heure du serveur ; `npm run test:live` passe aussi après la migration.
