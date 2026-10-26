@@ -554,5 +554,25 @@ for (const [who, n] of [[41, 1], [43, 1], [42, 0]]) {
   assert.equal(seen.rows.length, n, `request visible to user ${who}: ${n}`);
 }
 
+// 5. Realtime (installed realtime.apply_rls, read on the hosted project): it checks a new row
+// with `select exists(select 1 from <table> where <primary key> = ...)` as the subscriber's
+// role, answers 401 only if the primary key is unreadable, and sends only the columns for
+// which has_column_privilege(role, column, 'SELECT') is true. Same steps here.
+const reportForRealtime = (await db.query("select id from public.outage_reports where user_id = $1 limit 1", [user(42)])).rows[0].id;
+for (const role of ["anon", "authenticated"]) {
+  const visible = await as(role === "anon" ? null : 43, (tx) =>
+    tx.query("select exists(select 1 from public.outage_reports where id = $1) as ok", [reportForRealtime]),
+  );
+  assert.equal(visible.rows[0].ok, true, `Realtime still delivers new reports to ${role}`);
+  const sent = await db.query(
+    `select array_agg(attname::text order by attnum) as cols from pg_attribute
+     where attrelid = 'public.outage_reports'::regclass and attnum > 0 and not attisdropped
+       and has_column_privilege($1, 'public.outage_reports', attname, 'SELECT')`,
+    [role],
+  );
+  assert.ok(sent.rows[0].cols.includes("id") && sent.rows[0].cols.includes("zone_id"), `${role}: id and zone sent`);
+  assert.ok(!sent.rows[0].cols.includes("user_id"), `${role}: Realtime does not send user_id`);
+}
+
 await db.close();
-console.log(`OK: ${migrations.length} migrations + seed; positions, rate limit, row level security, zone state, planned or surprise, outcomes, groups, idempotent import, forecasts, offline reports, simulated demo, energy sharing, notifications, review of #9, load test cleanup, server time, positions not kept, account ids hidden`);
+console.log(`OK: ${migrations.length} migrations + seed; positions, rate limit, row level security, zone state, planned or surprise, outcomes, groups, idempotent import, forecasts, offline reports, simulated demo, energy sharing, notifications, review of #9, load test cleanup, server time, positions not kept, account ids hidden (API and Realtime)`);
