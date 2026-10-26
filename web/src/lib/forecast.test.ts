@@ -55,6 +55,37 @@ describe("model forecast", () => {
     expect(forecast.insight).toContain("L’ECG a annoncé");
   });
 
+  it("sums the forecast up with its confidence (tasks 105, 116, 119)", () => {
+    const announced = toForecast(row(), "live");
+    expect(announced.summary).toBe(
+      "Coupure probable entre 17:00 et 19:30 (confiance 90 %)",
+    );
+    expect(announced.confidenceLevel).toBe("forte");
+    expect(announced.lowData).toBe(false);
+    const thin = toForecast(
+      row({ probability: 30, confidence: 33, basis: "taux de base" }),
+      "live",
+    );
+    expect(thin.confidenceLevel).toBe("faible");
+    expect(thin.lowData).toBe(true);
+    expect(thin.insight).toContain("pas assez de données");
+    expect(
+      toForecast(
+        row({ probability: 5, confidence: 50, basis: "taux de base" }),
+        "live",
+      ).summary,
+    ).toBe("Risque faible aujourd’hui (confiance 50 %)");
+  });
+
+  it("dates a low-risk demo snapshot instead of saying today (PAN, #10)", () => {
+    const low = row({ probability: 5, confidence: 50, basis: "taux de base" });
+    const summary = toForecast(low, "snapshot").summary;
+    expect(summary).not.toContain("aujourd’hui");
+    expect(summary).toBe(
+      `Risque faible le ${toForecast(low, "snapshot").dayLabel} (confiance 50 %)`,
+    );
+  });
+
   it("says when the risk is low and when no announcement exists", () => {
     const forecast = toForecast(
       row({

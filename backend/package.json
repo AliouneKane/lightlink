@@ -15,7 +15,8 @@
     "start:db": "supabase start -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor",
     "test:live": "node scripts/test-live.mjs",
     "demo:on": "node scripts/demo-data.mjs on",
-    "demo:off": "node scripts/demo-data.mjs off"
+    "demo:off": "node scripts/demo-data.mjs off",
+    "test:load": "node scripts/test-load.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.3.16",

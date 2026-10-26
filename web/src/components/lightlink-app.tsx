@@ -507,21 +507,23 @@ export function LightLinkApp({
             <ZapOff size={21} />
           </span>
           <div>
-            <strong>{forecast.headline}</strong>
+            <strong>{forecast.summary}</strong>
             <span>
-              {forecast.windowStart} – {forecast.windowEnd} <i>·</i>{" "}
-              {forecast.probability} % au plus fort
+              {forecast.lowData
+                ? "Estimation · pas assez de données pour ce quartier"
+                : `${forecast.probability} % au plus fort`}
             </span>
           </div>
         </div>
         <RiskChart forecast={forecast} />
-        <div className="confidence">
-          <span>Confiance</span>
+        {/* Task 105: the colour follows the level, never green when confidence is low. */}
+        <div className="confidence" data-level={forecast.confidenceLevel}>
+          <span>Confiance {forecast.confidenceLevel}</span>
           <strong>
             {forecast.confidence}% <ShieldCheck size={14} />
           </strong>
         </div>
-        <div className="confidence-track">
+        <div className="confidence-track" data-level={forecast.confidenceLevel}>
           <span style={{ width: `${forecast.confidence}%` }} />
         </div>
         <p className="prediction-note">
@@ -865,7 +867,7 @@ export function LightLinkApp({
                   <strong>{forecast.probability}%</strong>
                 </div>
                 <div>
-                  <span>Confiance</span>
+                  <span>Confiance {forecast.confidenceLevel}</span>
                   <strong>{forecast.confidence}%</strong>
                 </div>
               </div>
@@ -873,7 +875,7 @@ export function LightLinkApp({
               <div className="forecast-insight">
                 <Sparkles size={21} />
                 <p>
-                  <strong>{forecast.headline}.</strong>
+                  <strong>{forecast.summary}.</strong>
                   {forecast.insight}
                 </p>
               </div>

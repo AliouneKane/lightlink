@@ -25,6 +25,18 @@ const { count: schedules } = await db
 assert.ok(schedules >= 50, `expected the ECG schedules, found ${schedules}`);
 step(`map public: 10 zones, ${schedules} ECG schedules`);
 
+// Task 122: what the forecast screen reads answers in under 2 seconds.
+const started = performance.now();
+const [stateRead, forecastRead] = await Promise.all([
+  db.from("zone_status").select("*"),
+  db.from("predictions").select("zone_id, probability, confidence").limit(50),
+]);
+const elapsed = performance.now() - started;
+assert.ifError(stateRead.error);
+assert.ifError(forecastRead.error);
+assert.ok(elapsed < 2000, `forecast data read in ${Math.round(elapsed)} ms`);
+step(`forecast data read in ${Math.round(elapsed)} ms (limit 2 s)`);
+
 // 2. Without a session, reporting is refused.
 const anonymousInsert = await db
   .from("outage_reports")
@@ -38,12 +50,14 @@ assert.ifError(authError);
 const before = await db.from("zone_status").select("powered_reports").eq("zone_id", zone).single();
 assert.ifError(before.error);
 
+// The account id is not readable (migration 13): the event is recognised by its text.
+const tag = `[test bout en bout] ${Date.now()}`;
 const received = new Promise((resolve, reject) => {
   const timeout = setTimeout(() => reject(new Error("no Realtime event within 20 s")), 20_000);
   const channel = db
     .channel("e2e")
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "outage_reports" }, (event) => {
-      if (event.new.user_id === auth.user.id) {
+      if (event.new.description === tag) {
         clearTimeout(timeout);
         void db.removeChannel(channel);
         resolve(event.new);
@@ -56,14 +70,15 @@ const received = new Promise((resolve, reject) => {
       setTimeout(() => {
         void db
           .from("outage_reports")
-          .insert({ zone_id: zone, kind: "powered", description: "[test bout en bout]" })
+          .insert({ zone_id: zone, kind: "powered", description: tag })
           .then(({ error }) => error && reject(error));
       }, 3000);
     });
 });
 const event = await received;
 assert.equal(event.zone_id, zone);
-step("anonymous report stored and pushed live (Realtime)");
+assert.equal(event.user_id, undefined, "Realtime must not send the account id");
+step("anonymous report stored and pushed live (Realtime), without account id");
 
 // 4. The live map counts it.
 const after = await db.from("zone_status").select("powered_reports").eq("zone_id", zone).single();
@@ -99,6 +114,11 @@ const created = await host.rpc("create_offer", {
 });
 assert.ifError(created.error);
 const offerId = created.data;
+const mine = await host.rpc("my_offers").select("id");
+assert.ifError(mine.error);
+assert.ok(mine.data.some((row) => row.id === offerId), "the host finds their offer (my_offers)");
+const notMine = await neighbour.rpc("my_offers").select("id");
+assert.ok(!notMine.data?.some((row) => row.id === offerId), "but it is not the neighbour's");
 const found = await neighbour.rpc("energy_options", { origin_zone: "osu" });
 assert.ifError(found.error);
 assert.ok(found.data.some((row) => row.id === offerId && row.places_left === 1), "the offer is found nearby");
@@ -118,6 +138,13 @@ assert.ifError((await host.from("offers").update({ status: "closed" }).eq("id", 
 // The test offer stays closed on the project, titled "[test] Recharge": hosts cannot delete
 // offers (by design). To remove them: delete from public.offers where title like '[test]%';
 step("sharing: offer, search, request, notification, acceptance, private place, end");
+
+// 7. Nobody reads who hosts an offer or who reported, even signed in (migration 13).
+const hostOfOffers = await neighbour.from("offers").select("host_id").limit(1);
+assert.ok(hostOfOffers.error, "host_id of offers must not be readable");
+const reporter = await neighbour.from("outage_reports").select("user_id").limit(1);
+assert.ok(reporter.error, "user_id of reports must not be readable");
+step("account ids of hosts and reporters not readable");
 await neighbour.auth.signOut();
 
 await db.auth.signOut();

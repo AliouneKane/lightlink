@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
 import { cliCommand, deleteSql, insertSql, scenario } from "./demo-data.mjs";
+import { loadSql } from "./test-load.mjs";
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 
@@ -27,16 +28,16 @@ await db.exec(`
     select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
   $$;
   create publication supabase_realtime;
+  grant usage on schema public, auth to anon, authenticated;
+  grant execute on all functions in schema auth to anon, authenticated;
+  -- Supabase grants its API roles access to every new table and function, when it is
+  -- created; row level security then decides. A migration can take a right back (revoke).
+  alter default privileges in schema public grant select, insert, update, delete on tables to anon, authenticated;
+  alter default privileges in schema public grant execute on functions to anon, authenticated;
 `);
 for (const file of [...migrations, join(root, "seed.sql")]) {
   await db.exec(readFileSync(file, "utf8"));
 }
-// Supabase grants table access to its API roles; row level security then decides.
-await db.exec(`
-  grant usage on schema public, auth to anon, authenticated;
-  grant select, insert, update, delete on all tables in schema public to anon, authenticated;
-  grant execute on all functions in schema public, auth to anon, authenticated;
-`);
 
 const user = (n) => `00000000-0000-0000-0000-0000000000${String(n).padStart(2, "0")}`;
 for (let n = 1; n <= 40; n++) {
@@ -139,7 +140,8 @@ await rejects(
   as(12, (tx) => tx.query("insert into public.zone_groups values ('osu', 'A', false, 'x', '2026-01-01', '2026-01-02')")),
   "user writing load-shedding groups",
 );
-const otherReports = await as(12, (tx) => tx.query(`update public.outage_reports set kind = 'powered' where user_id = '${user(1)}'`));
+// Reports of user 1 (Madina); since migration 13 nobody can even filter on user_id.
+const otherReports = await as(12, (tx) => tx.query("update public.outage_reports set kind = 'powered' where zone_id = 'madina'"));
 assert.equal(otherReports.affectedRows, 0, "user changed another user's reports");
 const otherProfile = await as(12, (tx) => tx.query(`update public.profiles set display_name = 'x' where id = '${user(1)}'`));
 assert.equal(otherProfile.affectedRows, 0, "user changed another user's profile");
@@ -479,5 +481,98 @@ await db.exec("delete from public.outage_reports where zone_id = 'dansoman'");
 for (const n of [1, 2, 3]) await report(n, "dansoman", "outage", now);
 assert.equal((await inbox(38, "outage_in_zone")).length, 1, "the profile's neighbourhood is followed");
 
+// --- PAN's review of #10: the load test deletes only the rows of its own run ------------------
+const real = await db.query(
+  "insert into public.outage_reports (user_id, zone_id, kind, description) values ($1, 'osu', 'outage', '[SIMULÉ] test de charge') returning id",
+  [user(39)],
+);
+const realId = real.rows[0].id;
+await db.query("insert into public.abuse_reports (reporter_id, report_id, reason) values ($1, $2, 'texte trompeur')", [user(40), realId]);
+const load = (await db.exec(loadSql)).at(-1).rows[0];
+assert.equal(Number(load.left_over), 0, "the load test removes its 100 rows");
+const kept = await db.query("select count(*)::int as n from public.outage_reports where id = $1", [realId]);
+assert.equal(kept.rows[0].n, 1, "a real report with the same text survives the load test");
+const moderation = await db.query("select count(*)::int as n from public.abuse_reports where report_id = $1", [realId]);
+assert.equal(moderation.rows[0].n, 1, "and so does its moderation");
+const loadRows = await db.query("select count(*)::int as n from public.outage_reports where description = '[SIMULÉ] test de charge'");
+assert.equal(loadRows.rows[0].n, 1, "only the real report is left");
+
+// --- PAN's review of #10: server time and positions not kept ---------------------------------
+// 1. A user cannot escape the rate limit with a created_at in the past.
+const backdated = (tx) =>
+  tx.query("insert into public.outage_reports (zone_id, kind, created_at) values ('osu', 'outage', '2026-01-01T00:00Z') returning created_at");
+const serverTime = await as(13, backdated);
+assert.ok(Date.now() - new Date(serverTime.rows[0].created_at).getTime() < 60_000, "created_at is the server's time");
+for (let i = 0; i < 4; i++) await as(13, backdated);
+await rejects(as(13, backdated), "sixth backdated report in 10 minutes");
+// 2. A position is checked, then not kept: nobody can read it back, not even anonymously.
+await as(14, (tx) =>
+  tx.query("insert into public.outage_reports (zone_id, kind, lat, lng) values ('madina', 'outage', 5.672, -0.166)"),
+);
+await rejects(
+  as(14, (tx) => tx.query("insert into public.outage_reports (zone_id, kind, lat, lng) values ('madina', 'outage', 5.556, -0.182)")),
+  "Osu position for Madina, still refused",
+);
+const positions = await as(null, (tx) =>
+  tx.query("select count(*)::int as n from public.outage_reports where lat is not null or lng is not null"),
+);
+assert.equal(positions.rows[0].n, 0, "no report position is readable");
+
+// --- Account ids hidden from the public API (migration 13) ------------------------------------
+for (const n of [41, 42, 43]) await db.query("insert into auth.users (id) values ($1)", [user(n)]);
+const host41 = await offer(41, "labone", { title: "Offre de 41" });
+await as(42, (tx) => tx.query("insert into public.outage_reports (zone_id, kind) values ('labone', 'outage')"));
+// 1. Nobody, with or without an account, reads who hosts an offer or who reported.
+for (const who of [null, 43]) {
+  await rejects(as(who, (tx) => tx.query("select host_id from public.offers")), "reading host_id");
+  await rejects(as(who, (tx) => tx.query("select user_id from public.outage_reports")), "reading user_id");
+  await rejects(as(who, (tx) => tx.query("select * from public.outage_reports")), "select * on reports");
+  await rejects(as(who, (tx) => tx.query(`select id from public.outage_reports where user_id = '${user(42)}'`)), "filtering reports by account");
+}
+// 2. What the apps read still works.
+// Same columns as offerColumns in shared/sharing.ts.
+const columns = "id, host_name, zone_id, title, source, capacity, price, slots, description, status, ends_at";
+assert.equal((await as(null, (tx) => tx.query(`select ${columns} from public.offers where id = $1`, [host41]))).rows.length, 1);
+assert.ok((await as(null, (tx) => tx.query("select zone_id, kind, created_at from public.outage_reports"))).rows.length > 0);
+assert.ok((await as(null, (tx) => tx.query("select * from public.zone_status"))).rows.length > 0, "map state");
+assert.ok((await as(null, (tx) => tx.query("select * from public.announcement_outcomes"))).rows.length > 0, "announcement answers");
+// 3. A host still finds, suspends and reopens their offers; others do not see them as theirs.
+const mine41 = await as(41, (tx) => tx.query("select id from public.my_offers()"));
+assert.deepEqual(mine41.rows.map((row) => row.id), [host41]);
+assert.equal((await as(43, (tx) => tx.query("select id from public.my_offers()"))).rows.length, 0);
+await rejects(as(null, (tx) => tx.query("select id from public.my_offers()")), "my_offers without a session");
+const suspended = await as(41, (tx) => tx.query("update public.offers set status = 'closed' where id = $1", [host41]));
+assert.equal(suspended.affectedRows, 1, "the host suspends their offer");
+const hijack = await as(43, (tx) => tx.query("update public.offers set status = 'available' where id = $1", [host41]));
+assert.equal(hijack.affectedRows, 0, "another resident cannot reopen it");
+await as(41, (tx) => tx.query("update public.offers set status = 'available' where id = $1", [host41]));
+// 4. Requests: own offer refused, the host sees the request, the requester too, a third resident not.
+await rejects(request(41, host41), "requesting one's own offer");
+const asked = await request(43, host41);
+for (const [who, n] of [[41, 1], [43, 1], [42, 0]]) {
+  const seen = await as(who, (tx) => tx.query("select id from public.offer_requests where id = $1", [asked]));
+  assert.equal(seen.rows.length, n, `request visible to user ${who}: ${n}`);
+}
+
+// 5. Realtime (installed realtime.apply_rls, read on the hosted project): it checks a new row
+// with `select exists(select 1 from <table> where <primary key> = ...)` as the subscriber's
+// role, answers 401 only if the primary key is unreadable, and sends only the columns for
+// which has_column_privilege(role, column, 'SELECT') is true. Same steps here.
+const reportForRealtime = (await db.query("select id from public.outage_reports where user_id = $1 limit 1", [user(42)])).rows[0].id;
+for (const role of ["anon", "authenticated"]) {
+  const visible = await as(role === "anon" ? null : 43, (tx) =>
+    tx.query("select exists(select 1 from public.outage_reports where id = $1) as ok", [reportForRealtime]),
+  );
+  assert.equal(visible.rows[0].ok, true, `Realtime still delivers new reports to ${role}`);
+  const sent = await db.query(
+    `select array_agg(attname::text order by attnum) as cols from pg_attribute
+     where attrelid = 'public.outage_reports'::regclass and attnum > 0 and not attisdropped
+       and has_column_privilege($1, 'public.outage_reports', attname, 'SELECT')`,
+    [role],
+  );
+  assert.ok(sent.rows[0].cols.includes("id") && sent.rows[0].cols.includes("zone_id"), `${role}: id and zone sent`);
+  assert.ok(!sent.rows[0].cols.includes("user_id"), `${role}: Realtime does not send user_id`);
+}
+
 await db.close();
-console.log(`OK: ${migrations.length} migrations + seed; positions, rate limit, row level security, zone state, planned or surprise, outcomes, groups, idempotent import, forecasts, offline reports, simulated demo, energy sharing, notifications, review of #9`);
+console.log(`OK: ${migrations.length} migrations + seed; positions, rate limit, row level security, zone state, planned or surprise, outcomes, groups, idempotent import, forecasts, offline reports, simulated demo, energy sharing, notifications, review of #9, load test cleanup, server time, positions not kept, account ids hidden (API and Realtime)`);

@@ -106,6 +106,13 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
   const zone =
     neighborhoods.find((item) => item.id === zoneId) ?? neighborhoods[0];
   const forecast = getForecast(zone.id, livePredictions);
+  // Task 105: the colour follows the confidence level, never green when it is low.
+  const confidenceColor =
+    forecast.confidenceLevel === "forte"
+      ? colors.green
+      : forecast.confidenceLevel === "moyenne"
+        ? colors.amber
+        : colors.muted;
 
   function openEcg() {
     setLinkError(null);
@@ -173,7 +180,7 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
             {forecast.windowEnd}
           </Txt>
           <Txt size={12} weight="medium" style={{ color: "#34442d" }}>
-            {forecast.headline} · {forecast.dayLabel}
+            {forecast.summary}
           </Txt>
         </View>
         <View style={styles.metrics}>
@@ -195,16 +202,16 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
             <View style={styles.row}>
               <ShieldCheck size={14} color={colors.muted} />
               <Txt size={11} tone="muted">
-                Confiance
+                Confiance {forecast.confidenceLevel}
               </Txt>
             </View>
             <Txt
               size={24}
               weight="extrabold"
-              style={[styles.metricValue, { color: colors.green }]}
+              style={[styles.metricValue, { color: confidenceColor }]}
             >
               {forecast.confidence}
-              <Txt size={16} weight="bold" style={{ color: colors.green }}>
+              <Txt size={16} weight="bold" style={{ color: confidenceColor }}>
                 {" "}
                 %
               </Txt>
@@ -237,7 +244,7 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
           </View>
           <View style={styles.flex}>
             <Txt size={17} weight="extrabold">
-              {forecast.headline}.
+              {forecast.summary}.
             </Txt>
             <Txt size={11} tone="muted">
               Votre quartier · {zone.name}

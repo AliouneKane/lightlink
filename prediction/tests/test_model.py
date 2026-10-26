@@ -298,6 +298,19 @@ class ManualEntry(unittest.TestCase):
                 self.assertRegex(row[key], r"^([01]\d|2[0-3]):[0-5]\d$")
 
 
+class Speed(unittest.TestCase):
+    """Tâche 122: les prévisions du jour sont calculées en moins de 2 secondes."""
+
+    def test_all_forecasts_under_two_seconds(self):
+        import time
+
+        start = time.perf_counter()
+        predictions, _ = m.predict_all(date(2026, 10, 28))
+        elapsed = time.perf_counter() - start
+        self.assertEqual(len(predictions), 10)
+        self.assertLess(elapsed, 2.0, f"{elapsed:.2f} s")
+
+
 class Sql(unittest.TestCase):
     def test_sql_is_utc_idempotent_and_transactional(self):
         preds, window = m.predict_all(date(2026, 10, 16))
