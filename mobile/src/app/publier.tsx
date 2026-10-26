@@ -90,7 +90,7 @@ function parseDraft(value: unknown): OfferDraft | null {
 }
 
 export default function Publish() {
-  const { state, ready, createOffer } = useDemo();
+  const { state, ready, createOffer, liveEnabled } = useDemo();
   const { colors } = useTheme();
   const reducedMotion = useReducedMotion();
   const draft = useFormDraft<OfferDraft>(
@@ -109,6 +109,7 @@ export default function Publish() {
   );
   const value = draft.value;
   const [errors, setErrors] = useState<Errors>({});
+  const [submitting, setSubmitting] = useState(false);
   const [discarding, setDiscarding] = useState(false);
   const [detailsExpanded, setDetailsExpanded] = useState<boolean | null>(null);
   const expanded = detailsExpanded ?? value.description.length > 0;
@@ -161,7 +162,8 @@ export default function Publish() {
     requestAnimationFrame(() => refs[key].current?.focus());
   }
 
-  function submit() {
+  async function submit() {
+    if (submitting) return;
     const nextErrors: Errors = {};
     if (value.title.trim().length < 3)
       nextErrors.title = "Donnez un titre d’au moins 3 caractères.";
@@ -192,7 +194,9 @@ export default function Publish() {
       return;
     }
     Keyboard.dismiss();
-    const result = createOffer({
+    // The confirmation and the cleared draft wait for the database (PAN's review of #9).
+    setSubmitting(true);
+    const result = await createOffer({
       title: value.title,
       neighborhoodId: value.zone,
       source: value.source,
@@ -202,6 +206,7 @@ export default function Publish() {
       until: value.until,
       description: value.description,
     });
+    setSubmitting(false);
     if (result) {
       setErrors({ general: result });
       return;
@@ -334,13 +339,18 @@ export default function Publish() {
             </Txt>
           )}
           <Button
-            label="Publier mon offre locale"
+            label={
+              liveEnabled ? "Publier mon offre" : "Publier mon offre locale"
+            }
             icon={Plus}
             onPress={submit}
+            loading={submitting}
             disabled={!ready || !draft.ready}
           />
           <Txt size={11} tone="muted" style={styles.centerText}>
-            Publication locale · aucun paiement.
+            {liveEnabled
+              ? "Visible par les voisins · aucun paiement."
+              : "Publication locale · aucun paiement."}
           </Txt>
         </View>
       }

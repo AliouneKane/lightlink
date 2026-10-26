@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   isRetryable,
   liveErrorMessage,
@@ -9,6 +9,15 @@ import {
   type EcgScheduleRow,
   type EnergyStatus,
   type ZoneStatusRow,
+  emptySharing,
+  loadNotifications,
+  loadSharing,
+  markNotificationsRead,
+  syncProfileZone,
+  createLatestGate,
+  openSession,
+  type Notification,
+  type SharingData,
 } from "./energy";
 import {
   predictionColumns,
@@ -38,11 +47,12 @@ function supabase(): SupabaseClient | null {
  * Reporting must take two taps: a resident without an account gets an anonymous session,
  * which the database treats as a signed-in user (one user id, same rate limit).
  */
+/** The neighbourhood of this browser's profile, written to a session when it opens. */
+let homeZone: string | null = null;
+
 async function ensureSession(db: SupabaseClient): Promise<string | null> {
-  const { data } = await db.auth.getSession();
-  if (data.session) return null;
-  const { error } = await db.auth.signInAnonymously();
-  return error ? liveErrorMessage(error) : null;
+  const { error } = await openSession(db, homeZone);
+  return error ? liveErrorMessage({ message: error }) : null;
 }
 
 export interface LiveReport {
@@ -203,4 +213,98 @@ export function useLiveData() {
   }, [refresh]);
 
   return { state, zones, schedules, predictions, refresh };
+}
+
+/**
+ * Phase 3, live mode: offers and requests around the resident's neighbourhood, the
+ * requests on their own offers, and their notification inbox. `run` performs a sharing
+ * action, shows its error if any, then reloads.
+ */
+export function useLiveSharing(zoneId: string) {
+  const [data, setData] = useState<SharingData>(emptySharing);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  // Which session and neighbourhood the profile was last synced for (point 7 of #9).
+  const synced = useRef<string | null>(null);
+  // Reads started under a previous account are dropped when they answer (review of #9).
+  const [gate] = useState(createLatestGate);
+  useEffect(() => {
+    homeZone = zoneId;
+  }, [zoneId]);
+
+  const refresh = useCallback(async () => {
+    const ticket = gate.take();
+    // Reading needs no account: a session is only opened when the resident acts.
+    const db = supabase();
+    if (!db) return;
+    const { data: session } = await db.auth.getSession();
+    const me = session.session?.user.id;
+    if (me && synced.current !== `${me}:${zoneId}`) {
+      // Alerts follow the profile's neighbourhood, anonymous sessions included.
+      // Marked only once written, so a refused update is retried on the next refresh.
+      const failed = await syncProfileZone(db, zoneId).catch(() => "réseau");
+      if (!failed) synced.current = `${me}:${zoneId}`;
+    }
+    const [sharing, inbox] = await Promise.all([
+      loadSharing(db, zoneId).catch(() => null),
+      loadNotifications(db).catch(() => []),
+    ]);
+    if (!gate.isCurrent(ticket)) return; // the account changed meanwhile
+    if (sharing) setData(sharing);
+    setNotifications(inbox);
+  }, [zoneId, gate]);
+
+  useEffect(() => {
+    if (!liveEnabled) return;
+    const first = setTimeout(() => void refresh(), 0);
+    const minute = setInterval(() => void refresh(), 60_000);
+    // Point 3 of #9: another account must never see the previous one's requests or
+    // private addresses, even for a moment. Clear, then reload for the new session.
+    const db = supabase();
+    let currentUser: string | null | undefined;
+    const subscription = db?.auth.onAuthStateChange((_event, session) => {
+      const next = session?.user.id ?? null;
+      if (currentUser !== undefined && next !== currentUser) {
+        gate.invalidate();
+        setData(emptySharing);
+        setNotifications([]);
+        setNotice(null);
+        synced.current = null;
+        void refresh();
+      }
+      currentUser = next;
+    });
+    return () => {
+      clearTimeout(first);
+      clearInterval(minute);
+      subscription?.data.subscription.unsubscribe();
+    };
+  }, [refresh, gate]);
+
+  const run = useCallback(
+    async (action: (db: SupabaseClient) => Promise<string | null>) => {
+      const db = supabase();
+      if (!db) return "Mode démo : action non envoyée.";
+      const sessionError = await ensureSession(db).catch(
+        () => "Pas de connexion. Réessayez quand le réseau revient.",
+      );
+      const error =
+        sessionError ??
+        (await action(db).catch(() => "L’action n’a pas pu aboutir."));
+      setNotice(error);
+      await refresh();
+      return error;
+    },
+    [refresh],
+  );
+
+  const markRead = useCallback(async () => {
+    const db = supabase();
+    if (!db) return;
+    await markNotificationsRead(db).catch(() => undefined);
+    await refresh();
+  }, [refresh]);
+
+  return { data, notifications, notice, run, markRead };
 }

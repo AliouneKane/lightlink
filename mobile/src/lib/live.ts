@@ -4,6 +4,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
   isRetryable,
   liveErrorMessage,
+  openSession,
   reportRow,
   type EcgScheduleRow,
   type ZoneStatusRow,
@@ -37,13 +38,42 @@ function supabase(): SupabaseClient | null {
 }
 
 /** Two taps, no account: an anonymous session is a signed-in user for the database. */
+/** The neighbourhood of the phone's profile, written to a session when it opens. */
+let homeZone: string | null = null;
+export function setHomeZone(zoneId: string) {
+  homeZone = zoneId;
+}
+
+// A first report opens the session and saves the profile's neighbourhood at once, so the
+// resident receives that neighbourhood's alerts (PAN's review of #9).
 async function ensureSession(db: SupabaseClient): Promise<SendResult | null> {
-  const { data } = await db.auth.getSession();
-  if (data.session) return null;
-  const { error } = await db.auth.signInAnonymously();
+  const { error } = await openSession(db, homeZone);
   return error
-    ? { ok: false, retry: isRetryable(error), message: liveErrorMessage(error) }
+    ? {
+        ok: false,
+        retry: isRetryable({ message: error }),
+        message: liveErrorMessage({ message: error }),
+      }
     : null;
+}
+
+/** The client without opening a session: enough to read public data. */
+export function liveDb(): SupabaseClient | null {
+  return supabase();
+}
+
+/**
+ * The client with a session (anonymous if needed), for energy sharing and notifications.
+ * Null in demo mode or when no session can be opened.
+ */
+export async function sessionDb(): Promise<SupabaseClient | null> {
+  const db = supabase();
+  if (!db) return null;
+  try {
+    return (await ensureSession(db)) ? null : db;
+  } catch {
+    return null;
+  }
 }
 
 export async function sendLiveReport(

@@ -38,6 +38,8 @@ export interface EnergyOffer {
   slots: number;
   until: string;
   description: string;
+  /** Live mode: the signed-in resident hosts this offer. */
+  own?: boolean;
 }
 
 export interface CommunityReport {
@@ -49,10 +51,17 @@ export interface CommunityReport {
   description: string;
 }
 
+export type RequestStatus =
+  "pending" | "accepted" | "refused" | "cancelled" | "finished";
+
 export interface Booking {
   id: string;
   offerId: string;
   createdAt: string;
+  /** Live mode only; a demo request is simply "sent". */
+  status?: RequestStatus;
+  /** Exact place, shown once the host accepted (live mode, task 89). */
+  address?: string;
 }
 
 export interface DemoState {

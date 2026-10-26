@@ -26,7 +26,7 @@ import {
 } from "@/components/ui";
 import { useDemo } from "@/providers/demo-provider";
 import { useTheme } from "@/providers/theme-provider";
-import { distanceKm, neighborhoods } from "@/lib/energy";
+import { distanceKm, neighborhoods, requestStatusLabels } from "@/lib/energy";
 import { isOwnedOffer } from "@/lib/demo-repository";
 import { sourceMeta } from "@/lib/theme";
 
@@ -35,8 +35,18 @@ export default function OfferDetail() {
   return <OfferContent key={id} id={id} zone={zone} />;
 }
 function OfferContent({ id, zone }: { id: string; zone?: string }) {
-  const { state, ready, requestOffer, cancelRequest, setOfferAvailability } =
-    useDemo();
+  const {
+    state,
+    ready,
+    requestOffer,
+    cancelRequest,
+    setOfferAvailability,
+    liveEnabled,
+    incomingRequests,
+    answerRequest,
+    reportAbuse,
+  } = useDemo();
+  const [abuseOpen, setAbuseOpen] = useState(false);
   const { colors } = useTheme();
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -64,15 +74,25 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
     (item) => item.id === offer.neighborhoodId,
   )!;
   const distance = distanceKm(origin.lat, origin.lng, offer.lat, offer.lng);
-  const own = isOwnedOffer(offer.id);
+  const own = Boolean(offer.own) || isOwnedOffer(offer.id);
+  // Live mode: a finished, refused or cancelled request no longer blocks a new one.
+  const activeBooking =
+    booking &&
+    (!booking.status || ["pending", "accepted"].includes(booking.status))
+      ? booking
+      : undefined;
+  const requestsHere = incomingRequests.filter(
+    (item) => item.offerId === offer.id,
+  );
   const available = offer.available && offer.slots > 0;
 
-  function act() {
+  // Waits for the database before confirming anything (PAN's review of #9, point 1).
+  async function act() {
     setError(null);
     setMessage(null);
     if (!offer) return;
     if (own) {
-      const result = setOfferAvailability(offer.id, !offer.available);
+      const result = await setOfferAvailability(offer.id, !offer.available);
       setError(result);
       if (!result)
         setMessage(
@@ -80,11 +100,17 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
             ? "Offre suspendue. Retrouvez-la dans Mes offres."
             : "Offre réactivée dans les offres locales.",
         );
-    } else if (booking) {
-      cancelRequest(booking.id);
-      setMessage("Demande simulée annulée.");
+    } else if (activeBooking) {
+      const result = await cancelRequest(activeBooking.id);
+      setError(result);
+      if (!result)
+        setMessage(
+          liveEnabled ? "Demande annulée." : "Demande simulée annulée.",
+        );
     } else {
-      setError(requestOffer(offer.id));
+      const result = await requestOffer(offer.id);
+      setError(result);
+      if (!result && liveEnabled) setMessage("Demande envoyée à l’hôte.");
     }
   }
 
@@ -108,8 +134,10 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
                 ? offer.available
                   ? "Votre offre est visible"
                   : "Votre offre est suspendue"
-                : booking
-                  ? "Demande locale en attente"
+                : activeBooking
+                  ? liveEnabled && activeBooking.status
+                    ? requestStatusLabels[activeBooking.status]
+                    : "Demande locale en attente"
                   : "Contribution conseillée"}
             </Txt>
           </View>
@@ -129,10 +157,12 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
                 ? offer.available
                   ? "Suspendre mon offre"
                   : "Réactiver mon offre"
-                : booking
+                : activeBooking
                   ? "Annuler ma demande"
                   : available
-                    ? "Simuler une demande"
+                    ? liveEnabled
+                      ? "Demander une place"
+                      : "Simuler une demande"
                     : "Offre indisponible"
             }
             icon={
@@ -140,14 +170,16 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
                 ? offer.available
                   ? Pause
                   : Play
-                : booking
+                : activeBooking
                   ? undefined
                   : ArrowUpRight
             }
             variant={
-              booking || (own && offer.available) ? "secondary" : "primary"
+              activeBooking || (own && offer.available)
+                ? "secondary"
+                : "primary"
             }
-            disabled={!ready || (!own && !booking && !available)}
+            disabled={!ready || (!own && !activeBooking && !available)}
             onPress={act}
           />
         </View>
@@ -186,7 +218,11 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
           <View style={styles.heroBadge}>
             <ShieldCheck size={12} color="#facb4c" />
             <Txt size={10} weight="bold" style={{ color: "#fff" }}>
-              {own ? "VOTRE OFFRE LOCALE" : "ENTRE VOISINS"}
+              {own
+                ? liveEnabled
+                  ? "VOTRE OFFRE"
+                  : "VOTRE OFFRE LOCALE"
+                : "ENTRE VOISINS"}
             </Txt>
           </View>
         </View>
@@ -230,13 +266,124 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
           style={{ color: available ? colors.green : colors.amber }}
         >
           {available
-            ? "Disponible dans ce scénario"
+            ? liveEnabled
+              ? "Disponible"
+              : "Disponible dans ce scénario"
             : own
               ? "Offre suspendue"
               : "Actuellement indisponible"}
         </Txt>
       </View>
-      {booking && (
+      {booking && liveEnabled && booking.status && (
+        <Card>
+          <View style={styles.statusRow}>
+            <CheckCircle2 size={20} color={colors.green} />
+            <Txt weight="bold" style={{ color: colors.green, flex: 1 }}>
+              Votre demande :{" "}
+              {requestStatusLabels[booking.status].toLowerCase()}
+            </Txt>
+          </View>
+          <Txt size={12} tone="muted">
+            {booking.status === "accepted" || booking.status === "finished"
+              ? booking.address
+                ? `Adresse donnée par l’hôte : ${booking.address}`
+                : "L’hôte n’a pas indiqué d’adresse précise : contactez-le dans le quartier."
+              : booking.status === "pending"
+                ? "L’hôte a été prévenu. L’adresse exacte s’affichera s’il accepte."
+                : "Cette demande est close."}
+          </Txt>
+          {booking.status === "accepted" && (
+            <Button
+              label="Terminer : j’ai eu mon énergie"
+              variant="secondary"
+              onPress={() => answerRequest(booking.id, "finished")}
+            />
+          )}
+        </Card>
+      )}
+      {own && liveEnabled && (
+        <Card>
+          <Txt weight="bold">Demandes reçues ({requestsHere.length})</Txt>
+          {requestsHere.length === 0 && (
+            <Txt size={12} tone="muted">
+              Aucune demande pour le moment. Vous serez prévenu dès qu’un voisin
+              en fait une.
+            </Txt>
+          )}
+          {requestsHere.map((item) => (
+            <View key={item.id} style={styles.requestRow}>
+              <Txt size={12} style={{ flex: 1 }}>
+                {new Date(item.createdAt).toLocaleTimeString("fr-FR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  timeZone: "Africa/Accra",
+                })}{" "}
+                · {requestStatusLabels[item.status]}
+                {item.message ? ` · « ${item.message} »` : ""}
+              </Txt>
+              {item.status === "pending" && (
+                <>
+                  <Button
+                    label="Accepter"
+                    onPress={() => answerRequest(item.id, "accepted")}
+                  />
+                  <Button
+                    label="Refuser"
+                    variant="secondary"
+                    onPress={() => answerRequest(item.id, "refused")}
+                  />
+                </>
+              )}
+              {item.status === "accepted" && (
+                <Button
+                  label="Terminer"
+                  variant="secondary"
+                  onPress={() => answerRequest(item.id, "finished")}
+                />
+              )}
+            </View>
+          ))}
+        </Card>
+      )}
+      {!own && liveEnabled && (
+        <Card>
+          {abuseOpen ? (
+            <>
+              <Txt weight="bold">Quel est le problème ?</Txt>
+              {[
+                "Prix abusif",
+                "Offre trompeuse ou fausse",
+                "Comportement inapproprié",
+              ].map((reason) => (
+                <Button
+                  key={reason}
+                  label={reason}
+                  variant="secondary"
+                  onPress={() => {
+                    reportAbuse(offer.id, reason);
+                    setAbuseOpen(false);
+                    setMessage(
+                      "Merci, l’équipe LightLink va examiner cette offre.",
+                    );
+                  }}
+                />
+              ))}
+              <Button
+                label="Annuler"
+                variant="ghost"
+                onPress={() => setAbuseOpen(false)}
+              />
+            </>
+          ) : (
+            <Button
+              label="Signaler cette offre"
+              variant="ghost"
+              onPress={() => setAbuseOpen(true)}
+            />
+          )}
+        </Card>
+      )}
+      {booking && !liveEnabled && (
         <Card>
           <View style={styles.statusRow}>
             <CheckCircle2 size={20} color={colors.green} />
@@ -275,7 +422,9 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
             <Txt size={11} tone="muted">
               {own
                 ? "Votre contribution au quartier"
-                : "Votre voisin dans ce scénario"}
+                : liveEnabled
+                  ? "Votre voisin"
+                  : "Votre voisin dans ce scénario"}
             </Txt>
           </View>
           <View style={[styles.hostBadge, { backgroundColor: colors.soft }]}>
@@ -351,6 +500,13 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
 }
 
 const styles = StyleSheet.create({
+  requestRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 6,
+  },
   hero: {
     minHeight: 320,
     borderRadius: 28,

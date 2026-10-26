@@ -72,6 +72,7 @@ export default function ProfileScreen() {
     cancelRequest,
     setOfferAvailability,
     reset,
+    liveEnabled,
   } = useDemo();
   const [name, setName] = useState(state.profile.name);
   const [zoneId, setZoneId] = useState(state.profile.neighborhoodId);
@@ -119,7 +120,9 @@ export default function ProfileScreen() {
   const changed =
     name.trim() !== state.profile.name ||
     zoneId !== state.profile.neighborhoodId;
-  const ownedOffers = state.offers.filter((offer) => isOwnedOffer(offer.id));
+  const ownedOffers = state.offers.filter(
+    (offer) => offer.own || isOwnedOffer(offer.id),
+  );
   const contributions = state.reports.filter((report) =>
     report.id.startsWith("mobile-report-"),
   ).length;
@@ -532,9 +535,15 @@ export default function ProfileScreen() {
                       label="Annuler cette demande"
                       icon={X}
                       variant="ghost"
-                      onPress={() => {
-                        cancelRequest(booking.id);
-                        setRequestMessage("Demande simulée annulée.");
+                      onPress={async () => {
+                        // Waits for the database before saying it is done (PAN's review of #9).
+                        const error = await cancelRequest(booking.id);
+                        setRequestMessage(
+                          error ??
+                            (liveEnabled
+                              ? "Demande annulée."
+                              : "Demande simulée annulée."),
+                        );
                       }}
                     />
                   </Card>
@@ -648,8 +657,8 @@ export default function ProfileScreen() {
                     icon={offer.available ? Pause : Play}
                     variant="secondary"
                     disabled={!ready}
-                    onPress={() => {
-                      const result = setOfferAvailability(
+                    onPress={async () => {
+                      const result = await setOfferAvailability(
                         offer.id,
                         !offer.available,
                       );

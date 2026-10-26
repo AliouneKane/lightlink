@@ -58,6 +58,12 @@ import {
   neighborhoods,
   scheduleRowsToAnnouncements,
   withoutLiveData,
+  createLiveOffer,
+  reportLiveAbuse,
+  requestLiveOffer,
+  requestStatusLabels,
+  setLiveOfferOpen,
+  setLiveRequestStatus,
   validateOffer,
   validateReport,
   type EnergyOffer,
@@ -68,6 +74,7 @@ import {
   signIn,
   signUp,
   useLiveData,
+  useLiveSharing,
 } from "@/lib/live";
 import { updateDemoState, useDemoState } from "@/lib/demo-store";
 import { forecastSourceLabel, getForecast } from "../../../shared/forecast";
@@ -102,6 +109,15 @@ export function LightLinkApp({
   const view = pathname === "/" ? "dashboard" : pathname.slice(1);
   const state = useDemoState();
   const live = useLiveData();
+  // Phase 3, live mode: offers and requests come from Supabase, not from this browser.
+  const sharing = useLiveSharing(state.profile.neighborhoodId);
+  const shownOffers = liveEnabled ? sharing.data.offers : state.offers;
+  const shownBookings = liveEnabled ? sharing.data.bookings : state.bookings;
+  /** A request that still holds or may hold a place (demo requests have no status). */
+  const isActiveBooking = (booking: (typeof shownBookings)[number]) =>
+    !booking.status ||
+    booking.status === "pending" ||
+    booking.status === "accepted";
   // Live mode never shows the demo states: before the first read, or if it fails,
   // the zones carry no state and the map says why (PAN's review of #6).
   const zones = live.zones
@@ -140,7 +156,7 @@ export function LightLinkApp({
   const homeZone =
     zones.find((zone) => zone.id === state.profile.neighborhoodId) ?? zones[0];
   const offers = getOffers(
-    state.offers,
+    shownOffers,
     state.profile.neighborhoodId,
     source,
     search,
@@ -304,6 +320,18 @@ export function LightLinkApp({
       setFormError(error);
       return;
     }
+    if (liveEnabled) {
+      const address = String(form.get("address") ?? "").trim();
+      void sharing
+        .run((db) =>
+          createLiveOffer(db, { ...draft, address }, state.profile.name),
+        )
+        .then((failure) =>
+          setToast(failure ?? "Votre offre est publiée dans le quartier."),
+        );
+      setDialog(null);
+      return;
+    }
     const zone = neighborhoods.find(
       (item) => item.id === draft.neighborhoodId,
     )!;
@@ -371,9 +399,23 @@ export function LightLinkApp({
   function requestEnergy(offer: EnergyOffer) {
     if (
       !offer.available ||
-      state.bookings.some((booking) => booking.offerId === offer.id)
+      shownBookings.some(
+        (booking) => isActiveBooking(booking) && booking.offerId === offer.id,
+      )
     )
       return;
+    if (liveEnabled) {
+      void sharing
+        .run((db) => requestLiveOffer(db, offer.id))
+        .then((failure) =>
+          setToast(
+            failure ??
+              "Demande envoyée. L’hôte est prévenu ; l’adresse s’affichera s’il accepte.",
+          ),
+        );
+      setOfferDetail(null);
+      return;
+    }
     save(
       (previous) => ({
         ...previous,
@@ -389,8 +431,8 @@ export function LightLinkApp({
 
   function renderOfferCard(offer: EnergyOffer & { distance?: number }) {
     const Icon = sourceIcons[offer.source];
-    const booked = state.bookings.some(
-      (booking) => booking.offerId === offer.id,
+    const booked = shownBookings.some(
+      (booking) => isActiveBooking(booking) && booking.offerId === offer.id,
     );
     const zone = zones.find((item) => item.id === offer.neighborhoodId);
     return (
@@ -615,10 +657,10 @@ export function LightLinkApp({
         </div>
         <EnergyMap
           neighborhoods={zones}
-          offers={state.offers}
+          offers={shownOffers}
           selectedId={selectedId}
           onSelect={(id) => {
-            const offer = state.offers.find((item) => item.id === id);
+            const offer = shownOffers.find((item) => item.id === id);
             if (offer) setOfferDetail(offer);
             else {
               setSelectedId(id);
@@ -732,19 +774,19 @@ export function LightLinkApp({
       profile={state.profile}
       liveState={live.zones ? "ready" : live.state}
       sourceCounts={{
-        solar: state.offers.filter(
+        solar: shownOffers.filter(
           (offer) => offer.available && offer.source === "solar",
         ).length,
-        generator: state.offers.filter(
+        generator: shownOffers.filter(
           (offer) => offer.available && offer.source === "generator",
         ).length,
-        battery: state.offers.filter(
+        battery: shownOffers.filter(
           (offer) => offer.available && offer.source === "battery",
         ).length,
       }}
       zones={zones}
-      offerCount={state.offers.filter((offer) => offer.available).length}
-      bookingCount={state.bookings.length}
+      offerCount={shownOffers.filter((offer) => offer.available).length}
+      bookingCount={shownBookings.length}
       online={online}
     >
       {view !== "dashboard" && (
@@ -781,7 +823,7 @@ export function LightLinkApp({
               ? null
               : activeOutages
           }
-          offerCount={state.offers.filter((offer) => offer.available).length}
+          offerCount={shownOffers.filter((offer) => offer.available).length}
           reportCount={state.reports.length}
           offers={offers.map((offer) => renderOfferCard(offer))}
           map={renderMapPanel()}
@@ -1093,16 +1135,18 @@ export function LightLinkApp({
               </button>
             </div>
           )}
-          {state.bookings.length > 0 && (
+          {shownBookings.length > 0 && (
             <section className="panel requests-panel">
               <div className="panel-heading">
-                <h2>Mes demandes simulées</h2>
+                <h2>
+                  {liveEnabled ? "Mes demandes" : "Mes demandes simulées"}
+                </h2>
                 <span className="tiny-tag">
-                  {state.bookings.length} DEMANDE(S)
+                  {shownBookings.length} DEMANDE(S)
                 </span>
               </div>
-              {state.bookings.map((booking) => {
-                const offer = state.offers.find(
+              {shownBookings.map((booking) => {
+                const offer = shownOffers.find(
                   (item) => item.id === booking.offerId,
                 );
                 return (
@@ -1113,29 +1157,162 @@ export function LightLinkApp({
                     <div>
                       <strong>{offer?.title ?? "Offre indisponible"}</strong>
                       <span>
-                        En attente d’acceptation · aucun propriétaire contacté
+                        {liveEnabled && booking.status
+                          ? booking.address &&
+                            (booking.status === "accepted" ||
+                              booking.status === "finished")
+                            ? `${requestStatusLabels[booking.status]} · ${booking.address}`
+                            : requestStatusLabels[booking.status]
+                          : "En attente d’acceptation · aucun propriétaire contacté"}
                       </span>
                     </div>
-                    <button
-                      className="text-button"
-                      onClick={() =>
-                        save(
-                          (previous) => ({
-                            ...previous,
-                            bookings: previous.bookings.filter(
-                              (item) => item.id !== booking.id,
-                            ),
-                          }),
-                          "Demande simulée annulée.",
-                        )
-                      }
-                    >
-                      Annuler
-                    </button>
+                    {liveEnabled ? (
+                      isActiveBooking(booking) && (
+                        <>
+                          {booking.status === "accepted" && (
+                            <button
+                              className="text-button"
+                              onClick={() =>
+                                void sharing.run((db) =>
+                                  setLiveRequestStatus(
+                                    db,
+                                    booking.id,
+                                    "finished",
+                                  ),
+                                )
+                              }
+                            >
+                              Terminer
+                            </button>
+                          )}
+                          <button
+                            className="text-button"
+                            onClick={() =>
+                              void sharing.run((db) =>
+                                setLiveRequestStatus(
+                                  db,
+                                  booking.id,
+                                  "cancelled",
+                                ),
+                              )
+                            }
+                          >
+                            Annuler
+                          </button>
+                        </>
+                      )
+                    ) : (
+                      <button
+                        className="text-button"
+                        onClick={() =>
+                          save(
+                            (previous) => ({
+                              ...previous,
+                              bookings: previous.bookings.filter(
+                                (item) => item.id !== booking.id,
+                              ),
+                            }),
+                            "Demande simulée annulée.",
+                          )
+                        }
+                      >
+                        Annuler
+                      </button>
+                    )}
                   </div>
                 );
               })}
             </section>
+          )}
+          {liveEnabled && sharing.data.places.length > 0 && (
+            // Task 91: the whole neighbourhood is cut, the database proposes fixed places.
+            <section className="panel requests-panel">
+              <div className="panel-heading">
+                <h2>Lieux d’énergie un peu plus loin</h2>
+                <span className="tiny-tag">QUARTIER COUPÉ</span>
+              </div>
+              {sharing.data.places.map((place) => (
+                <div className="request-row" key={place.id}>
+                  <span className="stat-icon amber">
+                    <MapPin size={19} />
+                  </span>
+                  <div>
+                    <strong>{place.name}</strong>
+                    <span>
+                      {zones.find((zone) => zone.id === place.zoneId)?.name ??
+                        place.zoneId}{" "}
+                      · {place.distanceKm.toFixed(1)} km
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </section>
+          )}
+          {liveEnabled && sharing.data.incoming.length > 0 && (
+            <section className="panel requests-panel">
+              <div className="panel-heading">
+                <h2>Demandes reçues sur mes offres</h2>
+                <span className="tiny-tag">
+                  {sharing.data.incoming.length} DEMANDE(S)
+                </span>
+              </div>
+              {sharing.data.incoming.map((request) => (
+                <div className="request-row" key={request.id}>
+                  <span className="stat-icon amber">
+                    <HeartHandshake size={19} />
+                  </span>
+                  <div>
+                    <strong>{request.offerTitle}</strong>
+                    <span>
+                      {requestStatusLabels[request.status]} ·{" "}
+                      {formatTime(request.createdAt)}
+                      {request.message ? ` · « ${request.message} »` : ""}
+                    </span>
+                  </div>
+                  {request.status === "pending" && (
+                    <>
+                      <button
+                        className="text-button"
+                        onClick={() =>
+                          void sharing.run((db) =>
+                            setLiveRequestStatus(db, request.id, "accepted"),
+                          )
+                        }
+                      >
+                        Accepter
+                      </button>
+                      <button
+                        className="text-button"
+                        onClick={() =>
+                          void sharing.run((db) =>
+                            setLiveRequestStatus(db, request.id, "refused"),
+                          )
+                        }
+                      >
+                        Refuser
+                      </button>
+                    </>
+                  )}
+                  {request.status === "accepted" && (
+                    <button
+                      className="text-button"
+                      onClick={() =>
+                        void sharing.run((db) =>
+                          setLiveRequestStatus(db, request.id, "finished"),
+                        )
+                      }
+                    >
+                      Terminer
+                    </button>
+                  )}
+                </div>
+              ))}
+            </section>
+          )}
+          {liveEnabled && sharing.notice && (
+            <p role="alert" className="form-error">
+              {sharing.notice}
+            </p>
           )}
         </>
       )}
@@ -1346,7 +1523,9 @@ export function LightLinkApp({
             </label>
             <p className="form-note">
               <ShieldCheck size={15} />
-              Simulation locale : ce signalement ne sera pas envoyé au réseau.
+              {liveEnabled
+                ? "Votre signalement est partagé avec le quartier. Votre position n’est jamais montrée."
+                : "Simulation locale : ce signalement ne sera pas envoyé au réseau."}
             </p>
             {formError && (
               <p className="form-error" role="alert">
@@ -1450,10 +1629,21 @@ export function LightLinkApp({
                 placeholder="Indiquez les conditions d’accueil, sans adresse exacte."
               />
             </label>
+            {liveEnabled && (
+              <label className="field">
+                Adresse précise <span>facultatif, privée</span>
+                <input
+                  name="address"
+                  maxLength={200}
+                  placeholder="Ex. Maison bleue après la pharmacie"
+                />
+              </label>
+            )}
             <p className="form-note">
               <MapPin size={15} />
-              Seul le quartier sera visible. Ne publiez pas votre adresse
-              exacte.
+              {liveEnabled
+                ? "Seul le quartier est public. L’adresse précise n’est montrée qu’aux voisins que vous acceptez."
+                : "Seul le quartier sera visible. Ne publiez pas votre adresse exacte."}
             </p>
             {formError && (
               <p className="form-error" role="alert">
@@ -1505,7 +1695,9 @@ export function LightLinkApp({
             </span>
             <span>
               <Clock3 size={18} />
-              <small>Disponibilité simulée</small>
+              <small>
+                {liveEnabled ? "Disponible" : "Disponibilité simulée"}
+              </small>
               <strong>Jusqu’à {offerDetail.until}</strong>
             </span>
             <span>
@@ -1525,33 +1717,92 @@ export function LightLinkApp({
           </div>
           <p className="form-note">
             <ShieldCheck size={16} />
-            L’adresse exacte sera accessible après acceptation dans la version
-            connectée. Aucun paiement ici.
+            {liveEnabled
+              ? "L’adresse exacte s’affiche dans « Mes demandes » quand l’hôte accepte. Aucun paiement via LightLink."
+              : "L’adresse exacte sera accessible après acceptation dans la version connectée. Aucun paiement ici."}
           </p>
-          <button
-            className="button primary full-width"
-            disabled={
-              !offerDetail.available ||
-              state.bookings.some(
-                (booking) => booking.offerId === offerDetail.id,
-              )
-            }
-            onClick={() => requestEnergy(offerDetail)}
-          >
-            {state.bookings.some(
-              (booking) => booking.offerId === offerDetail.id,
-            ) ? (
-              <>
-                <CheckCheck size={17} />
-                Demande déjà enregistrée
-              </>
-            ) : (
-              <>
-                <ArrowRight size={17} />
-                Simuler une demande d’énergie
-              </>
-            )}
-          </button>
+          {liveEnabled && offerDetail.own ? (
+            <button
+              className="button secondary full-width"
+              onClick={() => {
+                const open = !offerDetail.available;
+                void sharing
+                  .run((db) => setLiveOfferOpen(db, offerDetail.id, open))
+                  .then((failure) =>
+                    setToast(
+                      failure ??
+                        (open ? "Offre réactivée." : "Offre suspendue."),
+                    ),
+                  );
+                setOfferDetail(null);
+              }}
+            >
+              {offerDetail.available
+                ? "Suspendre mon offre"
+                : "Réactiver mon offre"}
+            </button>
+          ) : (
+            <button
+              className="button primary full-width"
+              disabled={
+                !offerDetail.available ||
+                shownBookings.some(
+                  (booking) =>
+                    isActiveBooking(booking) &&
+                    booking.offerId === offerDetail.id,
+                )
+              }
+              onClick={() => requestEnergy(offerDetail)}
+            >
+              {shownBookings.some(
+                (booking) =>
+                  isActiveBooking(booking) &&
+                  booking.offerId === offerDetail.id,
+              ) ? (
+                <>
+                  <CheckCheck size={17} />
+                  Demande déjà enregistrée
+                </>
+              ) : (
+                <>
+                  <ArrowRight size={17} />
+                  {liveEnabled
+                    ? "Demander une place"
+                    : "Simuler une demande d’énergie"}
+                </>
+              )}
+            </button>
+          )}
+          {liveEnabled && !offerDetail.own && (
+            <details className="abuse-report">
+              <summary>Signaler cette offre</summary>
+              {[
+                "Prix abusif",
+                "Offre trompeuse ou fausse",
+                "Comportement inapproprié",
+              ].map((reason) => (
+                <button
+                  key={reason}
+                  type="button"
+                  className="text-button"
+                  onClick={() => {
+                    const offerId = offerDetail.id;
+                    void sharing
+                      .run((db) => reportLiveAbuse(db, offerId, reason))
+                      .then((failure) =>
+                        setToast(
+                          failure ??
+                            "Merci, l’équipe LightLink va examiner cette offre.",
+                        ),
+                      );
+                    setOfferDetail(null);
+                  }}
+                >
+                  {reason}
+                </button>
+              ))}
+            </details>
+          )}
         </Modal>
       )}
 
@@ -1694,7 +1945,9 @@ export function LightLinkApp({
           title="Votre quartier, à l’écoute."
           onClose={() => setDialog(null)}
         >
-          {!state.notificationsEnabled ? (
+          {/* Point 8 of #9: in live mode the inbox is always readable; the demo preference
+              only concerns the demonstration alerts. */}
+          {!liveEnabled && !state.notificationsEnabled ? (
             <div className="empty-state">
               <Bell size={30} />
               <h3>Alertes de démo désactivées</h3>
@@ -1708,36 +1961,76 @@ export function LightLinkApp({
             </div>
           ) : (
             <>
-              <p className="modal-intro">
-                Activité locale de démonstration. Aucune notification push
-                réelle.
-              </p>
-              {state.bookings.map((booking) => (
-                <div className="notification-item" key={booking.id}>
-                  <Clock3 size={20} />
-                  <div>
-                    <strong>Votre demande est enregistrée</strong>
-                    <p>
-                      {
-                        state.offers.find(
-                          (offer) => offer.id === booking.offerId,
-                        )?.title
-                      }{" "}
-                      · en attente simulée
-                    </p>
-                  </div>
-                </div>
-              ))}
-              <div className="notification-item">
-                <Sun size={20} />
-                <div>
-                  <strong>Bienvenue dans LightLink</strong>
-                  <p>
-                    Explorez votre quartier et essayez votre premier
-                    signalement.
+              {liveEnabled ? (
+                <>
+                  <p className="modal-intro">
+                    Vos alertes : coupures dans vos quartiers, rappels ECG,
+                    prévisions et demandes d’énergie.
                   </p>
-                </div>
-              </div>
+                  {sharing.notifications.length === 0 && (
+                    <p className="modal-intro">Aucune alerte pour le moment.</p>
+                  )}
+                  {sharing.notifications.map((item) => (
+                    <div className="notification-item" key={item.id}>
+                      {item.kind === "outage_in_zone" ? (
+                        <ZapOff size={20} />
+                      ) : (
+                        <Clock3 size={20} />
+                      )}
+                      <div>
+                        <strong>
+                          {item.read ? "" : "• "}
+                          {item.title}
+                        </strong>
+                        <p>
+                          {item.body} · {formatTime(item.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  {sharing.notifications.some((item) => !item.read) && (
+                    <button
+                      className="text-button"
+                      onClick={() => void sharing.markRead()}
+                    >
+                      Tout marquer comme lu
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="modal-intro">
+                    Activité locale de démonstration. Aucune notification push
+                    réelle.
+                  </p>
+                  {shownBookings.map((booking) => (
+                    <div className="notification-item" key={booking.id}>
+                      <Clock3 size={20} />
+                      <div>
+                        <strong>Votre demande est enregistrée</strong>
+                        <p>
+                          {
+                            shownOffers.find(
+                              (offer) => offer.id === booking.offerId,
+                            )?.title
+                          }{" "}
+                          · en attente simulée
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="notification-item">
+                    <Sun size={20} />
+                    <div>
+                      <strong>Bienvenue dans LightLink</strong>
+                      <p>
+                        Explorez votre quartier et essayez votre premier
+                        signalement.
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           )}
         </Modal>
