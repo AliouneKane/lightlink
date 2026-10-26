@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
 import { cliCommand, deleteSql, insertSql, scenario } from "./demo-data.mjs";
+import { loadSql } from "./test-load.mjs";
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 
@@ -479,5 +480,42 @@ await db.exec("delete from public.outage_reports where zone_id = 'dansoman'");
 for (const n of [1, 2, 3]) await report(n, "dansoman", "outage", now);
 assert.equal((await inbox(38, "outage_in_zone")).length, 1, "the profile's neighbourhood is followed");
 
+// --- PAN's review of #10: the load test deletes only the rows of its own run ------------------
+const real = await db.query(
+  "insert into public.outage_reports (user_id, zone_id, kind, description) values ($1, 'osu', 'outage', '[SIMULÉ] test de charge') returning id",
+  [user(39)],
+);
+const realId = real.rows[0].id;
+await db.query("insert into public.abuse_reports (reporter_id, report_id, reason) values ($1, $2, 'texte trompeur')", [user(40), realId]);
+const load = (await db.exec(loadSql)).at(-1).rows[0];
+assert.equal(Number(load.left_over), 0, "the load test removes its 100 rows");
+const kept = await db.query("select count(*)::int as n from public.outage_reports where id = $1", [realId]);
+assert.equal(kept.rows[0].n, 1, "a real report with the same text survives the load test");
+const moderation = await db.query("select count(*)::int as n from public.abuse_reports where report_id = $1", [realId]);
+assert.equal(moderation.rows[0].n, 1, "and so does its moderation");
+const loadRows = await db.query("select count(*)::int as n from public.outage_reports where description = '[SIMULÉ] test de charge'");
+assert.equal(loadRows.rows[0].n, 1, "only the real report is left");
+
+// --- PAN's review of #10: server time and positions not kept ---------------------------------
+// 1. A user cannot escape the rate limit with a created_at in the past.
+const backdated = (tx) =>
+  tx.query("insert into public.outage_reports (zone_id, kind, created_at) values ('osu', 'outage', '2026-01-01T00:00Z') returning created_at");
+const serverTime = await as(13, backdated);
+assert.ok(Date.now() - new Date(serverTime.rows[0].created_at).getTime() < 60_000, "created_at is the server's time");
+for (let i = 0; i < 4; i++) await as(13, backdated);
+await rejects(as(13, backdated), "sixth backdated report in 10 minutes");
+// 2. A position is checked, then not kept: nobody can read it back, not even anonymously.
+await as(14, (tx) =>
+  tx.query("insert into public.outage_reports (zone_id, kind, lat, lng) values ('madina', 'outage', 5.672, -0.166)"),
+);
+await rejects(
+  as(14, (tx) => tx.query("insert into public.outage_reports (zone_id, kind, lat, lng) values ('madina', 'outage', 5.556, -0.182)")),
+  "Osu position for Madina, still refused",
+);
+const positions = await as(null, (tx) =>
+  tx.query("select count(*)::int as n from public.outage_reports where lat is not null or lng is not null"),
+);
+assert.equal(positions.rows[0].n, 0, "no report position is readable");
+
 await db.close();
-console.log(`OK: ${migrations.length} migrations + seed; positions, rate limit, row level security, zone state, planned or surprise, outcomes, groups, idempotent import, forecasts, offline reports, simulated demo, energy sharing, notifications, review of #9`);
+console.log(`OK: ${migrations.length} migrations + seed; positions, rate limit, row level security, zone state, planned or surprise, outcomes, groups, idempotent import, forecasts, offline reports, simulated demo, energy sharing, notifications, review of #9, load test cleanup, server time, positions not kept`);

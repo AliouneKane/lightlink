@@ -77,6 +77,15 @@ describe("model forecast", () => {
     ).toBe("Risque faible aujourd’hui (confiance 50 %)");
   });
 
+  it("dates a low-risk demo snapshot instead of saying today (PAN, #10)", () => {
+    const low = row({ probability: 5, confidence: 50, basis: "taux de base" });
+    const summary = toForecast(low, "snapshot").summary;
+    expect(summary).not.toContain("aujourd’hui");
+    expect(summary).toBe(
+      `Risque faible le ${toForecast(low, "snapshot").dayLabel} (confiance 50 %)`,
+    );
+  });
+
   it("says when the risk is low and when no announcement exists", () => {
     const forecast = toForecast(
       row({

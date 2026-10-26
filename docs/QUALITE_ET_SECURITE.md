@@ -13,7 +13,7 @@ Tâches 102, 122 et 129 à 133. Mesures faites le 21 octobre 2026 sur un MacBook
 | Site web en 3G lente, 400 kbit/s et 400 ms de latence (129) | contenu visible en 0,6 s, page complète en 15,6 s | | navigateur avec réseau simulé |
 | Site web en 3G rapide (129) | contenu visible en 0,2 s, page complète en 4,4 s | | idem |
 
-**Limites de ces mesures** : le test de charge envoie les 100 signalements depuis la base elle-même (marqués simulés, puis supprimés) ; il ne simule pas 100 téléphones sur le réseau. Les signalements simulés ne déclenchent pas d'alerte.
+**Limites de ces mesures** : le test de charge envoie les 100 signalements depuis la base elle-même (marqués simulés, puis supprimés par leur identifiant : un vrai signalement portant le même texte n'est jamais touché, vérifié par `test:sql`) ; il ne simule pas 100 téléphones sur le réseau. Les signalements simulés ne déclenchent pas d'alerte.
 
 ## Sans réseau et réseau lent (129)
 
@@ -43,30 +43,33 @@ Le poids de l'APK final n'est pas encore mesuré : il ajoute le moteur natif de 
 
 ## Failles des dépendances (133)
 
-`npm audit` le 21 octobre 2026 :
+`npm audit` relancé le **26 octobre 2026** (le premier passage, du 21 octobre, est dépassé) :
 
 | Projet | Résultat | Dans ce qui est livré ? |
 |---|---|---|
 | Backend | 0 faille | — |
-| Web | 5 alertes « high », toutes dans l'outil de vérification du code (`eslint-config-next`) | **Non** : 0 faille dans les dépendances de production |
-| Mobile | 22 alertes, issues de **3 failles** seulement | Voir ci-dessous |
+| Web | 0 faille | Le 26 octobre au matin, l'audit signalait `next` 16.3.8 comme **critique** dans les dépendances de production. `main` est passé à `next` 16.4.1 (PR Dependabot #14) : l'audit ne signale plus rien. Avant cette mise à jour, nous n'avions pas démontré d'exploitation dans LightLink : le lockfile contenait déjà `sharp` 0.35.5, mesure prévue par l'avis de Next.js sur les images, et le code n'utilise ni `use cache` ni les Server Actions visés par les autres avis |
+| Mobile | 8 alertes, issues de **4 failles** | Voir ci-dessous |
 
-Les 3 failles mobiles :
+Les 4 failles mobiles :
 
 | Paquet | Faille | Où il sert | Décision |
 |---|---|---|---|
-| `braces` 3.0.3 | Blocage par motif de fichiers très imbriqué | Outils de compilation (Metro) sur l'ordinateur du développeur | Pas de version corrigée publiée ; aucun risque pour les habitants |
-| `node-forge` 1.4.0 | Vérification de signature RSA trop permissive | Outil Expo de signature des mises à jour, sur l'ordinateur | Pas de version corrigée publiée ; LightLink n'utilise pas les mises à jour signées |
-| `decode-uri-component` 0.2.2 (modérée) | Blocage par un lien mal encodé | Lecture des liens par `expo-router`, **dans l'app** | Risque faible (un lien piégé ferait au pire planter l'app chez celui qui l'ouvre). La correction exige expo-router 58, donc le SDK Expo 58 : à faire après la soumission. La PR Dependabot #3 propose ce saut de version et casse le contrôle de compatibilité du SDK 57 : **à fermer** |
+| `node-forge` 1.4.0 | Vérification de signature RSA trop permissive | Outil Expo de signature des mises à jour (`@expo/cli`), sur l'ordinateur | Pas de version corrigée publiée ; LightLink n'utilise pas les mises à jour signées |
+| `zod` 3.25 (via `@expo/cli`) | Mémoire épuisée en validant une très grande collection | Outil en ligne de commande d'Expo, sur l'ordinateur ; absent de l'app installée | La correction est dans zod 4.6.6, que le SDK Expo 57 n'utilise pas : à revoir avec le SDK 58, après la soumission |
+| `decode-uri-component` 0.2.2 (modérée, via `query-string`) | Blocage par un lien mal encodé | Lecture des liens par `expo-router`, **dans l'app** | Risque faible (un lien piégé ferait au pire planter l'app chez celui qui l'ouvre). La correction exige expo-router 58, donc le SDK Expo 58 : à faire après la soumission (la PR Dependabot #3, qui imposait ce saut, a été fermée) |
 
-Les « corrections » proposées par `npm audit` (Expo 44, React Native 0.72, Next.js 14) sont des **retours en arrière** de plusieurs années : à ne pas appliquer.
+`braces`, signalé le 21 octobre, n'apparaît plus. Les « corrections » proposées par `npm audit` (Expo 44) sont des **retours en arrière** de plusieurs années : à ne pas appliquer. Nous ne disons donc pas « zéro faille » : le web et le backend n'en ont aucune connue, le mobile en garde une dans l'app (modérée) et deux dans les outils de l'ordinateur.
 
 ## Sécurité et vie privée (102)
 
 Vérifié par `npm run test:sql` avec les vrais rôles de Supabase, et par `npm run test:live` sur le projet hébergé :
 
 - Personne ne signale au nom d'un autre, ni sans session ; 5 signalements au plus en 10 minutes ; une position à plus de 5 km du quartier est refusée.
+- L'heure d'un signalement (`created_at`) est fixée par la base pour les apps : une date antidatée ne permet plus de contourner la limite de 5 signalements (corrigé par la migration du 26 octobre, après la relecture de PAN sur la #10 ; auparavant, ce contournement était possible).
 - Personne ne modifie les données d'un autre (signalements, profils, offres) ; seuls l'import et le script de démo écrivent les horaires, prévisions et signalements simulés.
 - L'adresse exacte d'une offre n'est visible que par l'hôte et les demandeurs acceptés ; les demandes, les profils et les notifications sont privés.
 - Les signalements d'abus ne sont lisibles que par l'équipe.
-- La position GPS d'un signalement n'est jamais montrée aux autres habitants.
+- La position GPS d'un signalement sert seulement à vérifier qu'il vient du quartier, puis **n'est pas conservée** ; les positions enregistrées avant ont été effacées. Auparavant, la table des signalements étant publique, n'importe qui pouvait lire ces coordonnées par l'API, même sans compte : défaut corrigé par la migration du 26 octobre, après la relecture de PAN sur la #10.
+
+**Pas encore vérifié** : la migration du 26 octobre est testée sur une base locale (`test:sql`) ; tant qu'elle n'est pas appliquée au projet hébergé, les deux défauts ci-dessus y restent présents.

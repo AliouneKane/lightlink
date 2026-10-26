@@ -70,7 +70,7 @@ Screenshots were inspected at 1440 px desktop and 390 px mobile widths for dark/
 
 The last CSS adjustment applies `align-items: start` to `community-page-grid` to prevent the activity panel from stretching. The production build and four targeted checks pass after this change: Community accessibility and overflow across all six routes on desktop and mobile. Updated screenshots were inspected. The demonstration scenario deliberately remains dated 4 October, separate from the verification date.
 
-Dependency audit for the dashboard revision: `npm audit --omit=dev` reported zero vulnerabilities. The full audit still reported five high-severity findings in development tooling through `eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch` → `braces`. The automatic suggestion to downgrade to Next.js 14.2.35 using `--force` was not applied. Keep a compatible tooling update in the maintenance backlog; team acceptance remains pending.
+Dependency audit (26 October 2026): `npm audit` reports no vulnerability, development tooling included, since `next` was updated to 16.4.1 (Dependabot PR #14); the earlier audit had flagged `next` 16.3.8 as critical. Details and the mobile findings: [`docs/QUALITE_ET_SECURITE.md`](../docs/QUALITE_ET_SECURITE.md).
 
 Task 46 is not deployed. For a future Vercel deployment with Salam, import the repository, set Root Directory to `web`, select the Next.js preset, and use `npm ci` / `npm run build`. Configure pull-request previews and verify the resulting URL. Add backend environment variables only when their integration is ready; never commit secrets.
 
