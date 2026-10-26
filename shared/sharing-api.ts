@@ -105,9 +105,8 @@ export async function loadSharing(
     const [requests, own] = await Promise.all([
       db.from("offer_requests").select(requestColumns).eq("requester_id", me),
       db
-        .from("offers")
+        .rpc("my_offers")
         .select(offerColumns)
-        .eq("host_id", me)
         // Suspended (closed) offers stay listed so their host can reopen them (point 2).
         .gt("ends_at", new Date().toISOString()),
     ]);
@@ -157,12 +156,13 @@ export async function loadSharing(
     ).length;
   const byId = new Map<string, OfferRow>();
   for (const row of [...rows, ...hosted]) byId.set(row.id, row);
+  const mineIds = new Set(hosted.map((row) => row.id));
   const offers = [...byId.values()].map((row) =>
     offerRowToOffer(
       row,
-      me,
+      mineIds.has(row.id),
       placesLeft.get(row.id) ??
-        (row.host_id === me ? row.slots - takenOnMine(row.id) : row.slots),
+        (mineIds.has(row.id) ? row.slots - takenOnMine(row.id) : row.slots),
     ),
   );
   return {

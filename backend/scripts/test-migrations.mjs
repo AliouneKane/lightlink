@@ -28,16 +28,16 @@ await db.exec(`
     select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
   $$;
   create publication supabase_realtime;
+  grant usage on schema public, auth to anon, authenticated;
+  grant execute on all functions in schema auth to anon, authenticated;
+  -- Supabase grants its API roles access to every new table and function, when it is
+  -- created; row level security then decides. A migration can take a right back (revoke).
+  alter default privileges in schema public grant select, insert, update, delete on tables to anon, authenticated;
+  alter default privileges in schema public grant execute on functions to anon, authenticated;
 `);
 for (const file of [...migrations, join(root, "seed.sql")]) {
   await db.exec(readFileSync(file, "utf8"));
 }
-// Supabase grants table access to its API roles; row level security then decides.
-await db.exec(`
-  grant usage on schema public, auth to anon, authenticated;
-  grant select, insert, update, delete on all tables in schema public to anon, authenticated;
-  grant execute on all functions in schema public, auth to anon, authenticated;
-`);
 
 const user = (n) => `00000000-0000-0000-0000-0000000000${String(n).padStart(2, "0")}`;
 for (let n = 1; n <= 40; n++) {
@@ -140,7 +140,8 @@ await rejects(
   as(12, (tx) => tx.query("insert into public.zone_groups values ('osu', 'A', false, 'x', '2026-01-01', '2026-01-02')")),
   "user writing load-shedding groups",
 );
-const otherReports = await as(12, (tx) => tx.query(`update public.outage_reports set kind = 'powered' where user_id = '${user(1)}'`));
+// Reports of user 1 (Madina); since migration 13 nobody can even filter on user_id.
+const otherReports = await as(12, (tx) => tx.query("update public.outage_reports set kind = 'powered' where zone_id = 'madina'"));
 assert.equal(otherReports.affectedRows, 0, "user changed another user's reports");
 const otherProfile = await as(12, (tx) => tx.query(`update public.profiles set display_name = 'x' where id = '${user(1)}'`));
 assert.equal(otherProfile.affectedRows, 0, "user changed another user's profile");
@@ -517,5 +518,41 @@ const positions = await as(null, (tx) =>
 );
 assert.equal(positions.rows[0].n, 0, "no report position is readable");
 
+// --- Account ids hidden from the public API (migration 13) ------------------------------------
+for (const n of [41, 42, 43]) await db.query("insert into auth.users (id) values ($1)", [user(n)]);
+const host41 = await offer(41, "labone", { title: "Offre de 41" });
+await as(42, (tx) => tx.query("insert into public.outage_reports (zone_id, kind) values ('labone', 'outage')"));
+// 1. Nobody, with or without an account, reads who hosts an offer or who reported.
+for (const who of [null, 43]) {
+  await rejects(as(who, (tx) => tx.query("select host_id from public.offers")), "reading host_id");
+  await rejects(as(who, (tx) => tx.query("select user_id from public.outage_reports")), "reading user_id");
+  await rejects(as(who, (tx) => tx.query("select * from public.outage_reports")), "select * on reports");
+  await rejects(as(who, (tx) => tx.query(`select id from public.outage_reports where user_id = '${user(42)}'`)), "filtering reports by account");
+}
+// 2. What the apps read still works.
+// Same columns as offerColumns in shared/sharing.ts.
+const columns = "id, host_name, zone_id, title, source, capacity, price, slots, description, status, ends_at";
+assert.equal((await as(null, (tx) => tx.query(`select ${columns} from public.offers where id = $1`, [host41]))).rows.length, 1);
+assert.ok((await as(null, (tx) => tx.query("select zone_id, kind, created_at from public.outage_reports"))).rows.length > 0);
+assert.ok((await as(null, (tx) => tx.query("select * from public.zone_status"))).rows.length > 0, "map state");
+assert.ok((await as(null, (tx) => tx.query("select * from public.announcement_outcomes"))).rows.length > 0, "announcement answers");
+// 3. A host still finds, suspends and reopens their offers; others do not see them as theirs.
+const mine41 = await as(41, (tx) => tx.query("select id from public.my_offers()"));
+assert.deepEqual(mine41.rows.map((row) => row.id), [host41]);
+assert.equal((await as(43, (tx) => tx.query("select id from public.my_offers()"))).rows.length, 0);
+await rejects(as(null, (tx) => tx.query("select id from public.my_offers()")), "my_offers without a session");
+const suspended = await as(41, (tx) => tx.query("update public.offers set status = 'closed' where id = $1", [host41]));
+assert.equal(suspended.affectedRows, 1, "the host suspends their offer");
+const hijack = await as(43, (tx) => tx.query("update public.offers set status = 'available' where id = $1", [host41]));
+assert.equal(hijack.affectedRows, 0, "another resident cannot reopen it");
+await as(41, (tx) => tx.query("update public.offers set status = 'available' where id = $1", [host41]));
+// 4. Requests: own offer refused, the host sees the request, the requester too, a third resident not.
+await rejects(request(41, host41), "requesting one's own offer");
+const asked = await request(43, host41);
+for (const [who, n] of [[41, 1], [43, 1], [42, 0]]) {
+  const seen = await as(who, (tx) => tx.query("select id from public.offer_requests where id = $1", [asked]));
+  assert.equal(seen.rows.length, n, `request visible to user ${who}: ${n}`);
+}
+
 await db.close();
-console.log(`OK: ${migrations.length} migrations + seed; positions, rate limit, row level security, zone state, planned or surprise, outcomes, groups, idempotent import, forecasts, offline reports, simulated demo, energy sharing, notifications, review of #9, load test cleanup, server time, positions not kept`);
+console.log(`OK: ${migrations.length} migrations + seed; positions, rate limit, row level security, zone state, planned or surprise, outcomes, groups, idempotent import, forecasts, offline reports, simulated demo, energy sharing, notifications, review of #9, load test cleanup, server time, positions not kept, account ids hidden`);

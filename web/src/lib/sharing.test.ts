@@ -15,7 +15,6 @@ import {
 
 const row = (overrides: Partial<OfferRow> = {}): OfferRow => ({
   id: "o1",
-  host_id: "host",
   host_name: "Akosua Mensah",
   zone_id: "osu",
   title: "Générateur du soir",
@@ -32,7 +31,7 @@ const now = new Date("2026-10-22T15:00:00Z");
 
 describe("live offers", () => {
   it("shows the neighbourhood centre, never the exact place", () => {
-    const offer = offerRowToOffer(row(), "someone", 2, now);
+    const offer = offerRowToOffer(row(), false, 2, now);
     expect(offer).toMatchObject({
       host: "Akosua Mensah",
       initials: "AM",
@@ -47,15 +46,15 @@ describe("live offers", () => {
   });
 
   it("knows my offers, and full or ended offers are not available", () => {
-    expect(offerRowToOffer(row(), "host", 3, now).own).toBe(true);
-    expect(offerRowToOffer(row(), null, 3, now).own).toBe(false);
+    expect(offerRowToOffer(row(), true, 3, now).own).toBe(true);
+    expect(offerRowToOffer(row(), false, 3, now).own).toBe(false);
     expect(
-      offerRowToOffer(row({ status: "full" }), null, 0, now).available,
+      offerRowToOffer(row({ status: "full" }), false, 0, now).available,
     ).toBe(false);
     expect(
       offerRowToOffer(
         row({ ends_at: "2026-10-22T14:00:00+00:00" }),
-        null,
+        false,
         3,
         now,
       ).available,
@@ -156,7 +155,11 @@ function fakeDb(
         data: { session: me ? { user: { id: me } } : null },
       }),
     },
-    rpc: async () => ({ data: options, error: null }),
+    // my_offers() returns the signed-in host's offers (migration 13), like a table.
+    rpc: (name: string) =>
+      name === "my_offers"
+        ? query(me ? (tables.my_offers ?? []) : [])
+        : Promise.resolve({ data: options, error: null }),
     from: (table: string) => query(tables[table] ?? []),
   };
 }
@@ -169,6 +172,7 @@ describe("loading sharing data (PAN's review of #9)", () => {
       "host",
       {
         offers: [row({ status: "closed", ends_at: future })],
+        my_offers: [row({ status: "closed", ends_at: future })],
         offer_requests: [
           {
             id: "r1",
