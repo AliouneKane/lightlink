@@ -55,7 +55,7 @@ Même colonnes que `ecg_annonces.csv`. Les deux fichiers peuvent être chargés 
 
 - **Zones pilotes touchées:** Achimota et Adabraka (4 mai 2025), Dansoman (18 mai 2025).
 - **Premiers retours du courant annoncés** (colonnes `restauration` et `heure_restauration`): 20 lignes ont une heure de retour. Ce sont les seules durées estimées de tous nos fichiers, donc utiles pour la prédiction.
-- **Une seule grosse panne est liée à un poste** (Achimota BSP le 4 mai 2025, Mallam BSP le 14 octobre 2026): une panne de poste coupe beaucoup de quartiers à la fois. La base de données devrait pouvoir relier une annonce à une **cause** commune (voir [la modélisation](../../docs/MODELISATION_BASE_DE_DONNEES.md)).
+- **Une seule grosse panne est liée à un poste** (Achimota BSP le 4 mai 2025, Mallam BSP le 14 octobre 2026): une panne de poste coupe beaucoup de quartiers à la fois. La base de données devrait pouvoir relier une annonce à une **cause** commune (voir [la modélisation](../../MODELISATION_BASE_DE_DONNEES.md)).
 - **Couverture très partielle:** l'agent a trouvé 6 publications sur toute l'année 2025. Ce n'est pas un historique complet, seulement des exemples.
 - **Une date à vérifier:** le fichier contient `date_coupure` 2025-03-21 pour un post publié le 22 mars (la date vient de l'image).
 - **Lignes en désordre** (mars, mai, puis mars): sans importance, la date est dans chaque ligne.
