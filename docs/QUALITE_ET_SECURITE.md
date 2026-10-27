@@ -43,24 +43,23 @@ Le poids de l'APK final n'est pas encore mesuré : il ajoute le moteur natif de 
 
 ## Failles des dépendances (133)
 
-`npm audit` relancé le **26 octobre 2026** (le premier passage, du 21 octobre, est dépassé) :
+`npm audit` relancé le **27 octobre 2026** (les passages du 21 et du 26 octobre sont dépassés) : **0 faille connue** dans les trois projets.
 
-| Projet | Résultat | Dans ce qui est livré ? |
+| Projet | Résultat | Détail |
 |---|---|---|
 | Backend | 0 faille | — |
 | Web | 0 faille | Le 26 octobre au matin, l'audit signalait `next` 16.3.8 comme **critique** dans les dépendances de production. `main` est passé à `next` 16.4.1 (PR Dependabot #14) : l'audit ne signale plus rien. Avant cette mise à jour, nous n'avions pas démontré d'exploitation dans LightLink : le lockfile contenait déjà `sharp` 0.35.5, mesure prévue par l'avis de Next.js sur les images, et le code n'utilise ni `use cache` ni les Server Actions visés par les autres avis |
-| Mobile | 7 alertes, issues de **2 failles** | Voir ci-dessous |
+| Mobile | 0 faille | Trois paquets corrigés par des `overrides` dans `mobile/package.json`, voir ci-dessous |
 
-Corrigé le 26 octobre : `zod` (mémoire épuisée en validant une très grande collection), utilisé par l'outil en ligne de commande d'Expo et par ESLint, est forcé en 4.6.7 (`overrides` dans `mobile/package.json`). Vérifié : lint, types, tests, compatibilité Expo, export Android, iOS et web, 37 parcours navigateur, démarrage du serveur Expo et validation des extensions par `@expo/cli`.
-
-Les 2 failles restantes :
-
-| Paquet | Faille | Où il sert | Décision |
+| Paquet | Faille | Où il sert | Correction |
 |---|---|---|---|
-| `node-forge` 1.4.0 (4 alertes) | Vérification de signature RSA trop permissive | Outil Expo de signature des mises à jour (`@expo/cli`), sur l'ordinateur ; absent de l'app installée | **Aucune version corrigée publiée** (1.4.0 est la dernière). LightLink n'utilise pas les mises à jour signées |
-| `decode-uri-component` 0.2.2 (modérée, 3 alertes via `query-string` 7) | Blocage par un lien mal encodé | Lecture des liens par `expo-router`, **dans l'app** | Risque faible (un lien piégé ferait au pire planter l'app chez celui qui l'ouvre). Essayé : forcer `query-string` 9.5.1 (corrigé) casse l'app, car cette version n'existe qu'en module ESM et Metro la charge mal (`stringify is not a function` dans 3 parcours). La vraie correction est expo-router 58, donc le SDK Expo 58 : à faire après la soumission |
+| `zod` (26 octobre) | Mémoire épuisée en validant une très grande collection | Outil en ligne de commande d'Expo, ESLint | Forcé en 4.6.7 |
+| `node-forge` (27 octobre, haute) | Vérification de signature RSA trop permissive | Outil Expo de signature des mises à jour (`@expo/cli`), sur l'ordinateur ; absent de l'app installée | Forcé en 1.4.1, publiée le 27 octobre avec le correctif |
+| `decode-uri-component` (27 octobre, modérée) | Blocage par un lien mal encodé | Lecture des liens par `expo-router` (via `query-string` 7), **dans l'app** | La version corrigée (0.5) n'existe qu'en module ESM, que `query-string` 7 ne sait pas charger (`require`). Forcer `query-string` 9.5.1 avait cassé l'app (`stringify is not a function`). Le code de 0.5.1 est donc repris, converti en CommonJS, dans `mobile/vendor/decode-uri-component/` (licence MIT conservée). À retirer au passage au SDK Expo 58, dont `expo-router` n'utilise plus `query-string` |
 
-Les « corrections » proposées par `npm audit` (Expo 44) sont des **retours en arrière** de plusieurs années : à ne pas appliquer. Nous ne disons donc pas « zéro faille » : le web et le backend n'en ont aucune connue ; le mobile en garde une modérée dans l'app et une dans les outils de l'ordinateur, faute de version corrigée compatible.
+Vérifié après ces corrections : lint, types, 21 tests unitaires, export web et 37 parcours navigateur ; le code de 0.5.1 est bien dans le bundle Metro, et un lien malformé de 120 000 caractères est lu en quelques millisecondes. Pour `zod`, vérifié aussi le 26 octobre : compatibilité Expo, export Android et iOS, démarrage du serveur Expo et validation des extensions par `@expo/cli`.
+
+Les « corrections » proposées autrefois par `npm audit fix --force` (Expo 44, puis expo-router 58) sont des retours en arrière ou un changement de SDK : à ne pas appliquer sans migration complète.
 
 ## Sécurité et vie privée (102)
 
