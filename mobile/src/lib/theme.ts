@@ -51,46 +51,46 @@ export const PLANNED_COLOR = "#b9a3f0";
 
 export const statusMeta = {
   unknown: {
-    label: "État inconnu",
-    shortLabel: "Inconnu",
+    label: "Unknown status",
+    shortLabel: "Unknown",
     color: "muted" as const,
     icon: CircleHelp,
   },
   powered: {
-    label: "Courant disponible",
-    shortLabel: "Avec courant",
+    label: "Power available",
+    shortLabel: "Power on",
     color: "green" as const,
     icon: Zap,
   },
   outage: {
-    label: "Coupure signalée",
-    shortLabel: "En coupure",
+    label: "Outage reported",
+    shortLabel: "Outage",
     color: "red" as const,
     icon: ZapOff,
   },
   unstable: {
-    label: "Courant instable",
-    shortLabel: "Instable",
+    label: "Unstable power",
+    shortLabel: "Unstable",
     color: "amber" as const,
     icon: CircleHelp,
   },
 };
 export const sourceMeta = {
   solar: {
-    label: "Solaire",
-    shortLabel: "Solaire",
+    label: "Solar",
+    shortLabel: "Solar",
     color: "green" as const,
     icon: Sun,
   },
   generator: {
-    label: "Générateur",
-    shortLabel: "Générateur",
+    label: "Generator",
+    shortLabel: "Generator",
     color: "amber" as const,
     icon: PlugZap,
   },
   battery: {
-    label: "Batterie",
-    shortLabel: "Batterie",
+    label: "Battery",
+    shortLabel: "Battery",
     color: "blue" as const,
     icon: BatteryCharging,
   },

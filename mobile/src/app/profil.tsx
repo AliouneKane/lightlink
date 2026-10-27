@@ -176,7 +176,7 @@ export default function ProfileScreen() {
     setError(result);
     if (result) return;
     setEditing(false);
-    setMessage("Profil enregistré sur cet appareil.");
+    setMessage("Profile saved on this device.");
   }
   function resetDemo() {
     reset();
@@ -190,10 +190,10 @@ export default function ProfileScreen() {
     setMessage(null);
     setConfirmReset(false);
     setError(null);
-    setResetMessage("La démo a retrouvé ses réglages et données de départ.");
+    setResetMessage("The demo is back to its initial settings and data.");
     void clearFormDrafts().catch(() => {
       setResetMessage(
-        "Les données ont été réinitialisées. Certains brouillons n’ont pas pu être effacés du stockage local.",
+        "The data has been reset. Some drafts could not be deleted from local storage.",
       );
     });
   }
@@ -201,14 +201,14 @@ export default function ProfileScreen() {
   return (
     <>
       <Screen scrollRef={scrollRef}>
-        <BackHeader title="Mon espace" />
+        <BackHeader title="My space" />
 
         <View style={styles.hero}>
           <View style={styles.heroTop}>
             <View style={styles.heroEyebrow}>
               <Zap size={13} color="#132d39" />
               <Txt size={10} weight="extrabold" style={styles.navy}>
-                UNE ÉNERGIE À VOUS.
+                YOUR ENERGY.
               </Txt>
             </View>
             <View style={styles.localBadge}>
@@ -256,7 +256,7 @@ export default function ProfileScreen() {
           </View>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Modifier mon profil"
+            accessibilityLabel="Edit my profile"
             onPress={() => {
               feedback();
               discardDraft();
@@ -270,7 +270,7 @@ export default function ProfileScreen() {
           >
             <Pencil size={16} color="#facb4c" />
             <Txt size={13} weight="bold" style={{ color: "#fff", flex: 1 }}>
-              Modifier mon profil
+              Edit my profile
             </Txt>
             <ArrowUpRight size={19} color="#facb4c" />
           </Pressable>
@@ -299,7 +299,7 @@ export default function ProfileScreen() {
               {contributions}
             </Txt>
             <Txt size={10} tone="muted">
-              Signalements
+              Reports
             </Txt>
           </View>
           <View
@@ -307,7 +307,7 @@ export default function ProfileScreen() {
           />
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Voir mes demandes"
+            accessibilityLabel="View my requests"
             onPress={() => showActivity("demandes")}
             style={styles.stat}
           >
@@ -315,7 +315,7 @@ export default function ProfileScreen() {
               {state.bookings.length}
             </Txt>
             <Txt size={10} tone="muted">
-              Demandes
+              Requests
             </Txt>
           </Pressable>
           <View
@@ -323,7 +323,7 @@ export default function ProfileScreen() {
           />
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Voir mes offres"
+            accessibilityLabel="View my offers"
             onPress={() => showActivity("offres")}
             style={styles.stat}
           >
@@ -331,7 +331,7 @@ export default function ProfileScreen() {
               {ownedOffers.length}
             </Txt>
             <Txt size={10} tone="muted">
-              Offres publiées
+              Offers published
             </Txt>
           </Pressable>
         </View>
@@ -347,11 +347,11 @@ export default function ProfileScreen() {
               accessibilityRole="header"
               style={{ letterSpacing: -0.6 }}
             >
-              Vos liens d’énergie
+              Your energy links
             </Txt>
             <View style={[styles.smallBadge, { backgroundColor: colors.soft }]}>
               <Txt size={9} weight="bold" tone="muted">
-                SUR CET APPAREIL
+                ON THIS DEVICE
               </Txt>
             </View>
           </View>
@@ -361,7 +361,7 @@ export default function ProfileScreen() {
                 key={tab}
                 accessibilityRole="button"
                 accessibilityLabel={
-                  tab === "demandes" ? "Mes demandes" : "Mes offres"
+                  tab === "demandes" ? "My requests" : "My offers"
                 }
                 accessibilityState={{ selected: activeTab === tab }}
                 onPress={() => {
@@ -383,7 +383,7 @@ export default function ProfileScreen() {
                     color: activeTab === tab ? colors.navy : colors.muted,
                   }}
                 >
-                  {tab === "demandes" ? "Mes demandes" : "Mes offres"}
+                  {tab === "demandes" ? "My requests" : "My offers"}
                 </Txt>
                 <View
                   style={[
@@ -441,15 +441,15 @@ export default function ProfileScreen() {
                     weight="extrabold"
                     style={{ letterSpacing: -0.5 }}
                   >
-                    Votre prochain relais énergie
+                    Your next energy stop
                   </Txt>
                   <Txt size={12} tone="muted">
-                    Un voisin, une source, un petit coup de main. Vos demandes
-                    d’énergie se retrouvent ici.
+                    A neighbour, a source, a helping hand. Your energy requests
+                    appear here.
                   </Txt>
                 </View>
                 <Button
-                  label="Découvrir les offres"
+                  label="Discover offers"
                   icon={ArrowUpRight}
                   variant="secondary"
                   onPress={() => router.push("/(tabs)/partage")}
@@ -472,12 +472,12 @@ export default function ProfileScreen() {
                         weight="bold"
                         style={{ color: colors.amber }}
                       >
-                        DEMANDE SIMULÉE · EN ATTENTE
+                        SIMULATED REQUEST · PENDING
                       </Txt>
                     </View>
                     <Pressable
                       accessibilityRole="button"
-                      accessibilityLabel={`Voir l’offre ${offer.title}`}
+                      accessibilityLabel={`View the offer ${offer.title}`}
                       onPress={() =>
                         router.push({
                           pathname: "/offre/[id]",
@@ -514,7 +514,7 @@ export default function ProfileScreen() {
                       <Clock3 size={12} color={colors.muted} />
                       <Txt size={10} tone="muted" style={styles.flex}>
                         {new Date(booking.createdAt).toLocaleDateString(
-                          "fr-FR",
+                          "en-GB",
                           {
                             day: "numeric",
                             month: "short",
@@ -527,12 +527,12 @@ export default function ProfileScreen() {
                     </View>
                     {!offer.available && (
                       <Txt size={12} tone="danger">
-                        L’offre est actuellement indisponible. Vous pouvez
-                        retirer votre demande locale.
+                        The offer is currently unavailable. You can withdraw
+                        your local request.
                       </Txt>
                     )}
                     <Button
-                      label="Annuler cette demande"
+                      label="Cancel this request"
                       icon={X}
                       variant="ghost"
                       onPress={async () => {
@@ -541,8 +541,8 @@ export default function ProfileScreen() {
                         setRequestMessage(
                           error ??
                             (liveEnabled
-                              ? "Demande annulée."
-                              : "Demande simulée annulée."),
+                              ? "Request cancelled."
+                              : "Simulated request cancelled."),
                         );
                       }}
                     />
@@ -551,7 +551,7 @@ export default function ProfileScreen() {
               })
             )}
             <Txt size={10} tone="muted" style={styles.localNote}>
-              Aucun hôte n’est contacté. Aucune place n’est réservée.
+              No host is contacted. No place is reserved.
             </Txt>
           </View>
         ) : (
@@ -569,15 +569,15 @@ export default function ProfileScreen() {
                     weight="extrabold"
                     style={{ letterSpacing: -0.5 }}
                   >
-                    De l’énergie à partager ?
+                    Energy to share?
                   </Txt>
                   <Txt size={12} tone="muted">
-                    Votre source peut devenir le relais d’un voisin. Retrouvez
-                    vos offres ici, à votre rythme.
+                    Your source can become a neighbour’s energy stop. Find your
+                    offers here, at your own pace.
                   </Txt>
                 </View>
                 <Button
-                  label="Créer ma première offre"
+                  label="Create my first offer"
                   icon={Plus}
                   variant="secondary"
                   onPress={() => router.push("/publier")}
@@ -605,13 +605,13 @@ export default function ProfileScreen() {
                       }}
                     >
                       {offer.available
-                        ? "VISIBLE DANS LES OFFRES LOCALES"
-                        : "SUSPENDUE · MASQUÉE DES OFFRES LOCALES"}
+                        ? "VISIBLE IN LOCAL OFFERS"
+                        : "PAUSED · HIDDEN FROM LOCAL OFFERS"}
                     </Txt>
                   </View>
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`Gérer l’offre ${offer.title}`}
+                    accessibilityLabel={`Manage the offer ${offer.title}`}
                     style={styles.offerLink}
                     onPress={() =>
                       router.push({
@@ -650,9 +650,7 @@ export default function ProfileScreen() {
                   )}
                   <Button
                     label={
-                      offer.available
-                        ? "Suspendre cette offre"
-                        : "Réactiver cette offre"
+                      offer.available ? "Pause this offer" : "Reopen this offer"
                     }
                     icon={offer.available ? Pause : Play}
                     variant="secondary"
@@ -668,8 +666,8 @@ export default function ProfileScreen() {
                         text:
                           result ??
                           (offer.available
-                            ? "Offre suspendue. Elle reste dans Mes offres."
-                            : "Offre réactivée dans les offres locales."),
+                            ? "Offer paused. It stays in My offers."
+                            : "Offer reopened in the local offers."),
                       });
                     }}
                   />
@@ -678,14 +676,14 @@ export default function ProfileScreen() {
             )}
             {ownedOffers.length > 0 && (
               <Button
-                label="Publier une autre offre"
+                label="Publish another offer"
                 icon={Plus}
                 variant="ghost"
                 onPress={() => router.push("/publier")}
               />
             )}
             <Txt size={10} tone="muted" style={styles.localNote}>
-              Vos offres restent sur cet appareil, sans publication distante.
+              Your offers stay on this device, with no remote publication.
             </Txt>
           </View>
         )}
@@ -697,16 +695,16 @@ export default function ProfileScreen() {
             accessibilityRole="header"
             style={{ letterSpacing: -0.5 }}
           >
-            À votre façon
+            Your way
           </Txt>
           <Card style={styles.preferences}>
             <View style={styles.settingRow}>
               <Moon size={17} color={colors.muted} />
               <Txt size={13} weight="bold" style={styles.flex}>
-                Apparence
+                Appearance
               </Txt>
               <Txt size={10} tone="muted">
-                {mode === "dark" ? "Côté nuit" : "Côté soleil"}
+                {mode === "dark" ? "Night side" : "Sunny side"}
               </Txt>
             </View>
             <Chips
@@ -715,8 +713,8 @@ export default function ProfileScreen() {
                 setMode(value === "light" ? "light" : "dark")
               }
               options={[
-                { value: "dark", label: "Sombre", icon: Moon },
-                { value: "light", label: "Clair", icon: Sun },
+                { value: "dark", label: "Dark", icon: Moon },
+                { value: "light", label: "Light", icon: Sun },
               ]}
             />
             <View
@@ -726,14 +724,14 @@ export default function ProfileScreen() {
               <Bell size={17} color={colors.muted} />
               <View style={{ flex: 1, gap: 3 }}>
                 <Txt size={13} weight="bold">
-                  Alertes de démonstration
+                  Demo alerts
                 </Txt>
                 <Txt size={10} tone="muted">
-                  Préférence locale · aucun push
+                  Local preference · no push
                 </Txt>
               </View>
               <Switch
-                accessibilityLabel="Activer les alertes locales de démonstration"
+                accessibilityLabel="Turn on local demo alerts"
                 value={state.notificationsEnabled}
                 disabled={!ready}
                 onValueChange={setNotifications}
@@ -751,12 +749,12 @@ export default function ProfileScreen() {
           <View style={styles.settingRow}>
             <ShieldCheck size={18} color={colors.muted} />
             <Txt size={13} weight="bold" style={styles.flex}>
-              Vos données restent ici.
+              Your data stays here.
             </Txt>
           </View>
           <Txt size={11} tone="muted">
-            Profil, signalements et activité sur cet appareil. Aucun compte créé
-            ; les données du site web restent indépendantes.
+            Profile, reports and activity on this device. No account created;
+            the website’s data stays separate.
           </Txt>
           {storageError && (
             <Txt size={11} tone="danger" accessibilityRole="alert">
@@ -771,7 +769,7 @@ export default function ProfileScreen() {
           {!confirmReset ? (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Réinitialiser la démo"
+              accessibilityLabel="Reset the demo"
               accessibilityState={{ disabled: !ready }}
               disabled={!ready}
               onPress={() => setConfirmReset(true)}
@@ -779,7 +777,7 @@ export default function ProfileScreen() {
             >
               <Trash2 size={15} color={colors.red} />
               <Txt size={12} style={{ flex: 1, color: colors.red }}>
-                Réinitialiser la démo
+                Reset the demo
               </Txt>
               <ChevronRight size={16} color={colors.red} />
             </Pressable>
@@ -789,21 +787,20 @@ export default function ProfileScreen() {
               accessibilityLiveRegion="polite"
             >
               <Txt size={16} weight="bold">
-                Repartir de zéro ?
+                Start from scratch?
               </Txt>
               <Txt size={12} tone="muted">
-                Vos contributions, offres, demandes et brouillons seront
-                supprimés. Le profil et le thème retrouveront leurs réglages de
-                départ.
+                Your contributions, offers, requests and drafts will be deleted.
+                The profile and theme will return to their initial settings.
               </Txt>
               <Button
-                label="Oui, réinitialiser"
+                label="Yes, reset"
                 icon={Trash2}
                 variant="danger"
                 onPress={resetDemo}
               />
               <Button
-                label="Conserver mes données"
+                label="Keep my data"
                 variant="secondary"
                 onPress={() => setConfirmReset(false)}
               />
@@ -811,7 +808,7 @@ export default function ProfileScreen() {
           )}
         </View>
         <Txt size={10} tone="muted" style={styles.signature}>
-          LightLink. L’énergie nous rapproche.
+          LightLink. Energy brings us together.
         </Txt>
       </Screen>
 
@@ -857,14 +854,14 @@ export default function ProfileScreen() {
                   accessibilityRole="header"
                   style={{ letterSpacing: -0.7 }}
                 >
-                  Garder vos modifications ?
+                  Keep your changes?
                 </Txt>
                 <Txt size={13} tone="muted">
-                  Votre nom ou votre quartier a changé. Enregistrez votre profil
-                  ou poursuivez la modification avant de quitter.
+                  Your name or neighbourhood has changed. Save your profile or
+                  keep editing before leaving.
                 </Txt>
                 <Button
-                  label="Enregistrer et quitter"
+                  label="Save and leave"
                   icon={Save}
                   onPress={() => {
                     const result = updateProfile({
@@ -883,7 +880,7 @@ export default function ProfileScreen() {
                   }}
                 />
                 <Button
-                  label="Continuer à modifier"
+                  label="Keep editing"
                   variant="secondary"
                   onPress={() => {
                     setEditing(true);
@@ -891,7 +888,7 @@ export default function ProfileScreen() {
                   }}
                 />
                 <Button
-                  label="Quitter sans enregistrer"
+                  label="Leave without saving"
                   variant="ghost"
                   onPress={() => {
                     leaveAction();
@@ -911,15 +908,15 @@ export default function ProfileScreen() {
                       accessibilityRole="header"
                       style={{ letterSpacing: -0.7 }}
                     >
-                      Mon profil
+                      My profile
                     </Txt>
                     <Txt size={12} tone="muted">
-                      Un nom, un quartier. C’est tout.
+                      A name, a neighbourhood. That’s all.
                     </Txt>
                   </View>
                   <IconButton
                     icon={X}
-                    label="Fermer la modification du profil"
+                    label="Close profile editing"
                     onPress={closeEditor}
                   />
                 </View>
@@ -929,13 +926,13 @@ export default function ProfileScreen() {
                   contentContainerStyle={styles.sheetContent}
                 >
                   <Field
-                    label="Comment vous appeler ?"
+                    label="What should we call you?"
                     value={name}
                     onChangeText={(value) => {
                       setName(value);
                       setError(null);
                     }}
-                    placeholder="Votre nom"
+                    placeholder="Your name"
                     maxLength={60}
                     autoCapitalize="words"
                     error={error ?? undefined}
@@ -944,7 +941,7 @@ export default function ProfileScreen() {
                   />
                   <View style={{ gap: 9 }}>
                     <Txt size={13} weight="bold">
-                      Votre quartier
+                      Your neighbourhood
                     </Txt>
                     <ZonePicker
                       value={zoneId}
@@ -954,17 +951,17 @@ export default function ProfileScreen() {
                       }}
                     />
                     <Txt size={11} tone="muted">
-                      Le tableau de bord et les offres proches suivront ce
-                      quartier.
+                      The dashboard and nearby offers will follow this
+                      neighbourhood.
                     </Txt>
                   </View>
                   {changed && (
                     <Txt size={11} tone="muted">
-                      Modifications non enregistrées.
+                      Unsaved changes.
                     </Txt>
                   )}
                   <Button
-                    label="Enregistrer mon profil"
+                    label="Save my profile"
                     icon={Save}
                     onPress={saveProfile}
                     disabled={!ready || !changed}

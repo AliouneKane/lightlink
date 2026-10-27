@@ -45,11 +45,11 @@ export const requestColumns =
   "id, offer_id, requester_id, status, message, created_at";
 
 export const requestStatusLabels: Record<RequestStatus, string> = {
-  pending: "En attente de l’hôte",
-  accepted: "Acceptée",
-  refused: "Refusée",
-  cancelled: "Annulée",
-  finished: "Terminée",
+  pending: "Waiting for the host",
+  accepted: "Accepted",
+  refused: "Declined",
+  cancelled: "Cancelled",
+  finished: "Finished",
 };
 
 /** Requests that still hold or may hold a place. */
@@ -144,7 +144,7 @@ export function offerInsertRow(
 ) {
   return {
     zone_id: input.neighborhoodId,
-    host_name: hostName.trim().slice(0, 50) || "Voisin",
+    host_name: hostName.trim().slice(0, 50) || "Neighbour",
     title: input.title.trim(),
     source: input.source,
     capacity: input.capacity.trim(),
@@ -159,22 +159,22 @@ export function offerInsertRow(
 export function sharingErrorMessage(error: { message?: string }): string {
   const message = error.message ?? "";
   if (message.includes("your own offer"))
-    return "Vous ne pouvez pas demander votre propre offre.";
+    return "You cannot request your own offer.";
   if (message.includes("no longer available"))
-    return "Cette offre n’est plus disponible.";
+    return "This offer is no longer available.";
   if (message.includes("Too many pending requests"))
-    return "Vous avez déjà 3 demandes en attente. Annulez-en une pour en faire une autre.";
+    return "You already have 3 pending requests. Cancel one to make another.";
   if (message.includes("already taken"))
-    return "Toutes les places de cette offre sont déjà prises.";
+    return "All the places of this offer are already taken.";
   if (message.includes("not allowed"))
-    return "Cette action n’est pas possible pour cette demande.";
+    return "This action is not possible for this request.";
   if (/duplicate key|unique/i.test(message))
-    return "Vous avez déjà fait une demande pour cette offre.";
+    return "You have already requested this offer.";
   if (/offers_check|12 hours|ends_at/i.test(message))
-    return "Une offre dure 12 heures au plus. Choisissez une heure de fin plus proche.";
+    return "An offer lasts 12 hours at most. Choose an earlier end time.";
   if (/offer_private_details_address_check|address/i.test(message))
-    return "L’adresse précise doit contenir entre 3 et 200 caractères.";
+    return "The exact address must be between 3 and 200 characters.";
   if (/fetch|network|timeout/i.test(message))
-    return "Pas de connexion. Réessayez quand le réseau revient.";
-  return "L’action n’a pas pu aboutir. Réessayez dans un instant.";
+    return "No connection. Try again when the network is back.";
+  return "The action could not be completed. Please try again in a moment.";
 }

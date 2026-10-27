@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 
-const demoKey = "lightlink.mobile.demo.v1";
+const demoKey = "lightlink.mobile.demo.v2";
 const displayKey = "lightlink.mobile.display.v1";
 const runtimeErrors = new WeakMap<Page, string[]>();
 
@@ -12,12 +12,10 @@ test("le tri reste accessible sur un petit écran et conserve les filtres", asyn
   await page.setViewportSize({ width: 360, height: 380 });
   await page.goto("/partage");
   const offerCards = page.getByRole("button", {
-    name: /^(Un bureau, du soleil et du Wi-Fi|Recharge express à Osu|Énergie solaire pour vos projets|Un relais énergie à Adabraka|Recharge au calme à East Legon)$/,
+    name: /^(A desk, sunshine and Wi-Fi|Quick charging in Osu|Solar power for your projects|An energy stop in Adabraka|Quiet charging in East Legon)$/,
   });
-  await page
-    .getByRole("button", { name: "Trier les offres", exact: true })
-    .click();
-  await page.getByRole("radio", { name: "Petit budget", exact: true }).click();
+  await page.getByRole("button", { name: "Sort offers", exact: true }).click();
+  await page.getByRole("radio", { name: "Low budget", exact: true }).click();
   await expect
     .poll(() =>
       offerCards.evaluateAll((cards) =>
@@ -25,41 +23,37 @@ test("le tri reste accessible sur un petit écran et conserve les filtres", asyn
       ),
     )
     .toEqual([
-      "Recharge express à Osu",
-      "Recharge au calme à East Legon",
-      "Un bureau, du soleil et du Wi-Fi",
-      "Énergie solaire pour vos projets",
-      "Un relais énergie à Adabraka",
+      "Quick charging in Osu",
+      "Quiet charging in East Legon",
+      "A desk, sunshine and Wi-Fi",
+      "Solar power for your projects",
+      "An energy stop in Adabraka",
     ]);
-  await page.getByRole("button", { name: "Solaire", exact: true }).click();
-  await page
-    .getByRole("button", { name: "Trier les offres", exact: true })
-    .click();
-  await page
-    .getByRole("radio", { name: "Plus de places", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Solar", exact: true }).click();
+  await page.getByRole("button", { name: "Sort offers", exact: true }).click();
+  await page.getByRole("radio", { name: "Most places", exact: true }).click();
   await expect(offerCards).toHaveCount(2);
   await expect(offerCards.first()).toHaveAttribute(
     "aria-label",
-    "Énergie solaire pour vos projets",
+    "Solar power for your projects",
   );
   await expect(
-    page.getByRole("heading", { name: "À votre façon.", exact: true }),
+    page.getByRole("heading", { name: "Your way.", exact: true }),
   ).toHaveCount(0);
 });
 
 async function home(page: Page) {
   await page.goto("/");
-  await expect(page.getByText(/Bonjour .+ 👋/)).toBeVisible();
+  await expect(page.getByText(/Hello .+ 👋/)).toBeVisible();
 }
 
 async function chooseZone(page: Page, name: string) {
   await page
-    .getByRole("button", { name: "Choisir le quartier", exact: true })
+    .getByRole("button", { name: "Choose the neighbourhood", exact: true })
     .click();
   await page.getByRole("button", { name, exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "Fermer", exact: true }),
+    page.getByRole("button", { name: "Close", exact: true }),
   ).toHaveCount(0);
 }
 
@@ -102,96 +96,90 @@ test.afterEach(async ({ page }) => {
 });
 
 test("les onglets donnent accès aux quatre parcours", async ({ page }) => {
-  await openTab(page, "Carte");
+  await openTab(page, "Map");
   await expect(
-    page.getByRole("heading", { name: "Carte des quartiers" }),
+    page.getByRole("heading", { name: "Neighbourhood map" }),
   ).toBeVisible();
   await expect(
-    page.getByText("Aperçu schématique · centres approximatifs"),
+    page.getByText("Schematic preview · approximate centres"),
   ).toBeVisible();
-  await openTab(page, "Partage");
+  await openTab(page, "Sharing");
   await expect(
-    page.getByRole("heading", { name: "Les bonnes énergies." }),
+    page.getByRole("heading", { name: "Good energy nearby." }),
   ).toBeVisible();
-  await openTab(page, "Communauté");
+  await openTab(page, "Community");
   await expect(
-    page.getByRole("heading", { name: "Communauté", exact: true }),
+    page.getByRole("heading", { name: "Community", exact: true }),
   ).toBeVisible();
-  await openTab(page, "Accueil");
-  await expect(page.getByText("Bonjour PAN 👋")).toBeVisible();
+  await openTab(page, "Home");
+  await expect(page.getByText("Hello PAN 👋")).toBeVisible();
 });
 
 test("un signalement modifie le quartier et persiste après rechargement", async ({
   page,
 }) => {
-  await page.getByRole("button", { name: "Signaler", exact: true }).click();
-  await page
-    .getByRole("button", { name: "Enregistrer mon signalement" })
-    .click();
+  await page.getByRole("button", { name: "Report", exact: true }).click();
+  await page.getByRole("button", { name: "Save my report" }).click();
   await expect(page.getByRole("alert")).toHaveText(
-    "Choisissez l’état du courant que vous observez.",
+    "Choose the power status you observe.",
   );
-  await page.getByRole("radio", { name: "Le courant est disponible" }).click();
+  await page.getByRole("radio", { name: "The power is on" }).click();
   await page
-    .getByRole("button", { name: "Un détail à ajouter ?", exact: true })
+    .getByRole("button", { name: "Anything to add?", exact: true })
     .click();
   await page
-    .getByLabel("Votre observation", { exact: true })
-    .fill("Le courant est revenu dans ma rue.");
-  await page
-    .getByRole("button", { name: "Enregistrer mon signalement" })
-    .click();
+    .getByLabel("Your observation", { exact: true })
+    .fill("The power came back on my street.");
+  await page.getByRole("button", { name: "Save my report" }).click();
   await expect(
     page.getByText(
-      "Votre signalement est enregistré sur cet appareil. L’état local du quartier a été mis à jour.",
+      "Your report is saved on this device. The neighbourhood’s local status has been updated.",
     ),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Voir la communauté" }).click();
+  await page.getByRole("button", { name: "View the community" }).click();
   await expect(
-    page.getByText("Le courant est revenu dans ma rue.", { exact: true }),
+    page.getByText("The power came back on my street.", { exact: true }),
   ).toBeVisible();
   await home(page);
   await expect(
-    page.getByText("Le courant est là.", { exact: true }),
+    page.getByText("The power is on.", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText("25 signalements · démo", { exact: true }),
+    page.getByText("25 reports · demo", { exact: true }),
   ).toBeVisible();
   await page.reload();
   await expect(
-    page.getByText("Le courant est là.", { exact: true }),
+    page.getByText("The power is on.", { exact: true }),
   ).toBeVisible();
 });
 
 test("le profil local suit le nom et le quartier enregistrés", async ({
   page,
 }) => {
-  await page.getByRole("button", { name: "Ouvrir mon profil" }).click();
+  await page.getByRole("button", { name: "Open my profile" }).click();
   await page
-    .getByRole("button", { name: "Modifier mon profil", exact: true })
+    .getByRole("button", { name: "Edit my profile", exact: true })
     .click();
   await page
-    .getByLabel("Comment vous appeler ?", { exact: true })
+    .getByLabel("What should we call you?", { exact: true })
     .fill("Amadou Ndiaye");
   await chooseZone(page, "Madina");
-  await page.getByRole("button", { name: "Enregistrer mon profil" }).click();
-  await expect(
-    page.getByText("Profil enregistré sur cet appareil."),
-  ).toBeVisible();
+  await page.getByRole("button", { name: "Save my profile" }).click();
+  await expect(page.getByText("Profile saved on this device.")).toBeVisible();
   await home(page);
-  await expect(page.getByText("Bonjour Amadou Ndiaye 👋")).toBeVisible();
+  await expect(page.getByText("Hello Amadou Ndiaye 👋")).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Changer mon quartier", exact: true }),
+    page.getByRole("button", { name: "Change my neighbourhood", exact: true }),
   ).toHaveText("Madina");
   await expect(
-    page.getByText("Le courant est instable.", { exact: true }),
+    page.getByText("The power is unstable.", { exact: true }),
   ).toBeVisible();
   await page.reload();
-  await expect(page.getByText("Bonjour Amadou Ndiaye 👋")).toBeVisible();
+  await expect(page.getByText("Hello Amadou Ndiaye 👋")).toBeVisible();
   await page.goto("/partage");
   await expect(
     page.getByRole("button", {
-      name: "Chercher autour d’un quartier",
+      name: "Search around a neighbourhood",
       exact: true,
     }),
   ).toHaveText("Madina");
@@ -200,30 +188,30 @@ test("le profil local suit le nom et le quartier enregistrés", async ({
 test("le panneau profil protège le brouillon et permet de sauvegarder ou abandonner avant de quitter", async ({
   page,
 }) => {
-  await page.getByRole("button", { name: "Ouvrir mon profil" }).click();
+  await page.getByRole("button", { name: "Open my profile" }).click();
   await page
-    .getByRole("button", { name: "Modifier mon profil", exact: true })
+    .getByRole("button", { name: "Edit my profile", exact: true })
     .click();
-  const nameField = page.getByLabel("Comment vous appeler ?", { exact: true });
+  const nameField = page.getByLabel("What should we call you?", {
+    exact: true,
+  });
   const closeEditor = page.getByRole("button", {
-    name: "Fermer la modification du profil",
+    name: "Close profile editing",
     exact: true,
   });
   const confirmation = page.getByRole("heading", {
-    name: "Garder vos modifications ?",
+    name: "Keep your changes?",
     exact: true,
   });
   await nameField.fill("Ama Mensah");
   await closeEditor.click();
   await expect(confirmation).toBeVisible();
-  await page
-    .getByRole("button", { name: "Continuer à modifier", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Keep editing", exact: true }).click();
   await expect(nameField).toHaveValue("Ama Mensah");
   await closeEditor.click();
   await expect(confirmation).toBeVisible();
   await page
-    .getByRole("button", { name: "Enregistrer et quitter", exact: true })
+    .getByRole("button", { name: "Save and leave", exact: true })
     .click();
   await expect(nameField).toHaveCount(0);
   await expect(
@@ -234,14 +222,14 @@ test("le panneau profil protège le brouillon et permet de sauvegarder ou abando
     .toBe("Ama Mensah");
 
   await page
-    .getByRole("button", { name: "Modifier mon profil", exact: true })
+    .getByRole("button", { name: "Edit my profile", exact: true })
     .click();
   await expect(nameField).toHaveValue("Ama Mensah");
-  await nameField.fill("Nom à abandonner");
+  await nameField.fill("Name to discard");
   await closeEditor.click();
   await expect(confirmation).toBeVisible();
   await page
-    .getByRole("button", { name: "Quitter sans enregistrer", exact: true })
+    .getByRole("button", { name: "Leave without saving", exact: true })
     .click();
   await expect(nameField).toHaveCount(0);
   await expect(
@@ -250,9 +238,9 @@ test("le panneau profil protège le brouillon et permet de sauvegarder ou abando
   await expect
     .poll(async () => (await savedState(page))?.profile.name)
     .toBe("Ama Mensah");
-  await page.getByRole("button", { name: "Retour", exact: true }).click();
+  await page.getByRole("button", { name: "Back", exact: true }).click();
   await expect(
-    page.getByText("Bonjour Ama Mensah 👋", { exact: true }),
+    page.getByText("Hello Ama Mensah 👋", { exact: true }),
   ).toBeVisible();
 });
 
@@ -260,42 +248,42 @@ test("les sources et la recherche filtrent les offres avec un retour depuis l’
   page,
 }) => {
   await page.goto("/partage");
-  await page.getByRole("button", { name: "Solaire", exact: true }).click();
+  await page.getByRole("button", { name: "Solar", exact: true }).click();
   await expect(
-    page.getByText("2 offres disponibles", { exact: true }),
+    page.getByText("2 offers available", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Recharge express à Osu", exact: true }),
+    page.getByRole("button", { name: "Quick charging in Osu", exact: true }),
   ).toHaveCount(0);
-  await page.getByLabel("Rechercher une énergie").fill("Labone");
+  await page.getByLabel("Search for energy").fill("Labone");
   await expect(
-    page.getByText("1 offre disponible", { exact: true }),
+    page.getByText("1 offer available", { exact: true }),
   ).toBeVisible();
   await page
     .getByRole("button", {
-      name: "Un bureau, du soleil et du Wi-Fi",
+      name: "A desk, sunshine and Wi-Fi",
       exact: true,
     })
     .click();
   await expect(
     page.getByRole("heading", {
-      name: "Un bureau, du soleil et du Wi-Fi",
+      name: "A desk, sunshine and Wi-Fi",
       exact: true,
     }),
   ).toBeVisible();
   await expect(
-    page.getByText("2 kW · ordinateurs et téléphones", { exact: true }),
+    page.getByText("2 kW · laptops and phones", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Retour", exact: true }).click();
-  await page.getByLabel("Rechercher une énergie").fill("aucune-offre-ici");
+  await page.getByRole("button", { name: "Back", exact: true }).click();
+  await page.getByLabel("Search for energy").fill("no-offer-here");
   await expect(
-    page.getByText("Aucune offre par ici.", { exact: true }),
+    page.getByText("No offers around here.", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Effacer les filtres" }).click();
+  await page.getByRole("button", { name: "Clear filters" }).click();
   await expect(
-    page.getByText("5 offres disponibles", { exact: true }),
+    page.getByText("5 offers available", { exact: true }),
   ).toBeVisible();
-  await expect(page.getByLabel("Rechercher une énergie")).toHaveValue("");
+  await expect(page.getByLabel("Search for energy")).toHaveValue("");
 });
 
 test("une demande reste unique et peut être annulée depuis le profil", async ({
@@ -303,123 +291,121 @@ test("une demande reste unique et peut être annulée depuis le profil", async (
 }) => {
   await page.goto("/offre/offer-osu-battery");
   await page
-    .getByRole("button", { name: "Simuler une demande", exact: true })
+    .getByRole("button", { name: "Simulate a request", exact: true })
     .click();
   await expect(
-    page.getByText("Demande simulée enregistrée", { exact: true }),
+    page.getByText("Simulated request saved", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Simuler une demande", exact: true }),
+    page.getByRole("button", { name: "Simulate a request", exact: true }),
   ).toHaveCount(0);
   await page.reload();
   await expect(
-    page.getByText("Demande simulée enregistrée", { exact: true }),
+    page.getByText("Simulated request saved", { exact: true }),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "Voir mes demandes", exact: true })
+    .getByRole("button", { name: "View my requests", exact: true })
     .click();
   await expect(
     page.getByRole("button", {
-      name: "Voir l’offre Recharge express à Osu",
+      name: "View the offer Quick charging in Osu",
       exact: true,
     }),
   ).toHaveCount(1);
   await page
-    .getByRole("button", { name: "Annuler cette demande", exact: true })
+    .getByRole("button", { name: "Cancel this request", exact: true })
     .click();
   await expect(
-    page.getByText("Demande simulée annulée.", { exact: true }),
+    page.getByText("Simulated request cancelled.", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText("Votre prochain relais énergie", { exact: true }),
+    page.getByText("Your next energy stop", { exact: true }),
   ).toBeVisible();
   await page.goto("/offre/offer-osu-battery");
   await expect(
-    page.getByRole("button", { name: "Simuler une demande", exact: true }),
+    page.getByRole("button", { name: "Simulate a request", exact: true }),
   ).toBeVisible();
 });
 
 test("la publication valide les données et empêche de demander sa propre offre", async ({
   page,
 }) => {
-  await page.getByRole("button", { name: "Partager", exact: true }).click();
+  await page.getByRole("button", { name: "Share", exact: true }).click();
   // Validation must return focus to the first error even from lower in the form.
   await page
-    .getByLabel("Fin · HH:mm", { exact: true })
+    .getByLabel("End · HH:mm", { exact: true })
     .scrollIntoViewIfNeeded();
   await page
-    .getByRole("button", { name: "Publier mon offre locale", exact: true })
+    .getByRole("button", { name: "Publish my local offer", exact: true })
     .click();
   await expect(
     page
       .getByRole("alert")
-      .filter({ hasText: "Donnez un titre d’au moins 3 caractères." }),
+      .filter({ hasText: "Give a title of at least 3 characters." }),
   ).toBeVisible();
-  await expect(
-    page.getByLabel("Titre de l’offre", { exact: true }),
-  ).toBeFocused();
+  await expect(page.getByLabel("Offer title", { exact: true })).toBeFocused();
   await page
-    .getByLabel("Titre de l’offre", { exact: true })
-    .fill("Un bureau solaire à Osu");
+    .getByLabel("Offer title", { exact: true })
+    .fill("A solar desk in Osu");
   await page
-    .getByLabel("Capacité et appareils acceptés", { exact: true })
-    .fill("2 kW · ordinateurs et téléphones");
-  await page.getByLabel("Fin · HH:mm", { exact: true }).fill("25:00");
+    .getByLabel("Capacity and devices accepted", { exact: true })
+    .fill("2 kW · laptops and phones");
+  await page.getByLabel("End · HH:mm", { exact: true }).fill("25:00");
   await page
-    .getByRole("button", { name: "Publier mon offre locale", exact: true })
+    .getByRole("button", { name: "Publish my local offer", exact: true })
     .click();
   await expect(page.getByRole("alert")).toHaveText(
-    "Utilisez le format HH:mm, par exemple 19:00.",
+    "Use the HH:mm format, for example 19:00.",
   );
-  await expect(page.getByLabel("Fin · HH:mm", { exact: true })).toBeFocused();
-  await page.getByLabel("Fin · HH:mm", { exact: true }).fill("19:00");
+  await expect(page.getByLabel("End · HH:mm", { exact: true })).toBeFocused();
+  await page.getByLabel("End · HH:mm", { exact: true }).fill("19:00");
   await page
-    .getByLabel("Contribution conseillée (GHS)", { exact: true })
+    .getByLabel("Suggested contribution (GHS)", { exact: true })
     .fill("0");
   await page
-    .getByRole("button", { name: "Publier mon offre locale", exact: true })
+    .getByRole("button", { name: "Publish my local offer", exact: true })
     .click();
   await expect(
-    page.getByText("Une lumière de plus.", { exact: true }),
+    page.getByText("One more light.", { exact: true }),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "Voir mon offre", exact: true })
+    .getByRole("button", { name: "View my offer", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "Un bureau solaire à Osu", exact: true }),
+    page.getByRole("heading", { name: "A solar desk in Osu", exact: true }),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "Suspendre mon offre", exact: true })
+    .getByRole("button", { name: "Pause my offer", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Réactiver mon offre", exact: true }),
+    page.getByRole("button", { name: "Reopen my offer", exact: true }),
   ).toBeVisible();
   await page.reload();
   await expect(
-    page.getByRole("button", { name: "Réactiver mon offre", exact: true }),
+    page.getByRole("button", { name: "Reopen my offer", exact: true }),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "Réactiver mon offre", exact: true })
+    .getByRole("button", { name: "Reopen my offer", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Suspendre mon offre", exact: true }),
+    page.getByRole("button", { name: "Pause my offer", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText("VOTRE OFFRE LOCALE", { exact: true }),
+    page.getByText("YOUR LOCAL OFFER", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Simuler une demande", exact: true }),
+    page.getByRole("button", { name: "Simulate a request", exact: true }),
   ).toHaveCount(0);
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "Un bureau solaire à Osu", exact: true }),
+    page.getByRole("heading", { name: "A solar desk in Osu", exact: true }),
   ).toBeVisible();
   await page.goto("/partage");
   await expect(
-    page.getByText("6 offres disponibles", { exact: true }),
+    page.getByText("6 offers available", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Un bureau solaire à Osu", exact: true }),
+    page.getByRole("button", { name: "A solar desk in Osu", exact: true }),
   ).toBeVisible();
 });
 
@@ -428,50 +414,50 @@ test("la carte conserve le quartier sélectionné dans les actions et traite une
 }) => {
   await page.goto("/carte");
   await page
-    .getByRole("button", { name: "Rechercher un quartier", exact: true })
+    .getByRole("button", { name: "Search a neighbourhood", exact: true })
     .click();
   await page
-    .getByLabel("Rechercher un quartier", { exact: true })
+    .getByLabel("Search a neighbourhood", { exact: true })
     .fill("Labone");
   await expect(
     page.getByRole("heading", { name: "Labone", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText("1 quartier pilote", { exact: true }),
+    page.getByText("1 pilot neighbourhood", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Signaler", exact: true }).click();
+  await page.getByRole("button", { name: "Report", exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "Choisir le quartier", exact: true }),
+    page.getByRole("button", { name: "Choose the neighbourhood", exact: true }),
   ).toHaveText("Labone");
   await page.goto("/carte?zone=madina");
   await expect(
     page.getByRole("heading", { name: "Madina", exact: true }),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "Voir les prévisions de Madina", exact: true })
+    .getByRole("button", { name: "View the forecast for Madina", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Quartier des prévisions", exact: true }),
+    page.getByRole("button", { name: "Forecast neighbourhood", exact: true }),
   ).toHaveText("Madina");
   await page.goto("/carte");
-  await page.getByRole("button", { name: "Avec courant", exact: true }).click();
+  await page.getByRole("button", { name: "Power on", exact: true }).click();
   await page
-    .getByRole("button", { name: "Rechercher un quartier", exact: true })
+    .getByRole("button", { name: "Search a neighbourhood", exact: true })
     .click();
   await expect(
-    page.getByText("4 quartiers pilotes", { exact: true }),
+    page.getByText("4 pilot neighbourhoods", { exact: true }),
   ).toBeVisible();
   await page
-    .getByLabel("Rechercher un quartier", { exact: true })
-    .fill("introuvable");
+    .getByLabel("Search a neighbourhood", { exact: true })
+    .fill("not-found");
   await expect(
-    page.getByText("Aucun quartier trouvé", { exact: true }),
+    page.getByText("No neighbourhood found", { exact: true }),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "Réinitialiser les filtres", exact: true })
+    .getByRole("button", { name: "Reset filters", exact: true })
     .click();
   await expect(
-    page.getByText("10 quartiers pilotes", { exact: true }),
+    page.getByText("10 pilot neighbourhoods", { exact: true }),
   ).toBeVisible();
 });
 
@@ -480,60 +466,58 @@ test("le thème persiste et la réinitialisation demande une confirmation", asyn
 }) => {
   await page.goto("/signaler");
   await page
-    .getByRole("radio", { name: "Le courant est disponible", exact: true })
+    .getByRole("radio", { name: "The power is on", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Enregistrer mon signalement", exact: true })
+    .getByRole("button", { name: "Save my report", exact: true })
     .click();
   await page.goto("/offre/offer-osu-battery");
   await page
-    .getByRole("button", { name: "Simuler une demande", exact: true })
+    .getByRole("button", { name: "Simulate a request", exact: true })
     .click();
   await expect(
-    page.getByText("Demande simulée enregistrée", { exact: true }),
+    page.getByText("Simulated request saved", { exact: true }),
   ).toBeVisible();
   await page.goto("/profil");
   await page
-    .getByRole("button", { name: "Modifier mon profil", exact: true })
+    .getByRole("button", { name: "Edit my profile", exact: true })
     .click();
-  await page.getByLabel("Comment vous appeler ?", { exact: true }).fill("Ama");
   await page
-    .getByRole("button", { name: "Enregistrer mon profil", exact: true })
+    .getByLabel("What should we call you?", { exact: true })
+    .fill("Ama");
+  await page
+    .getByRole("button", { name: "Save my profile", exact: true })
     .click();
-  await page.getByRole("button", { name: "Clair", exact: true }).click();
+  await page.getByRole("button", { name: "Light", exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "Clair", exact: true }),
+    page.getByRole("button", { name: "Light", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
   await page.reload();
   await expect(
     page.getByRole("heading", { name: "Ama", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Clair", exact: true }),
+    page.getByRole("button", { name: "Light", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
   await page
-    .getByRole("button", { name: "Réinitialiser la démo", exact: true })
+    .getByRole("button", { name: "Reset the demo", exact: true })
     .click();
-  await page
-    .getByRole("button", { name: "Conserver mes données", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Keep my data", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Ama", exact: true }),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "Réinitialiser la démo", exact: true })
+    .getByRole("button", { name: "Reset the demo", exact: true })
     .click();
-  await page
-    .getByRole("button", { name: "Oui, réinitialiser", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Yes, reset", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "PAN", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Sombre", exact: true }),
+    page.getByRole("button", { name: "Dark", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
   await home(page);
-  await expect(page.getByText("Coupure à Osu", { exact: true })).toBeVisible();
+  await expect(page.getByText("Outage in Osu", { exact: true })).toBeVisible();
   await expect
     .poll(async () => (await savedState(page))?.bookings.length)
     .toBe(0);
@@ -554,24 +538,24 @@ test("des données locales invalides reviennent à une démo utilisable", async 
     demoKey,
   );
   await page.reload();
-  await expect(page.getByText("Bonjour PAN 👋", { exact: true })).toBeVisible();
-  await expect(page.getByText("Coupure à Osu", { exact: true })).toBeVisible();
+  await expect(page.getByText("Hello PAN 👋", { exact: true })).toBeVisible();
+  await expect(page.getByText("Outage in Osu", { exact: true })).toBeVisible();
   await page.evaluate(
     (key) => localStorage.setItem(key, "invalid JSON"),
     demoKey,
   );
   await page.reload();
-  await expect(page.getByText("Bonjour PAN 👋", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Signaler", exact: true }).click();
+  await expect(page.getByText("Hello PAN 👋", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Report", exact: true }).click();
   await page
-    .getByRole("radio", { name: "Le courant est instable", exact: true })
+    .getByRole("radio", { name: "The power is unstable", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Enregistrer mon signalement", exact: true })
+    .getByRole("button", { name: "Save my report", exact: true })
     .click();
   await expect(
     page.getByText(
-      "Votre signalement est enregistré sur cet appareil. L’état local du quartier a été mis à jour.",
+      "Your report is saved on this device. The neighbourhood’s local status has been updated.",
     ),
   ).toBeVisible();
 });
@@ -588,22 +572,20 @@ test("le stockage indisponible laisse les contributions utilisables dans la sess
     };
   });
   await page.reload();
-  await expect(page.getByText("Bonjour PAN 👋", { exact: true })).toBeVisible();
-  await expect(
-    page.getByText(/Le stockage local est indisponible/),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Signaler", exact: true }).click();
+  await expect(page.getByText("Hello PAN 👋", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Local storage is unavailable/)).toBeVisible();
+  await page.getByRole("button", { name: "Report", exact: true }).click();
   await page
-    .getByRole("radio", { name: "Le courant est disponible", exact: true })
+    .getByRole("radio", { name: "The power is on", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Enregistrer mon signalement", exact: true })
+    .getByRole("button", { name: "Save my report", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Voir la communauté", exact: true })
+    .getByRole("button", { name: "View the community", exact: true })
     .click();
   await expect(
-    page.getByText("État du courant signalé dans ce quartier.", {
+    page.getByText("Power status reported in this neighbourhood.", {
       exact: true,
     }),
   ).toBeVisible();
@@ -640,13 +622,13 @@ test("les écrans restent dans le viewport avec des erreurs et des textes longs"
   }
   await page.goto("/profil");
   await page
-    .getByRole("button", { name: "Modifier mon profil", exact: true })
+    .getByRole("button", { name: "Edit my profile", exact: true })
     .click();
   await page
-    .getByLabel("Comment vous appeler ?", { exact: true })
-    .fill("Amadou Ndiaye LightLink Quartier Démonstration Communauté");
+    .getByLabel("What should we call you?", { exact: true })
+    .fill("Amadou Ndiaye LightLink Neighbourhood Demonstration Community");
   await page
-    .getByRole("button", { name: "Enregistrer mon profil", exact: true })
+    .getByRole("button", { name: "Save my profile", exact: true })
     .click();
   await home(page);
   expect(
@@ -659,35 +641,33 @@ test("les écrans restent dans le viewport avec des erreurs et des textes longs"
 test("un brouillon d’offre survit au retour et au rechargement", async ({
   page,
 }) => {
-  await page.getByRole("button", { name: "Partager", exact: true }).click();
+  await page.getByRole("button", { name: "Share", exact: true }).click();
   await page
-    .getByLabel("Titre de l’offre", { exact: true })
-    .fill("Mon atelier solaire");
-  await page.getByRole("button", { name: "Retour", exact: true }).click();
-  await page.getByRole("button", { name: "Partager", exact: true }).click();
-  await expect(
-    page.getByLabel("Titre de l’offre", { exact: true }),
-  ).toHaveValue("Mon atelier solaire");
+    .getByLabel("Offer title", { exact: true })
+    .fill("My solar workshop");
+  await page.getByRole("button", { name: "Back", exact: true }).click();
+  await page.getByRole("button", { name: "Share", exact: true }).click();
+  await expect(page.getByLabel("Offer title", { exact: true })).toHaveValue(
+    "My solar workshop",
+  );
   await expect
     .poll(() =>
       page.evaluate(() =>
         localStorage.getItem("lightlink.mobile.draft.offer.v1"),
       ),
     )
-    .toContain("Mon atelier solaire");
+    .toContain("My solar workshop");
   await page.reload();
-  await expect(
-    page.getByLabel("Titre de l’offre", { exact: true }),
-  ).toHaveValue("Mon atelier solaire");
+  await expect(page.getByLabel("Offer title", { exact: true })).toHaveValue(
+    "My solar workshop",
+  );
   await page
-    .getByRole("button", { name: "Effacer le brouillon", exact: true })
+    .getByRole("button", { name: "Delete the draft", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Effacer ce brouillon", exact: true })
+    .getByRole("button", { name: "Delete this draft", exact: true })
     .click();
-  await expect(
-    page.getByLabel("Titre de l’offre", { exact: true }),
-  ).toHaveValue("");
+  await expect(page.getByLabel("Offer title", { exact: true })).toHaveValue("");
   await expect
     .poll(() =>
       page.evaluate(() =>
@@ -702,51 +682,49 @@ test("les brouillons de signalement restent associés à leur quartier", async (
 }) => {
   await page.goto("/signaler?zone=osu");
   await page
-    .getByRole("radio", { name: "Le courant est coupé", exact: true })
+    .getByRole("radio", { name: "The power is off", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Un détail à ajouter ?", exact: true })
+    .getByRole("button", { name: "Anything to add?", exact: true })
     .click();
   await page
-    .getByLabel("Votre observation", { exact: true })
-    .fill("Observation à Osu uniquement");
+    .getByLabel("Your observation", { exact: true })
+    .fill("Observation in Osu only");
   await expect
     .poll(() =>
       page.evaluate(() =>
         Object.keys(localStorage).some(
           (key) =>
             key.includes("draft.report") &&
-            localStorage.getItem(key)?.includes("Observation à Osu uniquement"),
+            localStorage.getItem(key)?.includes("Observation in Osu only"),
         ),
       ),
     )
     .toBe(true);
   await page.goto("/signaler?zone=labone");
   await expect(
-    page.getByRole("button", { name: "Choisir le quartier", exact: true }),
+    page.getByRole("button", { name: "Choose the neighbourhood", exact: true }),
   ).toHaveText("Labone");
   await expect(
-    page.getByRole("radio", { name: "Le courant est coupé", exact: true }),
+    page.getByRole("radio", { name: "The power is off", exact: true }),
   ).not.toBeChecked();
   await page.goto("/signaler?zone=osu");
   await expect(
-    page.getByLabel("Votre observation", { exact: true }),
-  ).toHaveValue("Observation à Osu uniquement");
+    page.getByLabel("Your observation", { exact: true }),
+  ).toHaveValue("Observation in Osu only");
 });
 
 test("la carte révèle la fiche choisie depuis le bas de la liste", async ({
   page,
 }) => {
-  await openTab(page, "Carte");
-  await page
-    .getByRole("button", { name: /^Choisir Tema Community 1,/ })
-    .click();
+  await openTab(page, "Map");
+  await page.getByRole("button", { name: /^Choose Tema Community 1,/ }).click();
   await expect(
     page.getByRole("heading", { name: "Tema Community 1", exact: true }),
   ).toBeInViewport();
-  await page.getByRole("button", { name: "Signaler", exact: true }).click();
+  await page.getByRole("button", { name: "Report", exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "Choisir le quartier", exact: true }),
+    page.getByRole("button", { name: "Choose the neighbourhood", exact: true }),
   ).toHaveText("Tema Community 1");
 });
 
@@ -757,18 +735,18 @@ test("les actions fixes et la navigation restent entièrement visibles", async (
     await page.goto(route);
     const label = page
       .locator("a")
-      .filter({ has: page.getByText("Accueil", { exact: true }) })
+      .filter({ has: page.getByText("Home", { exact: true }) })
       .last();
     await expect(label).toBeInViewport({ ratio: 1 });
   }
   await page.goto("/publier");
   await expect(
-    page.getByRole("button", { name: "Publier mon offre locale", exact: true }),
+    page.getByRole("button", { name: "Publish my local offer", exact: true }),
   ).toBeInViewport({ ratio: 1 });
   await page.goto("/signaler");
   await expect(
     page.getByRole("button", {
-      name: "Enregistrer mon signalement",
+      name: "Save my report",
       exact: true,
     }),
   ).toBeInViewport({ ratio: 1 });
@@ -781,53 +759,47 @@ test("les prévisions partagées restent lisibles et conservent le quartier vers
   // an outage in parts of Madina (shared/forecast-snapshot.ts).
   await page.goto("/previsions?zone=madina");
   await expect(
-    page.getByRole("button", { name: "Quartier des prévisions", exact: true }),
+    page.getByRole("button", { name: "Forecast neighbourhood", exact: true }),
   ).toHaveText("Madina");
-  await expect(
-    page.getByText("DÉMO · PRÉVISION DU 16 OCT. 2026"),
-  ).toBeVisible();
+  await expect(page.getByText("DEMO · FORECAST FOR 16 OCT 2026")).toBeVisible();
   await expect(page.getByText(/^09:00\s*–\s*17:00$/)).toBeVisible();
   await expect(page.getByText(/^90\s*%$/)).toBeVisible();
   await expect(
-    page.getByText("45 % de risque de coupure", { exact: true }),
+    page.getByText("45% outage risk", { exact: true }),
   ).toBeVisible();
 
   const chart = page.getByRole("slider", {
-    name: "Risque de coupure de 06 h à 23 h : au plus haut 45 % vers 10 h.",
+    name: "Outage risk from 06:00 to 23:00: highest at 45% around 10:00.",
     exact: true,
   });
   await expect(chart).toHaveAttribute("aria-valuenow", "3");
-  await expect(chart).toHaveAttribute("aria-valuetext", /45 pour cent/);
+  await expect(chart).toHaveAttribute("aria-valuetext", /45 percent/);
   await chart.focus();
   await page.keyboard.press("ArrowLeft");
   await expect(chart).toHaveAttribute("aria-valuenow", "2");
-  await expect(
-    page.getByText("0 % de risque de coupure", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText("0% outage risk", { exact: true })).toBeVisible();
   await page.keyboard.press("ArrowRight");
   await expect(
-    page.getByText("45 % de risque de coupure", { exact: true }),
+    page.getByText("45% outage risk", { exact: true }),
   ).toBeVisible();
 
   await page
-    .getByRole("button", { name: "Quartier des prévisions", exact: true })
+    .getByRole("button", { name: "Forecast neighbourhood", exact: true })
     .click();
   await page.getByRole("button", { name: "Labone", exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "Quartier des prévisions", exact: true }),
+    page.getByRole("button", { name: "Forecast neighbourhood", exact: true }),
   ).toHaveText("Labone");
   // No announcement in Labone that day: base rate only, low confidence.
   await expect(page.getByText(/^33\s*%$/)).toBeVisible();
-  await expect(
-    page.getByText("2 % de risque de coupure", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText("2% outage risk", { exact: true })).toBeVisible();
   await page
-    .getByRole("button", { name: "Trouver une solution", exact: true })
+    .getByRole("button", { name: "Find a solution", exact: true })
     .click();
   await expect(page).toHaveURL(/\/partage\?zone=labone(?:&|$)/);
   await expect(
     page.getByRole("button", {
-      name: "Chercher autour d’un quartier",
+      name: "Search around a neighbourhood",
       exact: true,
     }),
   ).toHaveText("Labone");
@@ -847,7 +819,7 @@ test("captures des écrans principaux en clair et sombre", async ({
     await page.goto("/profil");
     await page
       .getByRole("button", {
-        name: theme === "dark" ? "Sombre" : "Clair",
+        name: theme === "dark" ? "Dark" : "Light",
         exact: true,
       })
       .click();
@@ -855,19 +827,15 @@ test("captures des écrans principaux en clair et sombre", async ({
       .poll(() => page.evaluate((key) => localStorage.getItem(key), displayKey))
       .toBe(theme);
     for (const [name, route, expected] of [
-      ["home", "/", "Bonjour PAN 👋"],
-      ["map", "/carte", "Carte des quartiers"],
-      [
-        "offer",
-        "/offre/offer-labone-solar",
-        "Un bureau, du soleil et du Wi-Fi",
-      ],
-      ["profile", "/profil", "Mon espace"],
-      ["forecast", "/previsions", "Prévisions"],
-      ["sharing", "/partage", "Les bonnes énergies."],
-      ["community", "/communaute", "Communauté"],
-      ["report", "/signaler", "Signaler le courant"],
-      ["publish", "/publier", "Partager mon énergie"],
+      ["home", "/", "Hello PAN 👋"],
+      ["map", "/carte", "Neighbourhood map"],
+      ["offer", "/offre/offer-labone-solar", "A desk, sunshine and Wi-Fi"],
+      ["profile", "/profil", "My space"],
+      ["forecast", "/previsions", "Forecast"],
+      ["sharing", "/partage", "Good energy nearby."],
+      ["community", "/communaute", "Community"],
+      ["report", "/signaler", "Report the power"],
+      ["publish", "/publier", "Share my energy"],
     ]) {
       await page.goto(route);
       await expect(

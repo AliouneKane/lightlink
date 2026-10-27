@@ -101,14 +101,14 @@ function MapFallback({
         <MapPin size={22} color={colors.accent} />
         <Txt weight="bold" size={16} style={{ flex: 1 }}>
           {reason === "error"
-            ? "Les quartiers restent accessibles"
-            : "Les quartiers en un regard"}
+            ? "Neighbourhoods stay accessible"
+            : "Neighbourhoods at a glance"}
         </Txt>
       </View>
       <Txt size={12} tone="muted" accessibilityLiveRegion="polite">
         {reason === "error"
-          ? "Le fond de carte n’a pas pu se charger. Les informations locales restent disponibles."
-          : "Choisissez un quartier pour consulter son état et les offres proches."}
+          ? "The base map could not load. Local information remains available."
+          : "Choose a neighbourhood to see its status and nearby offers."}
       </Txt>
       <ScrollView
         style={{ maxHeight: Math.max(130, height - 170) }}
@@ -150,16 +150,14 @@ function MapFallback({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={
-          reason === "error"
-            ? "Réessayer de charger la carte"
-            : "Revenir à la carte"
+          reason === "error" ? "Try loading the map again" : "Back to the map"
         }
         onPress={retry}
         style={[styles.retry, { backgroundColor: colors.surface }]}
       >
         <ReturnIcon size={16} color={colors.accent} />
         <Txt size={12} weight="bold" tone="accent">
-          {reason === "error" ? "Réessayer la carte" : "Revenir à la carte"}
+          {reason === "error" ? "Retry the map" : "Back to the map"}
         </Txt>
       </Pressable>
     </View>
@@ -305,7 +303,7 @@ function NativeMap({
         pitchEnabled={false}
         rotateEnabled={false}
         zoomControlEnabled={false}
-        accessibilityLabel="Carte des quartiers pilotes d’Accra. Une liste accessible est disponible avec le bouton Liste."
+        accessibilityLabel="Map of Accra’s pilot neighbourhoods. An accessible list is available with the List button."
       >
         {neighborhoods.map((area) => {
           const active = area.id === selectedId;
@@ -331,7 +329,7 @@ function NativeMap({
             title={area.name}
             description={
               area.plannedUntil
-                ? `${statusMeta[area.status].label} · coupure annoncée par l’ECG jusqu’à ${area.plannedUntil.slice(11, 16)}`
+                ? `${statusMeta[area.status].label} · ECG outage announced until ${area.plannedUntil.slice(11, 16)}`
                 : statusMeta[area.status].label
             }
             pinColor={colors[statusMeta[area.status].color]}
@@ -358,13 +356,13 @@ function NativeMap({
       </View>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Afficher les quartiers en liste"
+        accessibilityLabel="Show neighbourhoods as a list"
         onPress={onShowList}
         style={[styles.listButton, { backgroundColor: colors.surface }]}
       >
         <Layers size={16} color={colors.ink} />
         <Txt size={10} weight="bold">
-          Liste
+          List
         </Txt>
       </Pressable>
       <View
@@ -374,11 +372,11 @@ function NativeMap({
         ]}
       >
         {[
-          { icon: Plus, label: "Zoom avant", factor: 0.6 },
-          { icon: Minus, label: "Zoom arrière", factor: 1.65 },
+          { icon: Plus, label: "Zoom in", factor: 0.6 },
+          { icon: Minus, label: "Zoom out", factor: 1.65 },
           {
             icon: Maximize2,
-            label: "Afficher tous les quartiers",
+            label: "Show all neighbourhoods",
             factor: 0,
           },
         ].map(({ icon: Icon, label, factor }) => (
@@ -408,7 +406,7 @@ function NativeMap({
         >
           <ActivityIndicator size="small" color={colors.accent} />
           <Txt size={11} accessibilityLiveRegion="polite">
-            Chargement de la carte…
+            Loading the map…
           </Txt>
         </View>
       )}

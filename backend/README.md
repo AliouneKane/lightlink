@@ -69,4 +69,4 @@ npm run demo:on    # 10 reports in Osu, Labone, Dansoman and Madina, observed in
 npm run demo:off   # removes them
 ```
 
-Simulated reports are labelled *[SIMULÉ]*, shown as *« Données simulées »* by the apps, never count in the measure of ECG announcements, trigger no alert, and leave the map by themselves after 2 hours. App users cannot create them.
+Simulated reports are labelled *[SIMULATED]*, shown as *“Simulated data”* by the apps, never count in the measure of ECG announcements, trigger no alert, and leave the map by themselves after 2 hours. App users cannot create them.

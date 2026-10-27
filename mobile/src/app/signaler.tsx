@@ -79,22 +79,22 @@ const choices: {
 }[] = [
   {
     value: "outage",
-    title: "Le courant est coupé",
-    description: "Aucune alimentation pour le moment.",
+    title: "The power is off",
+    description: "No supply for now.",
     icon: ZapOff,
     color: "red",
   },
   {
     value: "powered",
-    title: "Le courant est disponible",
-    description: "L’électricité fonctionne chez moi.",
+    title: "The power is on",
+    description: "Electricity works at my place.",
     icon: Zap,
     color: "green",
   },
   {
     value: "unstable",
-    title: "Le courant est instable",
-    description: "Des interruptions ou des fluctuations.",
+    title: "The power is unstable",
+    description: "Interruptions or fluctuations.",
     icon: CircleHelp,
     color: "amber",
   },
@@ -146,7 +146,7 @@ function ReportContent({ initialZone }: { initialZone: string }) {
   function submit() {
     Keyboard.dismiss();
     if (!status) {
-      setErrors({ status: "Choisissez l’état du courant que vous observez." });
+      setErrors({ status: "Choose the power status you observe." });
       scrollRef.current?.scrollTo({
         y: Math.max(0, statusY.current - 20),
         animated: !reducedMotion,
@@ -190,7 +190,7 @@ function ReportContent({ initialZone }: { initialZone: string }) {
   if (saved)
     return (
       <Screen scrollRef={scrollRef}>
-        <BackHeader title="Votre signalement" />
+        <BackHeader title="Your report" />
         <StorageNotice />
         <View style={styles.successIntro} accessibilityLiveRegion="polite">
           <View style={[styles.successOuter, { backgroundColor: colors.soft }]}>
@@ -206,11 +206,11 @@ function ReportContent({ initialZone }: { initialZone: string }) {
             accessibilityRole="header"
             style={styles.centerText}
           >
-            Merci pour{"\n"}le coup de main.
+            Thanks for{"\n"}lending a hand.
           </Txt>
           <Txt size={14} tone="muted" style={styles.successDescription}>
-            Votre signalement est enregistré sur cet appareil. L’état local du
-            quartier a été mis à jour.
+            Your report is saved on this device. The neighbourhood’s local
+            status has been updated.
           </Txt>
         </View>
         <Card style={styles.successSummary}>
@@ -229,17 +229,17 @@ function ReportContent({ initialZone }: { initialZone: string }) {
           <View style={[styles.summaryFooter, { borderTopColor: colors.line }]}>
             <ShieldCheck size={15} color={colors.green} />
             <Txt size={12} tone="muted" style={styles.flex}>
-              Contribution locale de {saved.author}
+              Local contribution from {saved.author}
             </Txt>
           </View>
         </Card>
         <Button
-          label="Voir la communauté"
+          label="View the community"
           icon={ArrowRight}
           onPress={() => router.replace("/(tabs)/communaute")}
         />
         <Button
-          label="Ajouter un autre signalement"
+          label="Add another report"
           variant="secondary"
           onPress={() => {
             setSaved(null);
@@ -249,7 +249,7 @@ function ReportContent({ initialZone }: { initialZone: string }) {
             );
           }}
         />
-        <DemoNote text="Il s’agit d’une simulation. Aucun signalement n’a été transmis à d’autres personnes ou au réseau électrique." />
+        <DemoNote text="This is a simulation. No report was sent to other people or to the power grid." />
       </Screen>
     );
 
@@ -269,18 +269,18 @@ function ReportContent({ initialZone }: { initialZone: string }) {
             </Txt>
           )}
           <Button
-            label="Enregistrer mon signalement"
+            label="Save my report"
             icon={Send}
             onPress={submit}
             disabled={!ready || !draft.ready}
           />
           <Txt size={11} tone="muted" style={styles.footerHint}>
-            Démonstration · enregistré uniquement sur cet appareil.
+            Demo · saved only on this device.
           </Txt>
         </View>
       }
     >
-      <BackHeader title="Signaler le courant" />
+      <BackHeader title="Report the power" />
       <StorageNotice />
       <View style={styles.intro}>
         <Txt
@@ -289,15 +289,15 @@ function ReportContent({ initialZone }: { initialZone: string }) {
           accessibilityRole="header"
           style={styles.title}
         >
-          Que se passe-t-il dans votre quartier ?
+          What is happening in your neighbourhood?
         </Txt>
         <Txt size={13} tone="muted">
-          Choisissez ce que vous observez. Un détail reste facultatif.
+          Choose what you observe. A detail is optional.
         </Txt>
       </View>
       {!draft.ready && (
         <Txt size={12} tone="muted">
-          Restauration du brouillon…
+          Restoring the draft…
         </Txt>
       )}
       {draft.storageError && (
@@ -310,12 +310,12 @@ function ReportContent({ initialZone }: { initialZone: string }) {
           <Save size={15} color={colors.muted} />
           <Txt size={12} tone="muted" style={styles.flex}>
             {draft.storageError
-              ? "Brouillon de cette session"
-              : "Brouillon conservé sur cet appareil"}
+              ? "Draft for this session"
+              : "Draft kept on this device"}
           </Txt>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Effacer le brouillon"
+            accessibilityLabel="Delete the draft"
             onPress={() => {
               Keyboard.dismiss();
               setDiscarding(true);
@@ -328,24 +328,24 @@ function ReportContent({ initialZone }: { initialZone: string }) {
       )}
       {discarding && (
         <Card>
-          <Txt weight="bold">Effacer votre saisie ?</Txt>
+          <Txt weight="bold">Delete your input?</Txt>
           <Txt size={13} tone="muted">
-            Le signalement n’a pas encore été enregistré.
+            The report has not been saved yet.
           </Txt>
           <Button
-            label="Effacer ce brouillon"
+            label="Delete this draft"
             variant="danger"
             onPress={clearDraft}
           />
           <Button
-            label="Continuer la saisie"
+            label="Keep editing"
             variant="secondary"
             onPress={() => setDiscarding(false)}
           />
         </Card>
       )}
       <View style={styles.fieldGroup}>
-        <SectionTitle title="1. Votre quartier" />
+        <SectionTitle title="1. Your neighbourhood" />
         <ZonePicker
           value={zoneId}
           onChange={(value) => {
@@ -360,9 +360,9 @@ function ReportContent({ initialZone }: { initialZone: string }) {
           statusY.current = event.nativeEvent.layout.y;
         }}
         accessibilityRole="radiogroup"
-        accessibilityLabel="État du courant"
+        accessibilityLabel="Power status"
       >
-        <SectionTitle title="2. L’état du courant" />
+        <SectionTitle title="2. The power status" />
         {errors.status && (
           <Txt
             size={13}
@@ -437,7 +437,7 @@ function ReportContent({ initialZone }: { initialZone: string }) {
       <Card>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Un détail à ajouter ?"
+          accessibilityLabel="Anything to add?"
           accessibilityState={{ expanded }}
           onPress={() => {
             Keyboard.dismiss();
@@ -448,7 +448,7 @@ function ReportContent({ initialZone }: { initialZone: string }) {
           <MessageSquare size={18} color={colors.muted} />
           <View style={styles.flex}>
             <Txt size={14} weight="bold">
-              Un détail à ajouter ?
+              Anything to add?
             </Txt>
             <Txt size={11} tone="muted">
               Facultatif{description ? ` · ${description.length}/500` : ""}
@@ -463,21 +463,21 @@ function ReportContent({ initialZone }: { initialZone: string }) {
         {expanded && (
           <Field
             ref={descriptionRef}
-            label="Votre observation"
+            label="Your observation"
             value={description}
             onChangeText={(value) => {
               draft.patch({ description: value });
               setErrors({});
             }}
-            placeholder="Ex. Le courant vient de revenir dans ma rue…"
+            placeholder="E.g. The power just came back on my street…"
             multiline
             maxLength={500}
             error={errors.description}
-            hint={`${description.length}/500 · Évitez les adresses exactes et les informations personnelles.`}
+            hint={`${description.length}/500 · Avoid exact addresses and personal information.`}
           />
         )}
       </Card>
-      <DemoNote text="Le signalement reste sur cet appareil. Les horaires et prévisions du scénario ne sont pas recalculés." />
+      <DemoNote text="The report stays on this device. The scenario’s schedules and forecasts are not recalculated." />
     </Screen>
   );
 }

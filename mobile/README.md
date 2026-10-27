@@ -43,21 +43,21 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=<publishable key>
 | Reports              | Kept on the phone                                    | Sent to Supabase; **without network they wait on the phone** and leave when it comes back, in order, never twice |
 | Offers and requests  | Kept on the phone                                    | Supabase: request a place, accept or refuse, exact address shown once accepted, report abuse                     |
 
-If the database does not answer, neighbourhoods read _« État inconnu »_ instead of an invented state.
+If the database does not answer, neighbourhoods read _“Unknown status”_ instead of an invented state.
 
 ## Screens
 
-| Route         | Screen                                                                |
-| ------------- | --------------------------------------------------------------------- |
-| `/`           | Home: my neighbourhood, its state, forecast preview, shortcuts        |
-| `/carte`      | Map of the 10 pilot neighbourhoods, filters, details                  |
-| `/partage`    | Energy offers by source and distance                                  |
-| `/communaute` | Recent reports                                                        |
-| `/signaler`   | Report an outage, power back, or unstable power                       |
-| `/previsions` | Forecast, risk by hour, ECG calendar and _« Avez-vous du courant ? »_ |
-| `/offre/[id]` | Offer details; for its host, the requests received                    |
-| `/publier`    | Publish an offer                                                      |
-| `/profil`     | Profile, my requests, my offers, theme, reset                         |
+| Route         | Screen                                                          |
+| ------------- | --------------------------------------------------------------- |
+| `/`           | Home: my neighbourhood, its state, forecast preview, shortcuts  |
+| `/carte`      | Map of the 10 pilot neighbourhoods, filters, details            |
+| `/partage`    | Energy offers by source and distance                            |
+| `/communaute` | Recent reports                                                  |
+| `/signaler`   | Report an outage, power back, or unstable power                 |
+| `/previsions` | Forecast, risk by hour, ECG calendar and _“Do you have power?”_ |
+| `/offre/[id]` | Offer details; for its host, the requests received              |
+| `/publier`    | Publish an offer                                                |
+| `/profil`     | Profile, my requests, my offers, theme, reset                   |
 
 ## Checks
 

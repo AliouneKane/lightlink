@@ -195,7 +195,7 @@ export async function createLiveOffer(
 ): Promise<string | null> {
   const endsAt = endsAtFromUntil(input.until);
   if (!endsAt)
-    return "Une offre dure 12 heures au plus. Choisissez une heure de fin plus proche.";
+    return "An offer lasts 12 hours at most. Choose an earlier end time.";
   // One call: the offer and its private address are created together or not at all
   // (PAN's review of #9, point 4: a refused address used to leave a public offer behind).
   const row = offerInsertRow(input, hostName, endsAt);
@@ -227,14 +227,14 @@ export async function syncProfileZone(
   zoneId: string,
 ): Promise<string | null> {
   const me = await currentUser(db);
-  if (!me) return "Pas de session.";
+  if (!me) return "No session.";
   const { data, error } = await db
     .from("profiles")
     .update({ zone_id: zoneId })
     .eq("id", me)
     .select("id");
   if (error) return sharingErrorMessage(error);
-  return data?.length ? null : "Profil introuvable.";
+  return data?.length ? null : "Profile not found.";
 }
 
 /** Suspend (closed) or reopen one of my offers. */
@@ -280,8 +280,7 @@ export async function reportLiveAbuse(
   offerId: string,
   reason: string,
 ): Promise<string | null> {
-  if (reason.trim().length < 3)
-    return "Expliquez le problème en quelques mots.";
+  if (reason.trim().length < 3) return "Explain the problem in a few words.";
   const { error } = await db
     .from("abuse_reports")
     .insert({ offer_id: offerId, reason: reason.trim().slice(0, 500) });
@@ -347,7 +346,7 @@ export async function openSession(
     const key = `${me}:${homeZoneId}`;
     if (me && syncedZones.get(db) !== key) {
       const failed = await syncProfileZone(db, homeZoneId).catch(
-        () => "réseau",
+        () => "network",
       );
       if (!failed) syncedZones.set(db, key);
     }

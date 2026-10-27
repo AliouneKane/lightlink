@@ -46,10 +46,11 @@ interface RepositoryOptions {
   createId?: () => string;
 }
 
-const loadingError = "Vos données locales sont encore en cours de chargement.";
-export const mobileStorageKey = "lightlink.mobile.demo.v1";
+const loadingError = "Your local data is still loading.";
+// v2: demo content translated to English; a v1 store would show French offers.
+export const mobileStorageKey = "lightlink.mobile.demo.v2";
 const storageWarning =
-  "Le stockage local est indisponible. Vos changements restent utilisables pendant cette session, mais ne seront pas conservés après fermeture.";
+  "Local storage is unavailable. Your changes remain usable during this session but will not be kept after closing.";
 const ownedOfferPrefix = "mobile-offer-";
 
 /** Ownership belongs to this local installation, independently of its display name. */
@@ -197,7 +198,7 @@ export function createDemoRepository(
       if (error) return error;
       const state = snapshot.state;
       if (state.offers.length >= 100)
-        return "La démo contient déjà 100 offres. Réinitialisez les données pour en créer de nouvelles.";
+        return "The demo already holds 100 offers. Reset the data to create new ones.";
       const neighborhood = neighborhoods.find(
         (item) => item.id === input.neighborhoodId,
       )!;
@@ -206,7 +207,7 @@ export function createDemoRepository(
         .slice(0, 2)
         .map((part) => part[0])
         .join("")
-        .toLocaleUpperCase("fr")
+        .toLocaleUpperCase("en")
         .slice(0, 4);
       save({
         ...state,
@@ -238,14 +239,13 @@ export function createDemoRepository(
       const state = snapshot.state;
       const offer = state.offers.find((item) => item.id === offerId);
       if (!offer || !offer.available || offer.slots < 1)
-        return "Cette offre n’est plus disponible.";
+        return "This offer is no longer available.";
       // Ownership survives changing the display name, without persisting auth data.
-      if (isOwnedOffer(offer.id))
-        return "Vous ne pouvez pas demander votre propre offre.";
+      if (isOwnedOffer(offer.id)) return "You cannot request your own offer.";
       if (state.bookings.some((booking) => booking.offerId === offerId))
-        return "Vous avez déjà une demande en attente pour cette offre.";
+        return "You already have a pending request for this offer.";
       if (state.bookings.length >= 100)
-        return "La démo contient déjà 100 demandes. Annulez une demande avant de continuer.";
+        return "The demo already holds 100 requests. Cancel a request before continuing.";
       save({
         ...state,
         bookings: [
@@ -265,13 +265,13 @@ export function createDemoRepository(
       if (!snapshot.ready) return loadingError;
       const state = snapshot.state;
       const offer = state.offers.find((item) => item.id === offerId);
-      if (!offer) return "Cette offre n’est plus sur cet appareil.";
+      if (!offer) return "This offer is no longer on this device.";
       if (!isOwnedOffer(offer.id))
-        return "Vous pouvez seulement gérer les offres que vous avez publiées.";
+        return "You can only manage the offers you published.";
       if (typeof available !== "boolean")
-        return "Choisissez si votre offre est disponible ou suspendue.";
+        return "Choose whether your offer is available or paused.";
       if (available && offer.slots < 1)
-        return "Cette offre ne contient aucune place disponible.";
+        return "This offer has no available place.";
       if (offer.available === available) return null;
       save({
         ...state,
@@ -297,9 +297,9 @@ export function createDemoRepository(
         !profile.name.trim() ||
         profile.name.trim().length > 60
       )
-        return "Votre nom doit contenir entre 1 et 60 caractères.";
+        return "Your name must be between 1 and 60 characters.";
       if (!neighborhoods.some((item) => item.id === profile.neighborhoodId))
-        return "Choisissez un quartier de la zone pilote.";
+        return "Choose a neighbourhood in the pilot area.";
       save({
         ...snapshot.state,
         profile: {

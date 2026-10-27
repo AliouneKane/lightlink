@@ -43,17 +43,17 @@ export interface EnergyMapProps {
 
 const ACCRA: [number, number] = [5.59, -0.205];
 const STATUS = {
-  powered: { color: "#1b9e77", label: "Électricité disponible" },
-  outage: { color: "#ee725b", label: "Coupure signalée" },
-  unstable: { color: "#e9ad44", label: "Réseau instable" },
-  unknown: { color: "#8a97a1", label: "État inconnu" },
+  powered: { color: "#1b9e77", label: "Power available" },
+  outage: { color: "#ee725b", label: "Outage reported" },
+  unstable: { color: "#e9ad44", label: "Unstable grid" },
+  unknown: { color: "#8a97a1", label: "Unknown status" },
 };
-// Dashed ring around zones with an ECG outage announced now (legend: "Coupure annoncée").
+// Dashed ring around zones with an ECG outage announced now (legend: "Announced outage").
 const PLANNED_COLOR = "#b9a3f0";
 const SOURCE = {
-  solar: "Énergie solaire",
-  generator: "Groupe électrogène",
-  battery: "Batterie",
+  solar: "Solar power",
+  generator: "Generator",
+  battery: "Battery",
 };
 
 // Only trusted, static SVG is passed to Leaflet. Offer titles stay in React.
@@ -105,7 +105,7 @@ function MapViewport({
     const element = map.getContainer();
     element.setAttribute(
       "aria-label",
-      "Carte interactive des quartiers et des offres d’énergie à Accra. Utilisez les flèches pour déplacer la carte.",
+      "Interactive map of neighbourhoods and energy offers in Accra. Use the arrow keys to move the map.",
     );
     let frame = 0;
     const resize = () => {
@@ -164,7 +164,7 @@ function MapTools() {
     locationerror: () => {
       setLocating(false);
       setLocationError(
-        "Localisation indisponible. Vérifiez l’autorisation de votre navigateur.",
+        "Location unavailable. Check your browser’s permission.",
       );
     },
   });
@@ -180,16 +180,12 @@ function MapTools() {
 
   return (
     <>
-      <div
-        className="map-tools"
-        ref={controls}
-        aria-label="Contrôles de la carte"
-      >
+      <div className="map-tools" ref={controls} aria-label="Map controls">
         <button
           type="button"
           className="map-tool-button"
-          title="Zoom avant"
-          aria-label="Zoom avant"
+          title="Zoom in"
+          aria-label="Zoom in"
           disabled={zoom >= 19}
           onClick={() => map.zoomIn()}
         >
@@ -198,8 +194,8 @@ function MapTools() {
         <button
           type="button"
           className="map-tool-button"
-          title="Zoom arrière"
-          aria-label="Zoom arrière"
+          title="Zoom out"
+          aria-label="Zoom out"
           disabled={zoom <= 3}
           onClick={() => map.zoomOut()}
         >
@@ -209,8 +205,8 @@ function MapTools() {
         <button
           type="button"
           className="map-tool-button"
-          title="Me localiser"
-          aria-label={locating ? "Localisation en cours" : "Me localiser"}
+          title="Locate me"
+          aria-label={locating ? "Locating" : "Locate me"}
           disabled={locating}
           aria-busy={locating}
           onClick={() => {
@@ -229,8 +225,8 @@ function MapTools() {
         <button
           type="button"
           className="map-tool-button"
-          title="Recentrer sur Accra"
-          aria-label="Recentrer sur Accra"
+          title="Recentre on Accra"
+          aria-label="Recentre on Accra"
           onClick={() => {
             setLocationError(null);
             map.flyTo(ACCRA, 12, { duration: 0.65, animate: !reducedMotion() });
@@ -255,7 +251,7 @@ function MapTools() {
             fillOpacity: 1,
           }}
         >
-          <Tooltip>Votre position</Tooltip>
+          <Tooltip>Your location</Tooltip>
         </CircleMarker>
       )}
     </>
@@ -399,15 +395,15 @@ export default function EnergyMap({
                     <p>{state.label}</p>
                     {area.plannedUntil && (
                       <p>
-                        Coupure annoncée par l’ECG jusqu’à{" "}
+                        ECG outage announced until{" "}
                         {area.plannedUntil.slice(11, 16)}
                       </p>
                     )}
                     <span>
-                      {area.reports} signalement{area.reports > 1 ? "s" : ""}
+                      {area.reports} report{area.reports === 1 ? "" : "s"}
                     </span>
                     <button type="button" onClick={() => onSelect(area.id)}>
-                      Voir ce quartier
+                      View this neighbourhood
                     </button>
                   </Popup>
                 </CircleMarker>
@@ -438,11 +434,11 @@ export default function EnergyMap({
                 <p>{SOURCE[offer.source]}</p>
                 <span>
                   {offer.available
-                    ? "Énergie disponible"
-                    : "Actuellement indisponible"}
+                    ? "Energy available"
+                    : "Currently unavailable"}
                 </span>
                 <button type="button" onClick={() => onSelect(offer.id)}>
-                  Voir l’offre
+                  View offer
                 </button>
               </Popup>
             </Marker>
@@ -458,19 +454,19 @@ export default function EnergyMap({
           role="status"
         >
           {liveState === "error"
-            ? "Les données en direct sont indisponibles : l’état des quartiers n’est pas affiché. Réessayez dans un instant."
-            : "Chargement de l’état des quartiers…"}
+            ? "Live data is unavailable: neighbourhood status is not shown. Please try again in a moment."
+            : "Loading neighbourhood status…"}
         </div>
       )}
       {tileStatus === "loading" && (
         <div className="map-status map-status--loading" role="status">
-          Chargement de la carte…
+          Loading the map…
         </div>
       )}
       {tileStatus === "error" && (
         <div className="map-status map-status--error" role="status">
-          Le fond de carte est indisponible. Les quartiers et les points
-          d’énergie restent consultables.
+          The base map is unavailable. Neighbourhoods and energy points can
+          still be viewed.
         </div>
       )}
     </div>

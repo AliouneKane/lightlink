@@ -119,8 +119,8 @@ export function createReportQueue(
         unknownTime === 0
           ? null
           : unknownTime === 1
-            ? "Un ancien signalement sans heure n’a pas été envoyé. Refaites-le si la coupure continue."
-            : `${unknownTime} anciens signalements sans heure n’ont pas été envoyés. Refaites-les si la coupure continue.`,
+            ? "An old report without a time was not sent. Report again if the outage continues."
+            : `${unknownTime} old reports without a time were not sent. Report again if the outage continues.`,
       );
     },
     /** Sends now, or keeps the report for later when the network is missing. */

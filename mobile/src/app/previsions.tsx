@@ -40,18 +40,18 @@ import { useTheme } from "@/providers/theme-provider";
 const methodSources = [
   {
     number: "01",
-    title: "Horaires ECG",
-    description: "Coupures annoncées par l’ECG pour votre quartier.",
+    title: "ECG schedules",
+    description: "Outages announced by the ECG for your neighbourhood.",
   },
   {
     number: "02",
-    title: "Historique du quartier",
-    description: "Fréquence et durée médiane des coupures.",
+    title: "Neighbourhood history",
+    description: "Frequency and median duration of outages.",
   },
   {
     number: "03",
-    title: "Signalements communautaires",
-    description: "Des contributions récentes pour affiner l’estimation.",
+    title: "Community reports",
+    description: "Recent contributions to refine the estimate.",
   },
 ];
 
@@ -108,9 +108,9 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
   const forecast = getForecast(zone.id, livePredictions);
   // Task 105: the colour follows the confidence level, never green when it is low.
   const confidenceColor =
-    forecast.confidenceLevel === "forte"
+    forecast.confidenceLevel === "high"
       ? colors.green
-      : forecast.confidenceLevel === "moyenne"
+      : forecast.confidenceLevel === "medium"
         ? colors.amber
         : colors.muted;
 
@@ -118,14 +118,14 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
     setLinkError(null);
     void Linking.openURL("https://www.ecg.com.gh/").catch(() =>
       setLinkError(
-        "Le site ECG n’a pas pu s’ouvrir. Réessayez lorsque votre connexion est disponible.",
+        "The ECG website could not open. Try again when your connection is available.",
       ),
     );
   }
 
   return (
     <Screen>
-      <BackHeader title="Prévisions" />
+      <BackHeader title="Forecast" />
       <View style={styles.intro}>
         <View
           style={styles.scenarioLine}
@@ -143,22 +143,22 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
           accessibilityRole="header"
           style={styles.headline}
         >
-          Le rythme de{"\n"}
+          The rhythm of{"\n"}
           <Txt
             size={30}
             weight="extrabold"
             tone="accent"
             style={styles.headline}
           >
-            votre énergie.
+            your power.
           </Txt>
         </Txt>
         <Txt size={13} tone="muted">
-          Des estimations transparentes pour anticiper votre journée.
+          Transparent estimates to plan your day.
         </Txt>
       </View>
       <ZonePicker
-        label="Quartier des prévisions"
+        label="Forecast neighbourhood"
         value={zoneId}
         onChange={setZoneId}
       />
@@ -167,7 +167,7 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
         <View style={[styles.window, { backgroundColor: colors.yellow }]}>
           <View style={styles.between}>
             <Txt size={11} weight="extrabold" style={styles.windowEyebrow}>
-              CRÉNEAU PROBABLE
+              LIKELY WINDOW
             </Txt>
             <ZapOff size={18} color={colors.navy} />
           </View>
@@ -188,11 +188,11 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
             <View style={styles.row}>
               <Clock3 size={14} color={colors.muted} />
               <Txt size={11} tone="muted">
-                Risque au plus fort
+                Peak risk
               </Txt>
             </View>
             <Txt size={24} weight="extrabold" style={styles.metricValue}>
-              {forecast.probability} %
+              {forecast.probability}%
             </Txt>
           </View>
           <View
@@ -202,7 +202,9 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
             <View style={styles.row}>
               <ShieldCheck size={14} color={colors.muted} />
               <Txt size={11} tone="muted">
-                Confiance {forecast.confidenceLevel}
+                {forecast.confidenceLevel[0].toUpperCase() +
+                  forecast.confidenceLevel.slice(1)}{" "}
+                confidence
               </Txt>
             </View>
             <Txt
@@ -212,7 +214,6 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
             >
               {forecast.confidence}
               <Txt size={16} weight="bold" style={{ color: confidenceColor }}>
-                {" "}
                 %
               </Txt>
             </Txt>
@@ -221,7 +222,7 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
         <View style={[styles.chartSection, { borderTopColor: colors.line }]}>
           <View style={styles.between}>
             <Txt size={15} weight="bold">
-              Risque de coupure
+              Outage risk
             </Txt>
             <Txt size={10} weight="bold" tone="muted">
               {forecast.hourLabels[0]} –{" "}
@@ -247,7 +248,7 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
               {forecast.summary}.
             </Txt>
             <Txt size={11} tone="muted">
-              Votre quartier · {zone.name}
+              Your neighbourhood · {zone.name}
             </Txt>
           </View>
         </View>
@@ -255,7 +256,7 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
           {forecast.insight}
         </Txt>
         <Button
-          label="Trouver une solution"
+          label="Find a solution"
           icon={ArrowRight}
           onPress={() =>
             router.push({
@@ -269,14 +270,14 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
       <Card>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Une estimation, en toute transparence"
+          accessibilityLabel="An estimate, in full transparency"
           accessibilityState={{ expanded: showMethod }}
           onPress={() => setShowMethod(!showMethod)}
           style={styles.methodHeading}
         >
           <ShieldCheck size={23} color={colors.accent} />
           <Txt size={16} weight="bold" style={styles.flex}>
-            Une estimation,{"\n"}en toute transparence.
+            An estimate,{"\n"}in full transparency.
           </Txt>
           {showMethod ? (
             <ChevronUp size={19} color={colors.muted} />
@@ -285,9 +286,9 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
           )}
         </Pressable>
         <Txt size={13} tone="muted" style={styles.paragraph}>
-          Ces chiffres viennent des annonces officielles de l’ECG et des
-          coupures passées du quartier. Chaque paramètre est sourcé ou recalibré
-          avec les réponses des habitants.
+          These figures come from official ECG announcements and the
+          neighbourhood’s past outages. Every parameter is sourced or
+          recalibrated with residents’ answers.
         </Txt>
         {showMethod && (
           <View style={styles.methodList}>
@@ -319,17 +320,17 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
           </View>
         )}
         <Txt size={11} tone="muted" style={styles.certainty}>
-          Une prévision indique une possibilité, jamais une certitude.
+          A forecast shows a possibility, never a certainty.
         </Txt>
       </Card>
 
-      <SectionTitle title="Les données derrière l’estimation" />
+      <SectionTitle title="The data behind the estimate" />
       <Card style={styles.dataCard}>
         <View style={styles.between}>
           <View style={styles.row}>
             <CalendarDays size={18} color={colors.accent} />
             <Txt size={15} weight="bold">
-              Calendrier ECG
+              ECG schedule
             </Txt>
           </View>
           <View style={[styles.tag, { backgroundColor: colors.soft }]}>
@@ -345,26 +346,26 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
           >
             <Txt size={12} tone="muted">
               {currentAnnouncement.demo
-                ? "DÉMO · Aujourd’hui · scénario de démonstration"
+                ? "DEMO · Today · demo scenario"
                 : `${formatDay(currentAnnouncement.startsAt)} · ${formatTime(currentAnnouncement.startsAt)}–${formatTime(currentAnnouncement.endsAt)} GMT`}
             </Txt>
             <Txt size={15} weight="bold" accessibilityRole="header">
-              Avez-vous du courant ?
+              Do you have power?
             </Txt>
             <Txt size={12} tone="muted" style={styles.paragraph}>
               {currentAnnouncement.demo
-                ? "Annonce de démonstration : l’ECG n’a rien publié pour votre quartier aujourd’hui."
-                : `Coupure annoncée par l’ECG : ${currentAnnouncement.localities}.`}
+                ? "Demo announcement: the ECG published nothing for your neighbourhood today."
+                : `Outage announced by the ECG: ${currentAnnouncement.localities}.`}
             </Txt>
             <Button
-              label="Oui, j’ai du courant"
+              label="Yes, I have power"
               variant={
                 currentAnswer?.status === "powered" ? "primary" : "secondary"
               }
               onPress={() => answerAnnouncement(true)}
             />
             <Button
-              label="Non, c’est coupé"
+              label="No, it’s off"
               variant={
                 currentAnswer?.status === "outage" ? "primary" : "secondary"
               }
@@ -372,11 +373,11 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
             />
             {currentAnswer && (
               <Txt size={12} accessibilityLiveRegion="polite">
-                Réponse enregistrée :{" "}
+                Answer saved:{" "}
                 {currentAnswer.status === "powered"
-                  ? "courant disponible"
-                  : "coupure"}
-                . Vous pouvez la modifier.
+                  ? "power available"
+                  : "outage"}
+                . You can change it.
               </Txt>
             )}
             {answerError && (
@@ -385,8 +386,8 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
               </Txt>
             )}
             <Txt size={11} tone="muted">
-              Vos réponses vérifient si les annonces sont tenues. Seul le nombre
-              de réponses sert au calcul.
+              Your answers check whether announcements are kept. Only the number
+              of answers is used in the calculation.
             </Txt>
           </View>
         )}
@@ -395,7 +396,7 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
             <Pressable
               key={item.id}
               accessibilityRole="link"
-              accessibilityLabel={`Annonce ECG du ${formatDay(item.startsAt)}, source`}
+              accessibilityLabel={`ECG announcement of ${formatDay(item.startsAt)}, source`}
               onPress={() =>
                 void Linking.openURL(item.sourceUrl).catch(() => {})
               }
@@ -407,13 +408,13 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
               </Txt>
               <Txt size={12} tone="muted">
                 {item.localities}
-                {item.partial ? " (partiel)" : ""} · Source ECG
+                {item.partial ? " (partial)" : ""} · ECG source
               </Txt>
             </Pressable>
           ))
         ) : (
           <Txt size={12} tone="muted" style={styles.paragraph}>
-            Aucune annonce ECG récente pour {homeZone.name}.
+            No recent ECG announcement for {homeZone.name}.
           </Txt>
         )}
         {linkError && (
@@ -422,7 +423,7 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
           </Txt>
         )}
         <Button
-          label="Consulter ECG"
+          label="Visit ECG"
           icon={ArrowUpRight}
           variant="secondary"
           onPress={openEcg}
@@ -433,35 +434,35 @@ function ForecastContent({ initialZone }: { initialZone: string }) {
           <View style={styles.row}>
             <Activity size={18} color={colors.accent} />
             <Txt size={15} weight="bold">
-              Qualité des données
+              Data quality
             </Txt>
           </View>
           <View style={[styles.tag, { backgroundColor: colors.soft }]}>
             <Txt size={9} weight="extrabold" tone="muted">
-              ESTIMATION
+              ESTIMATE
             </Txt>
           </View>
         </View>
         <Txt size={15} weight="bold">
           {forecast.announced
-            ? "Coupure annoncée par l’ECG"
-            : "Peu de jours observés"}
+            ? "Outage announced by the ECG"
+            : "Few days observed"}
         </Txt>
         <Txt size={12} tone="muted" style={styles.paragraph}>
           {forecast.announced
-            ? "La confiance mesure la part des annonces ECG réellement tenues ; vos réponses à « Avez-vous du courant ? » l’ajustent."
-            : "Sans annonce, la confiance reflète le nombre de jours de coupures observés dans le quartier. Elle monte avec vos signalements."}
+            ? "Confidence measures the share of ECG announcements actually kept; your answers to “Do you have power?” adjust it."
+            : "Without an announcement, confidence reflects the number of outage days observed in the neighbourhood. It grows with your reports."}
         </Txt>
       </Card>
       <Button
-        label="Signaler dans ce quartier"
+        label="Report in this neighbourhood"
         icon={ZapOff}
         variant="ghost"
         onPress={() =>
           router.push({ pathname: "/signaler", params: { zone: zoneId } })
         }
       />
-      <DemoNote text="Scénario du 4 octobre 2026 · les signalements modifient l’état local, sans recalculer ce graphique ni sa confiance." />
+      <DemoNote text="Scenario of 4 October 2026 · reports change the local status without recalculating this chart or its confidence." />
     </Screen>
   );
 }

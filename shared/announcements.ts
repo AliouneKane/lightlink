@@ -1,5 +1,5 @@
 /**
- * Official ECG outage announcements and the "Avez-vous du courant ?" question.
+ * Official ECG outage announcements and the "Do you have power?" question.
  * During an announced window, residents of the zone answer with an ordinary report
  * ("powered" or "outage"). Those answers measure how often announcements are held,
  * which no public source reports (prediction/README.md).
@@ -79,7 +79,7 @@ export function demoAnnouncement(
     startsAt: start.toISOString(),
     endsAt: end.toISOString(),
     partial: false,
-    localities: "Annonce de démonstration",
+    localities: "Demo announcement",
     sourceUrl: "",
     demo: true,
   };
@@ -142,18 +142,18 @@ export function answerReport(
   hasPower: boolean,
 ): { neighborhoodId: string; status: EnergyStatus; description: string } {
   const label = announcement.demo
-    ? "annonce de démonstration"
-    : `annonce ECG du ${formatDay(announcement.startsAt)}`;
+    ? "the demo announcement"
+    : `the ECG announcement of ${formatDay(announcement.startsAt)}`;
   return {
     neighborhoodId: announcement.neighborhoodId,
     status: hasPower ? "powered" : "outage",
-    description: `Réponse à l'${label} : ${hasPower ? "courant disponible" : "coupure"}.`,
+    description: `Answer to ${label}: ${hasPower ? "power available" : "outage"}.`,
   };
 }
 
 /** Accra uses GMT all year. */
 export function formatDay(date: string): string {
-  return new Intl.DateTimeFormat("fr-FR", {
+  return new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
     month: "short",
     timeZone: "Africa/Accra",

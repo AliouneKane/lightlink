@@ -3,18 +3,18 @@ import AxeBuilder from "@axe-core/playwright";
 
 for (const route of [
   "/",
-  "/carte",
-  "/previsions",
-  "/partage",
-  "/communaute",
-  "/parametres",
+  "/map",
+  "/forecast",
+  "/sharing",
+  "/community",
+  "/settings",
 ]) {
   test(`accessibility: ${route} meets WCAG A/AA`, async ({ page }) => {
     await page.goto(route);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     // Leaflet's third-party map surface has an equivalent keyboard-operable
-    // neighborhood list on /carte. The app controls and dialogs remain covered.
+    // neighborhood list on /map. The app controls and dialogs remain covered.
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
       .exclude(".leaflet-container")
@@ -26,13 +26,13 @@ for (const route of [
 test("accessibility: reporting dialog and energy request", async ({ page }) => {
   await page.goto("/");
   const report = page.getByRole("button", {
-    name: "Signaler une coupure",
+    name: "Report an outage",
     exact: true,
   });
   if (await report.isVisible()) await report.click();
   else
     await page
-      .getByRole("button", { name: "Signaler mon quartier", exact: true })
+      .getByRole("button", { name: "Report my neighbourhood", exact: true })
       .click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
@@ -40,9 +40,9 @@ test("accessibility: reporting dialog and energy request", async ({ page }) => {
     .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
     .analyze();
   expect(results.violations).toEqual([]);
-  await dialog.getByRole("button", { name: "Fermer", exact: true }).click();
-  await page.goto("/partage");
-  await page.getByRole("button", { name: "Voir l’offre" }).first().click();
+  await dialog.getByRole("button", { name: "Close", exact: true }).click();
+  await page.goto("/sharing");
+  await page.getByRole("button", { name: "View offer" }).first().click();
   await expect(dialog).toBeVisible();
   results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
@@ -52,7 +52,7 @@ test("accessibility: reporting dialog and energy request", async ({ page }) => {
 
 test("accessibility: light theme and profile dialog", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Activer le thème clair" }).click();
+  await page.getByRole("button", { name: "Switch to light theme" }).click();
   await expect(page.locator(".app-shell")).toHaveAttribute(
     "data-theme",
     "light",
@@ -62,11 +62,11 @@ test("accessibility: light theme and profile dialog", async ({ page }) => {
     .exclude(".leaflet-container")
     .analyze();
   expect(results.violations).toEqual([]);
-  const profile = page.getByRole("button", { name: "Mon profil", exact: true });
+  const profile = page.getByRole("button", { name: "My profile", exact: true });
   if (await profile.isVisible()) await profile.click();
   else {
-    await page.getByRole("button", { name: "Ouvrir le menu" }).click();
-    await page.getByRole("button", { name: /Profil de démonstration/ }).click();
+    await page.getByRole("button", { name: "Open menu" }).click();
+    await page.getByRole("button", { name: /Demo profile/ }).click();
   }
   await expect(page.getByRole("dialog")).toBeVisible();
   results = await new AxeBuilder({ page })

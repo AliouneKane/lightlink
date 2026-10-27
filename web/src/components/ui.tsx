@@ -7,10 +7,10 @@ import type { Neighborhood } from "@/lib/energy";
 import type { ZoneForecast } from "../../../shared/forecast";
 
 export const statusLabels = {
-  powered: "Courant disponible",
-  outage: "Coupure signalée",
-  unstable: "Coupure probable",
-  unknown: "État inconnu",
+  powered: "Power available",
+  outage: "Outage reported",
+  unstable: "Likely outage",
+  unknown: "Unknown status",
 };
 export function Brand({ compact = false }: { compact?: boolean }) {
   return (
@@ -19,7 +19,7 @@ export function Brand({ compact = false }: { compact?: boolean }) {
       {!compact && (
         <span>
           Light<span>Link</span>
-          <small>L’ÉNERGIE NOUS RELIE</small>
+          <small>ENERGY CONNECTS US</small>
         </span>
       )}
     </span>
@@ -78,7 +78,7 @@ export function Modal({
       <div className="modal-content">
         <div className="modal-heading">
           <h2 id="modal-title">{title}</h2>
-          <button className="icon-button" aria-label="Fermer" onClick={onClose}>
+          <button className="icon-button" aria-label="Close" onClick={onClose}>
             <X size={20} />
           </button>
         </div>
@@ -156,9 +156,9 @@ export function RiskChart({
     >
       {detailed && (
         <div className="chart-grid">
-          <span>100 %</span>
-          <span>50 %</span>
-          <span>0 %</span>
+          <span>100%</span>
+          <span>50%</span>
+          <span>0%</span>
         </div>
       )}
       <div className="chart-bars">

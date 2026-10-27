@@ -2,11 +2,12 @@ import { router } from "expo-router";
 import { Screen, Txt, Button } from "@/components/ui";
 export default function NotFound() {
   return (
-    <Screen title="Ce chemin s’arrête ici">
+    <Screen title="This path ends here">
       <Txt>
-        L’écran demandé n’existe pas. Retrouvez votre quartier depuis l’accueil.
+        The requested screen does not exist. Find your neighbourhood from the
+        home screen.
       </Txt>
-      <Button label="Revenir à l’accueil" onPress={() => router.replace("/")} />
+      <Button label="Back to home" onPress={() => router.replace("/")} />
     </Screen>
   );
 }

@@ -27,9 +27,9 @@ export function ForecastChart({ forecast }: { forecast: ZoneForecast }) {
   const x = (index: number) => left + step * index + step / 2;
   const selectedLabel =
     selected === peakIndex
-      ? `Pic vers ${chartHours[peakIndex]} h`
-      : `Vers ${chartHours[selected]} h`;
-  const selectionDescription = `${selectedLabel}, risque de coupure ${riskValues[selected]} pour cent`;
+      ? `Peak around ${String(chartHours[peakIndex]).padStart(2, "0")}:00`
+      : `Around ${String(chartHours[selected]).padStart(2, "0")}:00`;
+  const selectionDescription = `${selectedLabel}, outage risk ${riskValues[selected]} percent`;
 
   function select(index: number) {
     const next = Math.max(0, Math.min(riskValues.length - 1, index));
@@ -89,7 +89,7 @@ export function ForecastChart({ forecast }: { forecast: ZoneForecast }) {
             ]}
           />
           <Txt size={11} tone="muted">
-            Risque indicatif
+            Indicative risk
           </Txt>
         </View>
         <View style={styles.legendItem}>
@@ -97,7 +97,7 @@ export function ForecastChart({ forecast }: { forecast: ZoneForecast }) {
             style={[styles.legendMark, { backgroundColor: colors.yellow }]}
           />
           <Txt size={11} tone="muted">
-            Heures sensibles
+            Sensitive hours
           </Txt>
         </View>
       </View>
@@ -105,7 +105,7 @@ export function ForecastChart({ forecast }: { forecast: ZoneForecast }) {
         {...keyboardProps}
         accessibilityRole="adjustable"
         accessibilityLabel={forecast.chartDescription}
-        accessibilityHint="Balayez vers le haut ou le bas pour lire les différents repères. Les boutons précédent et suivant permettent aussi de les parcourir."
+        accessibilityHint="Swipe up or down to read the different marks. The previous and next buttons also move through them."
         accessibilityValue={{
           min: 1,
           max: riskValues.length,
@@ -113,8 +113,8 @@ export function ForecastChart({ forecast }: { forecast: ZoneForecast }) {
           text: selectionDescription,
         }}
         accessibilityActions={[
-          { name: "increment", label: "Repère suivant" },
-          { name: "decrement", label: "Repère précédent" },
+          { name: "increment", label: "Next mark" },
+          { name: "decrement", label: "Previous mark" },
         ]}
         onAccessibilityAction={(event) => {
           if (event.nativeEvent.actionName === "increment")
@@ -195,7 +195,7 @@ export function ForecastChart({ forecast }: { forecast: ZoneForecast }) {
             fontFamily={fonts.bold}
             textAnchor="middle"
           >
-            {riskValues[selected]} %
+            {riskValues[selected]}%
           </SvgText>
           {hourLabels.map((label, index) => (
             <SvgText
@@ -226,7 +226,7 @@ export function ForecastChart({ forecast }: { forecast: ZoneForecast }) {
       >
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Repère précédent"
+          accessibilityLabel="Previous mark"
           accessibilityState={{ disabled: selected === 0 }}
           disabled={selected === 0}
           onPress={() => select(selected - 1)}
@@ -239,12 +239,12 @@ export function ForecastChart({ forecast }: { forecast: ZoneForecast }) {
             {selectedLabel}
           </Txt>
           <Txt size={11} tone="muted">
-            {riskValues[selected]} % de risque de coupure
+            {riskValues[selected]}% outage risk
           </Txt>
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Repère suivant"
+          accessibilityLabel="Next mark"
           accessibilityState={{ disabled: selected === riskValues.length - 1 }}
           disabled={selected === riskValues.length - 1}
           onPress={() => select(selected + 1)}
@@ -257,7 +257,7 @@ export function ForecastChart({ forecast }: { forecast: ZoneForecast }) {
         </Pressable>
       </View>
       <Txt size={10} tone="muted" style={styles.hint}>
-        Touchez une barre pour voir le risque à chaque heure.
+        Tap a bar to see the risk at each hour.
       </Txt>
     </View>
   );
@@ -296,7 +296,7 @@ function ViewlessGrid({
         fontSize={10}
         fontFamily={fonts.medium}
       >
-        {value} %
+        {value}%
       </SvgText>
     </>
   );

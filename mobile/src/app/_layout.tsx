@@ -52,7 +52,7 @@ function Navigation() {
         }}
       >
         <ActivityIndicator color={colors.yellow} />
-        <Txt>Votre quartier se prépare…</Txt>
+        <Txt>Getting your neighbourhood ready…</Txt>
       </View>
     );
   return (
@@ -79,12 +79,12 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <Screen title="Un petit contretemps">
+        <Screen title="A small hiccup">
           <Txt>
-            LightLink n’a pas pu afficher cet écran. Vos contributions déjà
-            sauvegardées restent sur cet appareil.
+            LightLink could not display this screen. Your contributions already
+            saved stay on this device.
           </Txt>
-          <Button label="Réessayer" onPress={retry} />
+          <Button label="Try again" onPress={retry} />
         </Screen>
       </ThemeProvider>
     </SafeAreaProvider>

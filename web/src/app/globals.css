@@ -1950,16 +1950,16 @@ h3 {
   height: 100%;
   background: #76a886;
 }
-.confidence[data-level="moyenne"] strong {
+.confidence[data-level="medium"] strong {
   color: var(--amber);
 }
-.confidence-track[data-level="moyenne"] > span {
+.confidence-track[data-level="medium"] > span {
   background: var(--amber);
 }
-.confidence[data-level="faible"] strong {
+.confidence[data-level="low"] strong {
   color: var(--muted);
 }
-.confidence-track[data-level="faible"] > span {
+.confidence-track[data-level="low"] > span {
   background: var(--muted);
 }
 .prediction-note {

@@ -1,6 +1,6 @@
 # LightLink · Web
 
-The LightLink web app: neighbourhood power status, live map of Accra, outage forecasts and energy sharing, in French. Built with Next.js.
+The LightLink web app: neighbourhood power status, live map of Accra, outage forecasts and energy sharing, in English. Built with Next.js.
 
 <img src="../docs/images/web-dashboard.jpg" alt="LightLink web dashboard" width="100%" />
 
@@ -21,18 +21,18 @@ NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<publishable key>
 ```
 
-The badge at the top right shows the mode: **DÉMO**, **CONNEXION…**, **EN DIRECT** or **HORS LIGNE**.
+The badge at the top right shows the mode: **DEMO**, **CONNECTING…**, **LIVE** or **OFFLINE**.
 
 ## Pages
 
-| Route         | Page                                                                                                                                     |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`           | Dashboard: my neighbourhood, neighbourhoods without power, nearby offers, map, forecast, community. Sections can be reordered and hidden |
-| `/carte`      | Map of the 10 pilot neighbourhoods: reported outages, announced ECG outages (dashed ring), energy offers                                 |
-| `/previsions` | Forecast of the day, risk by hour, confidence, ECG calendar and the _« Avez-vous du courant ? »_ question                                |
-| `/partage`    | Energy offers by source and distance, my requests, requests received on my offers                                                        |
-| `/communaute` | Recent reports by neighbourhood                                                                                                          |
-| `/parametres` | Profile, light or dark theme, reset                                                                                                      |
+| Route        | Page                                                                                                                                     |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`          | Dashboard: my neighbourhood, neighbourhoods without power, nearby offers, map, forecast, community. Sections can be reordered and hidden |
+| `/map`       | Map of the 10 pilot neighbourhoods: reported outages, announced ECG outages (dashed ring), energy offers                                 |
+| `/forecast`  | Forecast of the day, risk by hour, confidence, ECG calendar and the _“Do you have power?”_ question                                      |
+| `/sharing`   | Energy offers by source and distance, my requests, requests received on my offers                                                        |
+| `/community` | Recent reports by neighbourhood                                                                                                          |
+| `/settings`  | Profile, light or dark theme, reset                                                                                                      |
 
 Dialogs: report an outage, publish an offer, account (sign up and sign in in live mode), notifications, help.
 
@@ -47,7 +47,7 @@ Dialogs: report an outage, publish an offer, account (sign up and sign in in liv
 | Accounts                  | Demonstration screens                                 | E-mail sign-up and sign-in                                       |
 | Notifications             | Demonstration list                                    | The resident's inbox                                             |
 
-When the database does not answer, the app never shows invented states: neighbourhoods read _« État inconnu »_ and the map explains why.
+When the database does not answer, the app never shows invented states: neighbourhoods read _“Unknown status”_ and the map explains why.
 
 ## Checks
 

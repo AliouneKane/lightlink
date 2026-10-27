@@ -30,18 +30,18 @@ function deferred<T>() {
 const report = {
   neighborhoodId: "labone",
   status: "outage" as const,
-  description: "Coupure observée pendant la démonstration.",
+  description: "Outage observed during the demo.",
 };
 
 const offer = {
   title: "Recharge solaire du quartier",
   neighborhoodId: "madina",
   source: "solar" as const,
-  capacity: "Téléphones et ordinateurs",
+  capacity: "Phones and laptops",
   price: 0,
   slots: 3,
   until: "21:00",
-  description: "Offre locale simulée.",
+  description: "Simulated local offer.",
 };
 
 function testOptions() {
@@ -65,11 +65,11 @@ describe("mobile local persistence", () => {
     const repository = createDemoRepository(storage, testOptions());
     const hydration = repository.hydrate();
     expect(repository.hydrate()).toBe(hydration);
-    expect(repository.report(report)).toMatch(/chargement/);
-    expect(repository.createOffer(offer)).toMatch(/chargement/);
-    expect(repository.requestOffer("offer-osu-battery")).toMatch(/chargement/);
+    expect(repository.report(report)).toMatch(/loading/);
+    expect(repository.createOffer(offer)).toMatch(/loading/);
+    expect(repository.requestOffer("offer-osu-battery")).toMatch(/loading/);
     expect(repository.setOfferAvailability("offer-osu-battery", false)).toMatch(
-      /chargement/,
+      /loading/,
     );
     repository.setNotifications(true);
     repository.reset();
@@ -184,7 +184,7 @@ describe("mobile local persistence", () => {
     repository.createOffer(offer);
     await repository.flush();
     expect(storage.setItem).toHaveBeenCalledTimes(1);
-    expect(repository.getSnapshot().storageError).toMatch(/stockage local/);
+    expect(repository.getSnapshot().storageError).toMatch(/Local storage/);
     expect(repository.getSnapshot().state.offers).toHaveLength(6);
     repository.updateProfile({ name: "Ama", neighborhoodId: "madina" });
     await repository.flush();
@@ -255,24 +255,24 @@ describe("mobile neighborhood and sharing journeys", () => {
       price: 0,
     });
     repository.updateProfile({ name: "Kwame", neighborhoodId: "madina" });
-    expect(repository.requestOffer(published.id)).toMatch(/propre offre/);
+    expect(repository.requestOffer(published.id)).toMatch(/your own offer/);
     expect(
       repository.getOffers("solar", "Recharge solaire du quartier")[0].id,
     ).toBe(published.id);
     await repository.flush();
     const reopened = createDemoRepository(storage);
     await reopened.hydrate();
-    expect(reopened.requestOffer(published.id)).toMatch(/propre offre/);
+    expect(reopened.requestOffer(published.id)).toMatch(/your own offer/);
   });
 
   it("creates one pending request without consuming slots, survives reload and cancels", async () => {
     const storage = memoryStorage();
     const repository = createDemoRepository(storage, testOptions());
     await repository.hydrate();
-    expect(repository.requestOffer("missing")).toMatch(/disponible/);
+    expect(repository.requestOffer("missing")).toMatch(/available/);
     const available = repository.getOffers()[0];
     expect(repository.requestOffer(available.id)).toBeNull();
-    expect(repository.requestOffer(available.id)).toMatch(/déjà/);
+    expect(repository.requestOffer(available.id)).toMatch(/already/);
     expect(
       repository
         .getSnapshot()
@@ -294,12 +294,10 @@ describe("mobile neighborhood and sharing journeys", () => {
     const storage = memoryStorage();
     const repository = createDemoRepository(storage, testOptions());
     await repository.hydrate();
-    expect(repository.setOfferAvailability("missing", false)).toMatch(
-      /appareil/,
-    );
+    expect(repository.setOfferAvailability("missing", false)).toMatch(/device/);
     expect(
       repository.setOfferAvailability(initialState.offers[0].id, false),
-    ).toMatch(/seulement gérer/);
+    ).toMatch(/only manage/);
     expect(storage.setItem).not.toHaveBeenCalled();
     repository.createOffer(offer);
     const published = repository.getSnapshot().state.offers[0];
@@ -324,7 +322,7 @@ describe("mobile neighborhood and sharing journeys", () => {
     expect(reopened.getOffers().some((item) => item.id === published.id)).toBe(
       true,
     );
-    expect(reopened.requestOffer(published.id)).toMatch(/propre offre/);
+    expect(reopened.requestOffer(published.id)).toMatch(/your own offer/);
     await reopened.flush();
     const nextSession = createDemoRepository(storage);
     await nextSession.hydrate();
@@ -355,11 +353,11 @@ describe("mobile neighborhood and sharing journeys", () => {
       repository.getSnapshot().state.bookings.map((item) => item.id),
     ).toEqual(["first"]);
     expect(repository.setOfferAvailability(owned.id, true)).toMatch(
-      /aucune place/,
+      /no available place/,
     );
     expect(
       repository.setOfferAvailability(owned.id, "yes" as unknown as boolean),
-    ).toMatch(/disponible ou suspendue/);
+    ).toMatch(/available or paused/);
     expect(storage.setItem).not.toHaveBeenCalled();
     repository.setNotifications(true);
     await repository.flush();
@@ -425,11 +423,11 @@ describe("mobile neighborhood and sharing journeys", () => {
     );
     const repository = createDemoRepository(storage);
     await repository.hydrate();
-    expect(repository.createOffer(offer)).toMatch(/100 offres/);
-    expect(repository.requestOffer(offers[1].id)).toMatch(/disponible/);
-    expect(repository.requestOffer(offers[2].id)).toMatch(/disponible/);
+    expect(repository.createOffer(offer)).toMatch(/100 offers/);
+    expect(repository.requestOffer(offers[1].id)).toMatch(/available/);
+    expect(repository.requestOffer(offers[2].id)).toMatch(/available/);
     expect(repository.getSnapshot().state.bookings).toHaveLength(100);
-    expect(repository.requestOffer(offers[3].id)).toMatch(/déjà/);
+    expect(repository.requestOffer(offers[3].id)).toMatch(/already/);
     await repository.flush();
     expect(storage.setItem).not.toHaveBeenCalled();
   });

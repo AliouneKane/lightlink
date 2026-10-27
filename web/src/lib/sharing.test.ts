@@ -17,7 +17,7 @@ const row = (overrides: Partial<OfferRow> = {}): OfferRow => ({
   id: "o1",
   host_name: "Akosua Mensah",
   zone_id: "osu",
-  title: "Générateur du soir",
+  title: "Evening generator",
   source: "generator",
   capacity: "3 prises",
   price: "12.50",
@@ -71,7 +71,7 @@ describe("live offers", () => {
 
   it("builds the inserted row from a valid form", () => {
     const input = {
-      title: "  Recharge solaire ",
+      title: "  Solar charging ",
       neighborhoodId: "labone",
       source: "solar" as const,
       capacity: "2 prises",
@@ -85,8 +85,8 @@ describe("live offers", () => {
       offerInsertRow(input, "  ", "2026-10-22T20:30:00.000Z"),
     ).toMatchObject({
       zone_id: "labone",
-      host_name: "Voisin",
-      title: "Recharge solaire",
+      host_name: "Neighbour",
+      title: "Solar charging",
     });
   });
 
@@ -100,21 +100,21 @@ describe("live offers", () => {
         message: "",
         created_at: "2026-10-22T15:00:00Z",
       },
-      "Maison bleue",
+      "Blue house",
     );
     expect(booking).toMatchObject({
       status: "accepted",
-      address: "Maison bleue",
+      address: "Blue house",
     });
   });
 
   it("explains the database's refusals", () => {
     expect(
       sharingErrorMessage({ message: "Too many pending requests" }),
-    ).toContain("3 demandes");
+    ).toContain("3 pending requests");
     expect(
       sharingErrorMessage({ message: "You cannot request your own offer" }),
-    ).toContain("propre offre");
+    ).toContain("your own offer");
     expect(
       sharingErrorMessage({ message: "Every place is already taken" }),
     ).toContain("places");
@@ -223,7 +223,7 @@ describe("PAN's second review of #9", () => {
     const shown: string[] = [];
     let releaseA!: () => void;
     const slowA = new Promise<string>((resolve) => {
-      releaseA = () => resolve("adresse privée de A");
+      releaseA = () => resolve("A's private address");
     });
     // Same steps as the hook: take a ticket, read, apply only if still current.
     const read = async (answer: Promise<string>) => {
@@ -233,10 +233,10 @@ describe("PAN's second review of #9", () => {
     };
     const pendingA = read(slowA); // started while A is signed in
     gate.invalidate(); // A signs out, B signs in
-    await read(Promise.resolve("données de B"));
+    await read(Promise.resolve("B's data"));
     releaseA(); // A's answer arrives last
     await pendingA;
-    expect(shown).toEqual(["données de B"]);
+    expect(shown).toEqual(["B's data"]);
   });
 
   it("saves the neighbourhood when an action opens an anonymous session (point 2)", async () => {

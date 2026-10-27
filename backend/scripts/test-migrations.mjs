@@ -240,7 +240,7 @@ assert.ok(existsSync(cliArgs[0]), "the Supabase CLI entry exists");
 assert.match(execFileSync(cli, cliArgs, { encoding: "utf8" }), /\d+\.\d+\.\d+/);
 assert.match(
   execFileSync(process.execPath, [fileURLToPath(new URL("./demo-data.mjs", import.meta.url)), "print"], { encoding: "utf8" }),
-  /\[SIMULÉ\]/,
+  /\[SIMULATED\]/,
 );
 await rejects(
   as(16, (tx) => tx.query("insert into public.outage_reports (zone_id, kind, simulated) values ('osu', 'outage', true)")),
@@ -261,7 +261,7 @@ assert.equal(demoState.osu.simulated_reports, 4);
 assert.equal(demoState.labone.status, "probable_outage");
 assert.equal(demoState.dansoman.status, "probable_outage");
 assert.equal(demoState.madina.status, "powered");
-const labelled = await db.query("select count(*)::int as n from public.outage_reports where simulated and description like '[SIMULÉ]%'");
+const labelled = await db.query("select count(*)::int as n from public.outage_reports where simulated and description like '[SIMULATED]%'");
 assert.equal(labelled.rows[0].n, scenario.length, "every simulated report is labelled");
 // A simulated outage during an announcement never measures it.
 await db.exec(`insert into public.ecg_schedules (zone_id, starts_at, ends_at, kind)
@@ -328,7 +328,7 @@ await rejects(move(17, firstRequest, "accepted"), "reopening a finished request"
 const freed = (await db.query("select status from public.offers where id = $1", [solar])).rows[0].status;
 assert.equal(freed, "available", "a finished request frees its place");
 // An offer that stays full, for the search test below.
-const busy = await offer(23, "osu", { title: "Générateur complet", source: "generator", slots: 1 });
+const busy = await offer(23, "osu", { title: "Full generator", source: "generator", slots: 1 });
 await move(23, await request(24, busy), "accepted");
 
 // At most 3 pending requests per resident.
@@ -342,13 +342,13 @@ await move(21, cancelled, "cancelled");
 await request(21, others[3]);
 
 // 81: nearest open offers first; full, closed and ended offers are not proposed.
-await offer(22, "achimota", { title: "Générateur Achimota", source: "generator" });
+await offer(22, "achimota", { title: "Achimota generator", source: "generator" });
 await db.exec(`update public.offers set ends_at = now() - interval '1 minute', starts_at = now() - interval '2 hours'
   where title = 'Batterie 3'`);
 const nearOsu = (await as(null, (tx) => tx.query("select kind, title, zone_id, distance_km from public.energy_options('osu')"))).rows;
 assert.ok(nearOsu.length >= 2);
 assert.deepEqual(nearOsu.map((row) => row.distance_km), [...nearOsu.map((row) => row.distance_km)].sort((a, b) => a - b));
-assert.ok(!nearOsu.some((row) => row.title === "Générateur complet"), "a full offer is not proposed");
+assert.ok(!nearOsu.some((row) => row.title === "Full generator"), "a full offer is not proposed");
 assert.ok(nearOsu.some((row) => row.title === "Recharge solaire"), "a freed offer is proposed again");
 const batteryRequest = (await as(21, (tx) => tx.query("select id from public.offer_requests where offer_id = $1", [others[1]]))).rows[0].id;
 await move(20, batteryRequest, "accepted");
@@ -404,7 +404,7 @@ const inbox = (who, kind) =>
 assert.equal((await inbox(17, "request_received")).length, 1);
 const answerAlert = await inbox(18, "request_answered");
 assert.equal(answerAlert.length, 1);
-assert.equal(answerAlert[0].title, "Demande acceptée");
+assert.equal(answerAlert[0].title, "Request accepted");
 // 94: residents register their phone and follow neighbourhoods; invalid tokens are refused.
 await as(25, (tx) => tx.query("insert into public.push_tokens (token, platform) values ('ExponentPushToken[abc]', 'android')"));
 await rejects(as(25, (tx) => tx.query("insert into public.push_tokens (token, platform) values ('not-a-token', 'android')")), "an invalid push token");
@@ -418,7 +418,7 @@ await db.exec("delete from public.outage_reports");
 for (const n of [1, 2, 3, 4]) await report(n, "adabraka", "outage", now);
 const alerts = await inbox(25, "outage_in_zone");
 assert.equal(alerts.length, 1, "one alert per confirmed outage");
-assert.match(alerts[0].title, /Coupure à Adabraka/);
+assert.match(alerts[0].title, /Outage in Adabraka/);
 assert.equal((await inbox(26, "outage_in_zone")).length, 0, "only followers are alerted");
 // 96 and 118: ECG reminders and high forecasts, once each, for followers only.
 await db.exec(`insert into public.ecg_schedules (zone_id, starts_at, ends_at, kind)
@@ -432,7 +432,7 @@ await db.query("select public.queue_daily_notifications()"); // the daily job ma
 assert.equal((await inbox(25, "ecg_reminder")).length, 1, "one reminder per ECG outage");
 const forecastAlert = await inbox(25, "prediction");
 assert.equal(forecastAlert.length, 1, "one alert per high forecast");
-assert.match(forecastAlert[0].body, /estimation/);
+assert.match(forecastAlert[0].body, /estimate/);
 // The inbox is private; residents can only mark their own notifications read.
 const notMine = await as(26, (tx) => tx.query("select id from public.notifications"));
 assert.equal(notMine.rows.length, 0);
@@ -474,7 +474,7 @@ await report(36, "cantonments", "outage", now);
 await report(37, "cantonments", "outage", now);
 const realAlert = await inbox(34, "outage_in_zone");
 assert.equal(realAlert.length, 1);
-assert.match(realAlert[0].body, /confirmée par 3 habitants/, "the number counts residents only");
+assert.match(realAlert[0].body, /confirmed by 3 residents/, "the number counts residents only");
 // 7. A resident (anonymous accounts included) who sets their neighbourhood is alerted.
 await as(38, (tx) => tx.query("update public.profiles set zone_id = 'dansoman'"));
 await db.exec("delete from public.outage_reports where zone_id = 'dansoman'");
@@ -483,18 +483,18 @@ assert.equal((await inbox(38, "outage_in_zone")).length, 1, "the profile's neigh
 
 // --- PAN's review of #10: the load test deletes only the rows of its own run ------------------
 const real = await db.query(
-  "insert into public.outage_reports (user_id, zone_id, kind, description) values ($1, 'osu', 'outage', '[SIMULÉ] test de charge') returning id",
+  "insert into public.outage_reports (user_id, zone_id, kind, description) values ($1, 'osu', 'outage', '[SIMULATED] load test') returning id",
   [user(39)],
 );
 const realId = real.rows[0].id;
-await db.query("insert into public.abuse_reports (reporter_id, report_id, reason) values ($1, $2, 'texte trompeur')", [user(40), realId]);
+await db.query("insert into public.abuse_reports (reporter_id, report_id, reason) values ($1, $2, 'misleading text')", [user(40), realId]);
 const load = (await db.exec(loadSql)).at(-1).rows[0];
 assert.equal(Number(load.left_over), 0, "the load test removes its 100 rows");
 const kept = await db.query("select count(*)::int as n from public.outage_reports where id = $1", [realId]);
 assert.equal(kept.rows[0].n, 1, "a real report with the same text survives the load test");
 const moderation = await db.query("select count(*)::int as n from public.abuse_reports where report_id = $1", [realId]);
 assert.equal(moderation.rows[0].n, 1, "and so does its moderation");
-const loadRows = await db.query("select count(*)::int as n from public.outage_reports where description = '[SIMULÉ] test de charge'");
+const loadRows = await db.query("select count(*)::int as n from public.outage_reports where description = '[SIMULATED] load test'");
 assert.equal(loadRows.rows[0].n, 1, "only the real report is left");
 
 // --- PAN's review of #10: server time and positions not kept ---------------------------------

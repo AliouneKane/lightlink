@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { LightLinkApp } from "@/components/lightlink-app";
 import { neighborhoods } from "@/lib/energy";
 
-const sections = ["carte", "previsions", "partage", "communaute", "parametres"];
+const sections = ["map", "forecast", "sharing", "community", "settings"];
 
 export function generateStaticParams() {
   return sections.map((section) => ({ section }));
@@ -13,13 +13,15 @@ export default async function SectionPage({
   searchParams,
 }: {
   params: Promise<{ section: string }>;
-  searchParams: Promise<{ quartier?: string; source?: string }>;
+  searchParams: Promise<{ zone?: string; source?: string }>;
 }) {
   const { section } = await params;
   if (!sections.includes(section)) notFound();
-  const { quartier, source } = await searchParams;
-  const initialNeighborhood = neighborhoods.some((zone) => zone.id === quartier)
-    ? quartier
+  const { zone: zoneParam, source } = await searchParams;
+  const initialNeighborhood = neighborhoods.some(
+    (zone) => zone.id === zoneParam,
+  )
+    ? zoneParam
     : undefined;
   const initialSource =
     source === "solar" || source === "generator" || source === "battery"

@@ -44,45 +44,45 @@ describe("model forecast", () => {
   it("finds the peak, the highlighted bars and the window", () => {
     const forecast = toForecast(row(), "live");
     expect(forecast.peakIndex).toBe(7);
-    expect(forecast.peakLabel).toBe("60 % vers 18 h");
+    expect(forecast.peakLabel).toBe("60% around 18:00");
     expect([forecast.peakStartIndex, forecast.peakEndIndex]).toEqual([6, 8]);
     expect([forecast.windowStart, forecast.windowEnd]).toEqual([
       "17:00",
       "19:30",
     ]);
-    expect(forecast.durationLabel).toBe("2 h 30");
-    expect(forecast.headline).toBe("Coupure probable");
-    expect(forecast.insight).toContain("L’ECG a annoncé");
+    expect(forecast.durationLabel).toBe("2 h 30 min");
+    expect(forecast.headline).toBe("Likely outage");
+    expect(forecast.insight).toContain("The ECG announced");
   });
 
   it("sums the forecast up with its confidence (tasks 105, 116, 119)", () => {
     const announced = toForecast(row(), "live");
     expect(announced.summary).toBe(
-      "Coupure probable entre 17:00 et 19:30 (confiance 90 %)",
+      "Likely outage between 17:00 and 19:30 (confidence 90%)",
     );
-    expect(announced.confidenceLevel).toBe("forte");
+    expect(announced.confidenceLevel).toBe("high");
     expect(announced.lowData).toBe(false);
     const thin = toForecast(
       row({ probability: 30, confidence: 33, basis: "taux de base" }),
       "live",
     );
-    expect(thin.confidenceLevel).toBe("faible");
+    expect(thin.confidenceLevel).toBe("low");
     expect(thin.lowData).toBe(true);
-    expect(thin.insight).toContain("pas assez de données");
+    expect(thin.insight).toContain("not enough data");
     expect(
       toForecast(
         row({ probability: 5, confidence: 50, basis: "taux de base" }),
         "live",
       ).summary,
-    ).toBe("Risque faible aujourd’hui (confiance 50 %)");
+    ).toBe("Low risk today (confidence 50%)");
   });
 
   it("dates a low-risk demo snapshot instead of saying today (PAN, #10)", () => {
     const low = row({ probability: 5, confidence: 50, basis: "taux de base" });
     const summary = toForecast(low, "snapshot").summary;
-    expect(summary).not.toContain("aujourd’hui");
+    expect(summary).not.toContain("today");
     expect(summary).toBe(
-      `Risque faible le ${toForecast(low, "snapshot").dayLabel} (confiance 50 %)`,
+      `Low risk on ${toForecast(low, "snapshot").dayLabel} (confidence 50%)`,
     );
   });
 
@@ -95,18 +95,18 @@ describe("model forecast", () => {
       }),
       "live",
     );
-    expect(forecast.headline).toBe("Risque faible");
-    expect(forecast.insight).toContain("Aucune annonce ECG");
+    expect(forecast.headline).toBe("Low risk");
+    expect(forecast.insight).toContain("No ECG announcement");
     expect(forecast.peakStartIndex).toBe(forecast.peakEndIndex);
   });
 
   it("prefers today's live forecast and labels the demo with its day", () => {
     const live = getForecast("osu", [row()]);
     expect(live.source).toBe("live");
-    expect(forecastSourceLabel(live)).toBe("Prévision du jour");
+    expect(forecastSourceLabel(live)).toBe("Today’s forecast");
     const demo = getForecast("labone", [row()]);
     expect(demo.source).toBe("snapshot");
-    expect(forecastSourceLabel(demo)).toBe("Démo · prévision du 16 oct. 2026");
+    expect(forecastSourceLabel(demo)).toBe("Demo · forecast for 16 Oct 2026");
   });
 
   it("formats durations and day bounds", () => {

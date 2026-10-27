@@ -28,7 +28,7 @@ begin
     insert into public.outage_reports (zone_id, kind, description, simulated, observed_at)
     select zones[1 + (n % array_length(zones, 1))],
            case when n % 3 = 0 then 'powered' else 'outage' end,
-           '[SIMULÉ] test de charge', true, now() - (n || ' seconds')::interval
+           '[SIMULATED] load test', true, now() - (n || ' seconds')::interval
     from generate_series(1, 100) as n
     returning id
   )

@@ -58,12 +58,12 @@ export default function Home() {
   const powered = zone.status === "powered";
   const unknown = zone.status === "unknown";
   const headline = powered
-    ? "Le courant est là."
+    ? "The power is on."
     : zone.status === "outage"
-      ? `Coupure à ${zone.name}`
+      ? `Outage in ${zone.name}`
       : unknown
-        ? "État du quartier inconnu."
-        : "Le courant est instable.";
+        ? "Neighbourhood status unknown."
+        : "The power is unstable.";
   const initials = state.profile.name
     .trim()
     .split(/\s+/)
@@ -87,7 +87,7 @@ export default function Home() {
         </Txt>
         <IconButton
           icon={ClipboardList}
-          label={`Mes demandes${state.bookings.length ? ` · ${state.bookings.length} en attente` : ""}`}
+          label={`My requests${state.bookings.length ? ` · ${state.bookings.length} pending` : ""}`}
           onPress={() =>
             router.push({
               pathname: "/profil",
@@ -97,7 +97,7 @@ export default function Home() {
         />
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Ouvrir mon profil"
+          accessibilityLabel="Open my profile"
           onPress={() => router.push("/profil")}
           style={({ pressed }) => [
             styles.avatar,
@@ -115,7 +115,7 @@ export default function Home() {
       </View>
       <View style={{ gap: 5 }}>
         <Txt size={12} tone="muted">
-          Bonjour {state.profile.name} 👋
+          Hello {state.profile.name} 👋
         </Txt>
         <Txt
           size={32}
@@ -123,20 +123,20 @@ export default function Home() {
           accessibilityRole="header"
           style={{ lineHeight: 39, letterSpacing: -1.3 }}
         >
-          L’énergie nous
+          Energy brings us
           <Txt
             size={32}
             weight="extrabold"
             style={{ color: colors.accent, lineHeight: 39 }}
           >
-            {"\n"}rapproche.
+            {"\n"}together.
           </Txt>
         </Txt>
       </View>
       <View style={styles.locationRow}>
         <View style={{ flex: 1 }}>
           <ZonePicker
-            label="Changer mon quartier"
+            label="Change my neighbourhood"
             value={zone.id}
             onChange={(neighborhoodId) =>
               updateProfile({ ...state.profile, neighborhoodId })
@@ -162,7 +162,7 @@ export default function Home() {
               }}
             />
             <Txt size={10} tone="muted">
-              Zone pilote
+              Pilot area
             </Txt>
           </View>
         </View>
@@ -179,7 +179,7 @@ export default function Home() {
               weight="extrabold"
               style={{ color: "#132d39", letterSpacing: 1.1 }}
             >
-              VOTRE QUARTIER · DÉMO
+              YOUR NEIGHBOURHOOD · DEMO
             </Txt>
           </View>
           <ArrowDownRight size={20} color="#132d39" />
@@ -189,7 +189,7 @@ export default function Home() {
             source={require("../../../assets/neighborhood-hero.webp")}
             contentFit="contain"
             style={styles.neighborhoodArt}
-            accessibilityLabel="Illustration de maisons reliées par l’entraide et l’énergie solaire"
+            accessibilityLabel="Illustration of houses connected by mutual help and solar power"
             transition={0}
           />
           <View style={styles.heroCopy}>
@@ -206,18 +206,16 @@ export default function Home() {
               style={{ color: "#34442d", lineHeight: 19 }}
             >
               {powered
-                ? "Votre énergie peut aider un voisin."
+                ? "Your energy can help a neighbour."
                 : unknown
                   ? zone.restoration
-                  : "L’entraide, elle, reste allumée."}
+                  : "Mutual help stays switched on."}
             </Txt>
           </View>
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={
-            powered ? "Partager mon énergie" : "Trouver de l’énergie"
-          }
+          accessibilityLabel={powered ? "Share my energy" : "Find energy"}
           onPress={() => {
             feedback();
             router.push(
@@ -233,7 +231,7 @@ export default function Home() {
         >
           <Zap size={18} color="#facb4c" />
           <Txt size={14} weight="bold" style={{ color: "#fff", flex: 1 }}>
-            {powered ? "Partager mon énergie" : "Trouver de l’énergie"}
+            {powered ? "Share my energy" : "Find energy"}
           </Txt>
           <ArrowUpRight size={21} color="#facb4c" />
         </Pressable>
@@ -241,7 +239,7 @@ export default function Home() {
       <View style={styles.quickActions}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Signaler"
+          accessibilityLabel="Report"
           onPress={() => {
             feedback();
             router.push("/signaler");
@@ -265,16 +263,16 @@ export default function Home() {
           </View>
           <View>
             <Txt weight="bold" size={15}>
-              Signaler
+              Report
             </Txt>
             <Txt size={11} tone="muted">
-              En un petit geste
+              In one small step
             </Txt>
           </View>
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Partager"
+          accessibilityLabel="Share"
           onPress={() => {
             feedback();
             router.push("/publier");
@@ -301,17 +299,17 @@ export default function Home() {
           </View>
           <View>
             <Txt weight="bold" size={15}>
-              Partager
+              Share
             </Txt>
             <Txt size={11} tone="muted">
-              Une source, un lien
+              One source, one link
             </Txt>
           </View>
         </Pressable>
       </View>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Consulter les prévisions"
+        accessibilityLabel="View the forecast"
         onPress={() =>
           router.push({ pathname: "/previsions", params: { zone: zone.id } })
         }
@@ -322,10 +320,10 @@ export default function Home() {
       >
         <View style={{ flex: 1, gap: 3 }}>
           <Txt size={13} weight="bold">
-            Un temps d’avance.
+            One step ahead.
           </Txt>
           <Txt size={11} tone="muted">
-            {zone.reports} signalements · démo
+            {zone.reports} reports · demo
           </Txt>
         </View>
         <View style={[styles.row, { gap: 3, alignItems: "flex-end" }]}>
@@ -348,14 +346,14 @@ export default function Home() {
       </Pressable>
       <View style={{ gap: 12 }}>
         <SectionTitle
-          title="Les bonnes énergies"
-          action="Tout voir"
+          title="Good energy nearby"
+          action="See all"
           onPress={() =>
             router.push({ pathname: "/partage", params: { zone: zone.id } })
           }
         />
         <Txt tone="muted" size={12}>
-          À deux pas, un voisin peut faire la différence.
+          A neighbour close by can make a difference.
         </Txt>
         <ScrollView
           horizontal
@@ -380,15 +378,15 @@ export default function Home() {
         </ScrollView>
         {offers.length === 0 && (
           <Card>
-            <Txt weight="bold">Aucune offre disponible pour le moment.</Txt>
-            <Txt tone="muted">Votre source pourrait être la première.</Txt>
+            <Txt weight="bold">No offers available for now.</Txt>
+            <Txt tone="muted">Your source could be the first.</Txt>
           </Card>
         )}
       </View>
       <View style={{ gap: 13 }}>
         <SectionTitle
-          title="Le quartier s’active"
-          action="Le fil"
+          title="The neighbourhood is active"
+          action="Feed"
           onPress={() => router.push("/communaute")}
         />
         {reports.map((report) => {
@@ -417,12 +415,12 @@ export default function Home() {
                 </Txt>
                 <Txt size={11} tone="muted">
                   {report.author} ·{" "}
-                  {new Date(report.createdAt).toLocaleDateString("fr-FR", {
+                  {new Date(report.createdAt).toLocaleDateString("en-GB", {
                     day: "numeric",
                     month: "short",
                     timeZone: "Africa/Accra",
                   })}{" "}
-                  à {formatTime(report.createdAt)} GMT
+                  at {formatTime(report.createdAt)} GMT
                 </Txt>
               </View>
             </View>

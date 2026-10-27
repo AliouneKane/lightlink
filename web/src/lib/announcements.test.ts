@@ -73,17 +73,17 @@ describe("ECG announcements", () => {
   });
 });
 
-describe("Avez-vous du courant ?", () => {
+describe("Do you have power?", () => {
   it("builds a valid powered or outage report", () => {
     const yes = answerReport(madina8, true);
     const no = answerReport(madina8, false);
     expect(yes.status).toBe("powered");
     expect(no.status).toBe("outage");
     expect(validateReport(yes)).toBeNull();
-    expect(yes.description).toContain("annonce ECG du 8 oct.");
+    expect(yes.description).toContain("ECG announcement of 8 Oct");
     expect(
       answerReport(demoAnnouncement("osu", new Date()), true).description,
-    ).toContain("démonstration");
+    ).toContain("demo");
   });
 
   it("finds the latest answer of this user, in this zone, during the window", () => {

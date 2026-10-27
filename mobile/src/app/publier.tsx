@@ -166,17 +166,17 @@ export default function Publish() {
     if (submitting) return;
     const nextErrors: Errors = {};
     if (value.title.trim().length < 3)
-      nextErrors.title = "Donnez un titre d’au moins 3 caractères.";
+      nextErrors.title = "Give a title of at least 3 characters.";
     if (!value.capacity.trim())
-      nextErrors.capacity = "Précisez la capacité et les appareils acceptés.";
+      nextErrors.capacity = "Give the capacity and the devices accepted.";
     if (
       !/^\d+$/.test(value.slots) ||
       Number(value.slots) < 1 ||
       Number(value.slots) > 50
     )
-      nextErrors.slots = "Indiquez entre 1 et 50 places.";
+      nextErrors.slots = "Enter between 1 and 50 places.";
     if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(value.until))
-      nextErrors.until = "Utilisez le format HH:mm, par exemple 19:00.";
+      nextErrors.until = "Use the HH:mm format, for example 19:00.";
     const price = Number(value.price.replace(",", "."));
     if (
       !/^(?:\d+(?:[.,]\d*)?|[.,]\d+)$/.test(value.price.trim()) ||
@@ -184,7 +184,7 @@ export default function Publish() {
       price < 0 ||
       price > 1000
     )
-      nextErrors.price = "Indiquez un montant de 0 à 1 000 GHS.";
+      nextErrors.price = "Enter an amount from 0 to 1,000 GHS.";
     setErrors(nextErrors);
     const first = (
       ["title", "capacity", "slots", "until", "price"] as InputKey[]
@@ -241,18 +241,18 @@ export default function Publish() {
     const meta = sourceMeta[publishedValue.source];
     return (
       <Screen scrollRef={scrollRef}>
-        <BackHeader title="Votre offre est prête" />
+        <BackHeader title="Your offer is ready" />
         <StorageNotice />
         <View style={styles.successIntro} accessibilityLiveRegion="polite">
           <View style={[styles.successIcon, { backgroundColor: colors.soft }]}>
             <CheckCircle2 size={42} color={colors.green} />
           </View>
           <Txt size={28} weight="extrabold" accessibilityRole="header">
-            Une lumière de plus.
+            One more light.
           </Txt>
           <Txt size={14} tone="muted" style={styles.centerText}>
-            Votre offre est publiée sur cet appareil. Vous pourrez la retrouver
-            et gérer sa disponibilité depuis votre espace.
+            Your offer is published on this device. You can find it and manage
+            its availability from your space.
           </Txt>
         </View>
         <Card>
@@ -292,7 +292,7 @@ export default function Publish() {
           </View>
         </Card>
         <Button
-          label="Voir mon offre"
+          label="View my offer"
           icon={ArrowRight}
           onPress={() =>
             offer
@@ -307,7 +307,7 @@ export default function Publish() {
           }
         />
         <Button
-          label="Partager une autre source"
+          label="Share another source"
           variant="secondary"
           icon={Plus}
           onPress={() => {
@@ -318,7 +318,7 @@ export default function Publish() {
             );
           }}
         />
-        <DemoNote text="Publication locale de démonstration, sans diffusion à d’autres appareils et sans paiement." />
+        <DemoNote text="Local demo publication, not shared with other devices and with no payment." />
       </Screen>
     );
   }
@@ -339,9 +339,7 @@ export default function Publish() {
             </Txt>
           )}
           <Button
-            label={
-              liveEnabled ? "Publier mon offre" : "Publier mon offre locale"
-            }
+            label={liveEnabled ? "Publish my offer" : "Publish my local offer"}
             icon={Plus}
             onPress={submit}
             loading={submitting}
@@ -349,25 +347,25 @@ export default function Publish() {
           />
           <Txt size={11} tone="muted" style={styles.centerText}>
             {liveEnabled
-              ? "Visible par les voisins · aucun paiement."
-              : "Publication locale · aucun paiement."}
+              ? "Visible to neighbours · no payment."
+              : "Local publication · no payment."}
           </Txt>
         </View>
       }
     >
-      <BackHeader title="Partager mon énergie" />
+      <BackHeader title="Share my energy" />
       <StorageNotice />
       <View style={styles.intro}>
         <Txt size={25} weight="extrabold" accessibilityRole="header">
-          Votre surplus peut éclairer la journée.
+          Your surplus can brighten someone’s day.
         </Txt>
         <Txt size={13} tone="muted">
-          La source, l’accueil, puis un mot pour vos voisins.
+          The source, the welcome, then a word for your neighbours.
         </Txt>
       </View>
       {!draft.ready && (
         <Txt size={12} tone="muted">
-          Restauration du brouillon…
+          Restoring the draft…
         </Txt>
       )}
       {draft.storageError && (
@@ -380,12 +378,12 @@ export default function Publish() {
           <Save size={15} color={colors.muted} />
           <Txt size={12} tone="muted" style={styles.flex}>
             {draft.storageError
-              ? "Brouillon de cette session"
-              : "Brouillon conservé sur cet appareil"}
+              ? "Draft for this session"
+              : "Draft kept on this device"}
           </Txt>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Effacer le brouillon"
+            accessibilityLabel="Delete the draft"
             onPress={() => {
               Keyboard.dismiss();
               setDiscarding(true);
@@ -398,17 +396,17 @@ export default function Publish() {
       )}
       {discarding && (
         <Card>
-          <Txt weight="bold">Effacer votre saisie ?</Txt>
+          <Txt weight="bold">Delete your input?</Txt>
           <Txt size={13} tone="muted">
-            Votre offre n’a pas encore été publiée.
+            Your offer has not been published yet.
           </Txt>
           <Button
-            label="Effacer ce brouillon"
+            label="Delete this draft"
             variant="danger"
             onPress={clearDraft}
           />
           <Button
-            label="Continuer la saisie"
+            label="Keep editing"
             variant="secondary"
             onPress={() => setDiscarding(false)}
           />
@@ -420,7 +418,7 @@ export default function Publish() {
         }}
       >
         <Card>
-          <SectionTitle title="1. Votre source d’énergie" />
+          <SectionTitle title="1. Your energy source" />
           <View
             onLayout={(event) => {
               fieldY.current.title = event.nativeEvent.layout.y;
@@ -428,8 +426,8 @@ export default function Publish() {
           >
             <Field
               ref={titleRef}
-              label="Titre de l’offre"
-              placeholder="Un coin pour recharger et travailler"
+              label="Offer title"
+              placeholder="A corner to charge and work"
               value={value.title}
               onChangeText={(next) => change("title", next)}
               maxLength={100}
@@ -440,7 +438,7 @@ export default function Publish() {
           </View>
           <View style={styles.fieldGroup}>
             <Txt size={13} weight="bold">
-              Quartier de l’offre
+              Offer neighbourhood
             </Txt>
             <ZonePicker
               value={value.zone}
@@ -449,15 +447,15 @@ export default function Publish() {
           </View>
           <View style={styles.fieldGroup}>
             <Txt size={13} weight="bold">
-              Source d’énergie
+              Energy source
             </Txt>
             <Chips
               value={value.source}
               onChange={(next) => change("source", next as EnergySource)}
               options={[
-                { value: "solar", label: "Solaire", icon: Sun },
-                { value: "generator", label: "Générateur", icon: PlugZap },
-                { value: "battery", label: "Batterie", icon: BatteryCharging },
+                { value: "solar", label: "Solar", icon: Sun },
+                { value: "generator", label: "Generator", icon: PlugZap },
+                { value: "battery", label: "Battery", icon: BatteryCharging },
               ]}
             />
           </View>
@@ -468,8 +466,8 @@ export default function Publish() {
           >
             <Field
               ref={capacityRef}
-              label="Capacité et appareils acceptés"
-              placeholder="2 kW · téléphones et ordinateurs"
+              label="Capacity and devices accepted"
+              placeholder="2 kW · phones and laptops"
               value={value.capacity}
               onChangeText={(next) => change("capacity", next)}
               maxLength={100}
@@ -486,7 +484,7 @@ export default function Publish() {
         }}
       >
         <Card>
-          <SectionTitle title="2. Les conditions d’accueil" />
+          <SectionTitle title="2. Hosting conditions" />
           <View
             onLayout={(event) => {
               fieldY.current.slots = event.nativeEvent.layout.y;
@@ -497,7 +495,7 @@ export default function Publish() {
             <View style={styles.flex}>
               <Field
                 ref={slotsRef}
-                label="Places (1 à 50)"
+                label="Places (1 to 50)"
                 value={value.slots}
                 onChangeText={(next) => change("slots", next)}
                 keyboardType="number-pad"
@@ -510,7 +508,7 @@ export default function Publish() {
             <View style={styles.flex}>
               <Field
                 ref={untilRef}
-                label="Fin · HH:mm"
+                label="End · HH:mm"
                 value={value.until}
                 onChangeText={(next) => change("until", next)}
                 placeholder="19:00"
@@ -529,13 +527,13 @@ export default function Publish() {
           >
             <Field
               ref={priceRef}
-              label="Contribution conseillée (GHS)"
+              label="Suggested contribution (GHS)"
               value={value.price}
               onChangeText={(next) => change("price", next)}
               keyboardType="decimal-pad"
               maxLength={7}
               error={errors.price}
-              hint="0 GHS pour un partage gratuit. Aucun paiement dans cette démo."
+              hint="0 GHS for free sharing. No payment in this demo."
               returnKeyType="done"
               onSubmitEditing={() => Keyboard.dismiss()}
             />
@@ -550,7 +548,7 @@ export default function Publish() {
         <Card>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Un mot pour vos voisins"
+            accessibilityLabel="A word for your neighbours"
             accessibilityState={{ expanded }}
             onPress={() => {
               Keyboard.dismiss();
@@ -561,7 +559,7 @@ export default function Publish() {
             <MessageSquare size={18} color={colors.muted} />
             <View style={styles.flex}>
               <Txt size={14} weight="bold">
-                3. Un mot pour vos voisins
+                3. A word for your neighbours
               </Txt>
               <Txt size={11} tone="muted">
                 Facultatif
@@ -577,19 +575,19 @@ export default function Publish() {
           {expanded && (
             <Field
               ref={descriptionRef}
-              label="Un mot pour vos voisins (facultatif)"
-              placeholder="L’espace, les appareils, les conditions d’accueil…"
+              label="A word for your neighbours (optional)"
+              placeholder="The space, the devices, the hosting conditions…"
               multiline
               value={value.description}
               onChangeText={(next) => change("description", next)}
               maxLength={600}
               error={errors.description}
-              hint={`${value.description.length}/600 · Aucune adresse exacte nécessaire.`}
+              hint={`${value.description.length}/600 · No exact address needed.`}
             />
           )}
         </Card>
       </View>
-      <DemoNote text="Cette offre reste sur cet appareil. Les horaires concernent le scénario de démonstration." />
+      <DemoNote text="This offer stays on this device. The times refer to the demo scenario." />
     </Screen>
   );
 }

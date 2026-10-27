@@ -115,12 +115,12 @@ export async function signIn(
 
 function accountError(message: string): string {
   if (/invalid login credentials/i.test(message))
-    return "E-mail ou mot de passe incorrect.";
+    return "Incorrect email or password.";
   if (/already registered/i.test(message))
-    return "Un compte existe déjà avec cet e-mail. Connectez-vous.";
+    return "An account already exists with this email. Sign in.";
   if (/password/i.test(message))
-    return "Le mot de passe doit contenir au moins 6 caractères.";
-  return "La connexion a échoué. Réessayez dans un instant.";
+    return "The password must be at least 6 characters long.";
+  return "Sign-in failed. Please try again in a moment.";
 }
 
 /**
@@ -243,7 +243,7 @@ export function useLiveSharing(zoneId: string) {
     if (me && synced.current !== `${me}:${zoneId}`) {
       // Alerts follow the profile's neighbourhood, anonymous sessions included.
       // Marked only once written, so a refused update is retried on the next refresh.
-      const failed = await syncProfileZone(db, zoneId).catch(() => "réseau");
+      const failed = await syncProfileZone(db, zoneId).catch(() => "network");
       if (!failed) synced.current = `${me}:${zoneId}`;
     }
     const [sharing, inbox] = await Promise.all([
@@ -285,13 +285,13 @@ export function useLiveSharing(zoneId: string) {
   const run = useCallback(
     async (action: (db: SupabaseClient) => Promise<string | null>) => {
       const db = supabase();
-      if (!db) return "Mode démo : action non envoyée.";
+      if (!db) return "Demo mode: action not sent.";
       const sessionError = await ensureSession(db).catch(
-        () => "Pas de connexion. Réessayez quand le réseau revient.",
+        () => "No connection. Try again when the network is back.",
       );
       const error =
         sessionError ??
-        (await action(db).catch(() => "L’action n’a pas pu aboutir."));
+        (await action(db).catch(() => "The action could not be completed."));
       setNotice(error);
       await refresh();
       return error;
