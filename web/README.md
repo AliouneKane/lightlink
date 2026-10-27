@@ -80,3 +80,4 @@ npm run test:e2e               # 46 browser journeys, desktop and mobile sizes, 
 - **Privacy**: map markers sit on neighbourhood centres, never on a home; distances are straight lines between centres.
 - **Design**: dashboard proportions inspired by Linkwarden, original implementation; see [DESIGN_REFERENCE.md](../docs/DESIGN_REFERENCE.md).
 - **Deployment**: on Vercel, set _Root Directory_ to `web`, build with `npm ci` and `npm run build`, and add the two public variables above.
+- **Dependency audit** (26 October 2026): `npm audit` reports no vulnerability, development tooling included, since `next` was updated to 16.4.1 (Dependabot PR #14); the earlier audit had flagged `next` 16.3.8 as critical. Details and the mobile findings: [`docs/QUALITE_ET_SECURITE.md`](../docs/QUALITE_ET_SECURITE.md).

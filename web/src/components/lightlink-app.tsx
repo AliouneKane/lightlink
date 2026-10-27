@@ -516,13 +516,14 @@ export function LightLinkApp({
           </div>
         </div>
         <RiskChart forecast={forecast} />
-        <div className="confidence">
+        {/* Task 105: the colour follows the level, never green when confidence is low. */}
+        <div className="confidence" data-level={forecast.confidenceLevel}>
           <span>Confiance {forecast.confidenceLevel}</span>
           <strong>
             {forecast.confidence}% <ShieldCheck size={14} />
           </strong>
         </div>
-        <div className="confidence-track">
+        <div className="confidence-track" data-level={forecast.confidenceLevel}>
           <span style={{ width: `${forecast.confidence}%` }} />
         </div>
         <p className="prediction-note">

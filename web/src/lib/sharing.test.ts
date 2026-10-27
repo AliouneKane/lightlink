@@ -15,7 +15,6 @@ import {
 
 const row = (overrides: Partial<OfferRow> = {}): OfferRow => ({
   id: "o1",
-  host_id: "host",
   host_name: "Akosua Mensah",
   zone_id: "osu",
   title: "Générateur du soir",
@@ -32,7 +31,7 @@ const now = new Date("2026-10-22T15:00:00Z");
 
 describe("live offers", () => {
   it("shows the neighbourhood centre, never the exact place", () => {
-    const offer = offerRowToOffer(row(), "someone", 2, now);
+    const offer = offerRowToOffer(row(), false, 2, now);
     expect(offer).toMatchObject({
       host: "Akosua Mensah",
       initials: "AM",
@@ -47,15 +46,15 @@ describe("live offers", () => {
   });
 
   it("knows my offers, and full or ended offers are not available", () => {
-    expect(offerRowToOffer(row(), "host", 3, now).own).toBe(true);
-    expect(offerRowToOffer(row(), null, 3, now).own).toBe(false);
+    expect(offerRowToOffer(row(), true, 3, now).own).toBe(true);
+    expect(offerRowToOffer(row(), false, 3, now).own).toBe(false);
     expect(
-      offerRowToOffer(row({ status: "full" }), null, 0, now).available,
+      offerRowToOffer(row({ status: "full" }), false, 0, now).available,
     ).toBe(false);
     expect(
       offerRowToOffer(
         row({ ends_at: "2026-10-22T14:00:00+00:00" }),
-        null,
+        false,
         3,
         now,
       ).available,
@@ -156,7 +155,11 @@ function fakeDb(
         data: { session: me ? { user: { id: me } } : null },
       }),
     },
-    rpc: async () => ({ data: options, error: null }),
+    // my_offers() returns the signed-in host's offers (migration 13), like a table.
+    rpc: (name: string) =>
+      name === "my_offers"
+        ? query(me ? (tables.my_offers ?? []) : [])
+        : Promise.resolve({ data: options, error: null }),
     from: (table: string) => query(tables[table] ?? []),
   };
 }
@@ -169,6 +172,7 @@ describe("loading sharing data (PAN's review of #9)", () => {
       "host",
       {
         offers: [row({ status: "closed", ends_at: future })],
+        my_offers: [row({ status: "closed", ends_at: future })],
         offer_requests: [
           {
             id: "r1",
@@ -248,10 +252,12 @@ describe("PAN's second review of #9", () => {
       },
       from: () => ({
         update: (values: unknown) => ({
-          eq: async (_column: string, id: string) => {
-            updates.push({ values, id });
-            return { error: null };
-          },
+          eq: (_column: string, id: string) => ({
+            select: async () => {
+              updates.push({ values, id });
+              return { data: [{ id }], error: null };
+            },
+          }),
         }),
       }),
     };
@@ -260,11 +266,78 @@ describe("PAN's second review of #9", () => {
       created: true,
     });
     expect(updates).toEqual([{ values: { zone_id: "madina" }, id: "anon" }]);
-    // An existing session is left as it is.
-    expect(await openSession(db, "osu")).toEqual({
+    // An existing session is kept, and a zone already saved is not written again.
+    expect(await openSession(db, "madina")).toEqual({
       error: null,
       created: false,
     });
     expect(updates).toHaveLength(1);
+  });
+});
+
+describe("PAN's third review of #9", () => {
+  // A client whose profile UPDATE answers from a script: an error, or the rows changed.
+  const scriptedDb = (
+    answers: {
+      data: { id: string }[] | null;
+      error: { message: string } | null;
+    }[],
+  ) => {
+    const attempts: string[] = [];
+    let session: { user: { id: string } } | null = null;
+    const db = {
+      auth: {
+        getSession: async () => ({ data: { session } }),
+        signInAnonymously: async () => {
+          session = { user: { id: "anon" } };
+          return { error: null };
+        },
+      },
+      from: () => ({
+        update: (values: { zone_id: string }) => ({
+          eq: () => ({
+            select: async () => {
+              attempts.push(values.zone_id);
+              return answers.shift() ?? { data: [{ id: "anon" }], error: null };
+            },
+          }),
+        }),
+      }),
+    };
+    return { db, attempts };
+  };
+
+  it("retries the neighbourhood when the first PATCH was refused", async () => {
+    const { db, attempts } = scriptedDb([
+      { data: null, error: { message: "Failed to fetch" } },
+    ]);
+    // The session opens even though the profile could not be written.
+    expect(await openSession(db, "madina")).toEqual({
+      error: null,
+      created: true,
+    });
+    // Network back: the next report reuses the session and writes the zone.
+    expect(await openSession(db, "madina")).toEqual({
+      error: null,
+      created: false,
+    });
+    expect(attempts).toEqual(["madina", "madina"]);
+    // Written once: no third attempt.
+    await openSession(db, "madina");
+    expect(attempts).toHaveLength(2);
+  });
+
+  it("treats an UPDATE that changed no row as a failure", async () => {
+    const { db, attempts } = scriptedDb([{ data: [], error: null }]);
+    await openSession(db, "osu");
+    await openSession(db, "osu");
+    expect(attempts).toEqual(["osu", "osu"]);
+  });
+
+  it("writes a new neighbourhood chosen after the session opened", async () => {
+    const { db, attempts } = scriptedDb([]);
+    await openSession(db, "madina");
+    await openSession(db, "osu");
+    expect(attempts).toEqual(["madina", "osu"]);
   });
 });

@@ -11,10 +11,12 @@ import {
   type RequestStatus,
 } from "./energy";
 
-/** A row of public.offers. */
+/**
+ * A row of public.offers, as the apps may read it: who hosts an offer (host_id) is not
+ * readable; my own offers come from my_offers() (migration 13).
+ */
 export interface OfferRow {
   id: string;
-  host_id: string;
   host_name: string;
   zone_id: string;
   title: string;
@@ -38,7 +40,7 @@ export interface RequestRow {
 }
 
 export const offerColumns =
-  "id, host_id, host_name, zone_id, title, source, capacity, price, slots, description, status, ends_at";
+  "id, host_name, zone_id, title, source, capacity, price, slots, description, status, ends_at";
 export const requestColumns =
   "id, offer_id, requester_id, status, message, created_at";
 
@@ -69,7 +71,7 @@ export function initials(name: string): string {
  */
 export function offerRowToOffer(
   row: OfferRow,
-  me: string | null,
+  own: boolean,
   placesLeft: number = row.slots,
   now: Date = new Date(),
 ): EnergyOffer {
@@ -91,7 +93,7 @@ export function offerRowToOffer(
     slots: Math.max(0, placesLeft),
     until: row.ends_at.slice(11, 16), // Accra is on GMT all year
     description: row.description,
-    own: me !== null && row.host_id === me,
+    own,
   };
 }
 

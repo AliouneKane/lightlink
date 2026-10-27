@@ -102,9 +102,12 @@ export function toForecast(
   const confidenceLevel =
     confidence >= 70 ? "forte" : confidence >= 40 ? "moyenne" : "faible";
   const lowData = !announced && confidence < 40;
+  // Live rows are today's (todayBounds); a demo snapshot names its own day (PAN, #10).
+  const day =
+    source === "live" ? "aujourd’hui" : `le ${dayLabel(row.window_start)}`;
   const summary =
     probability < 20
-      ? `Risque faible aujourd’hui (confiance ${confidence} %)`
+      ? `Risque faible ${day} (confiance ${confidence} %)`
       : `${headline} entre ${start} et ${end} (confiance ${confidence} %)`;
   const insight = announced
     ? `L’ECG a annoncé une coupure dans le quartier entre ${start} et ${end}. Rechargez vos appareils avant ${start} ou explorez les offres de votre quartier.`

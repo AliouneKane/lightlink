@@ -33,6 +33,9 @@ Applied in order from `supabase/migrations/`.
 | `20261021000200_simulated_reports` | Simulated demo reports, labelled and reserved to the demo script |
 | `20261022000000_energy_sharing` | Offers, requests, private addresses, fixed energy places, abuse reports, `energy_options()` search ([rules](../docs/REGLES_PARTAGE.md)) |
 | `20261022000100_notifications` | Phones, followed zones, notification inbox, alerts written by the database and sent with `pg_net` |
+| `20261022000200_sharing_review_fixes` | An offer and its private address are created together or not at all |
+| `20261026000000_report_server_time_and_position` | The database sets the report time for app users (rate limit and live map can no longer be backdated); the GPS position is checked against the neighbourhood, then not kept |
+| `20261026000100_hide_account_ids` | Account ids of hosts (`host_id`) and reporters (`user_id`) are no longer readable through the public API |
 
 `supabase/seed.sql` holds the 10 pilot zones, their dated groups and the real ECG schedules. Its generated sections come from `data/` (`python3 prediction/build_zone_groups.py`, `python3 prediction/import_schedules.py --write-seed`); the CI checks they are up to date.
 
