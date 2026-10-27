@@ -41,16 +41,16 @@ import {
 } from "@/lib/display-store";
 
 export const navigation = [
-  { href: "/", label: "Tableau de bord", icon: LayoutDashboard },
-  { href: "/carte", label: "Carte du réseau", icon: Map },
-  { href: "/previsions", label: "Prévisions", icon: Sparkles },
-  { href: "/partage", label: "Partager l’énergie", icon: HeartHandshake },
-  { href: "/communaute", label: "Communauté", icon: Users },
+  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/map", label: "Network map", icon: Map },
+  { href: "/forecast", label: "Forecast", icon: Sparkles },
+  { href: "/sharing", label: "Share energy", icon: HeartHandshake },
+  { href: "/community", label: "Community", icon: Users },
 ];
 const sectionLabels: Record<SectionId, string> = {
-  offers: "Énergie à proximité",
-  network: "Carte du réseau",
-  insights: "Prévisions et activité",
+  offers: "Energy nearby",
+  network: "Network map",
+  insights: "Forecast and activity",
 };
 export type AppDialog =
   "report" | "offer" | "auth" | "notifications" | "help" | "reset";
@@ -84,7 +84,7 @@ export function AppShell({
   const display = useDisplay();
   const [menuOpen, setMenuOpen] = useState(false);
   const page = navigation.find((item) => item.href === pathname) ?? {
-    label: "Paramètres",
+    label: "Settings",
     icon: Settings2,
   };
   const PageIcon = page.icon;
@@ -113,31 +113,31 @@ export function AppShell({
       data-theme={display.theme}
     >
       <a className="skip-link" href="#main-content">
-        Aller au contenu
+        Skip to content
       </a>
       {menuOpen && (
         <button
           className="sidebar-backdrop"
-          aria-label="Fermer la navigation"
+          aria-label="Close navigation"
           onClick={() => setMenuOpen(false)}
         />
       )}
       <aside
         className={`sidebar ${menuOpen ? "is-open" : ""}`}
-        aria-label="Navigation principale"
+        aria-label="Main navigation"
       >
         <div className="sidebar-brand">
           <Link
             className="brand-link"
             href="/"
-            aria-label="LightLink — Tableau de bord"
+            aria-label="LightLink — Dashboard"
             onClick={() => setMenuOpen(false)}
           >
             <Brand compact={display.collapsed && !menuOpen} />
           </Link>
           <button
             className="mobile-close icon-button"
-            aria-label="Fermer le menu"
+            aria-label="Close menu"
             onClick={() => setMenuOpen(false)}
           >
             <X size={18} />
@@ -146,16 +146,13 @@ export function AppShell({
         <label className="sidebar-search global-search">
           <Search size={16} />
           <input
-            aria-label="Rechercher un quartier ou une offre"
-            placeholder="Rechercher dans LightLink"
+            aria-label="Search a neighbourhood or an offer"
+            placeholder="Search LightLink"
             value={search}
             onChange={(event) => onSearch(event.target.value)}
           />
           {search && (
-            <button
-              aria-label="Effacer la recherche"
-              onClick={() => onSearch("")}
-            >
+            <button aria-label="Clear search" onClick={() => onSearch("")}>
               <X size={14} />
             </button>
           )}
@@ -164,23 +161,23 @@ export function AppShell({
           <button
             className="button primary"
             onClick={() => onDialog("report")}
-            title="Signaler une coupure"
+            title="Report an outage"
           >
             <Plus size={17} />
-            <span>Signaler une coupure</span>
+            <span>Report an outage</span>
           </button>
           <button
             className="icon-button"
-            aria-label="Partager de l’énergie"
-            title="Partager de l’énergie"
+            aria-label="Share energy"
+            title="Share energy"
             onClick={() => onDialog("offer")}
           >
             <HeartHandshake size={18} />
           </button>
           <button
             className="icon-button"
-            aria-label="Comment fonctionne LightLink"
-            title="Comment fonctionne LightLink"
+            aria-label="How LightLink works"
+            title="How LightLink works"
             onClick={() => onDialog("help")}
           >
             <CircleHelp size={18} />
@@ -203,7 +200,7 @@ export function AppShell({
               >
                 <Icon size={18} />
                 <span>{item.label}</span>
-                {item.href === "/partage" && (
+                {item.href === "/sharing" && (
                   <span className="nav-count">{offerCount}</span>
                 )}
               </Link>
@@ -224,7 +221,7 @@ export function AppShell({
             }
           >
             <MapPinSymbol />
-            <span>Quartiers pilotes</span>
+            <span>Pilot neighbourhoods</span>
             <ChevronDown size={14} className="sidebar-group-chevron" />
           </button>
           <div
@@ -234,9 +231,9 @@ export function AppShell({
           >
             {zones.map((zone) => (
               <Link
-                href={`/carte?quartier=${zone.id}`}
+                href={`/map?zone=${zone.id}`}
                 key={zone.id}
-                title={`${zone.name} · ${zone.reports} signalements`}
+                title={`${zone.name} · ${zone.reports} reports`}
                 onClick={() => {
                   setMenuOpen(false);
                   onSearch("");
@@ -250,31 +247,31 @@ export function AppShell({
           </div>
           <div className="sidebar-group-title">
             <Zap size={16} />
-            <span>Sources d’énergie</span>
+            <span>Energy sources</span>
           </div>
           <div className="source-nav">
             {[
               {
                 id: "solar",
-                label: "Solaire",
+                label: "Solar",
                 icon: Sun,
                 count: sourceCounts.solar,
               },
               {
                 id: "generator",
-                label: "Générateur",
+                label: "Generator",
                 icon: Zap,
                 count: sourceCounts.generator,
               },
               {
-                label: "Batterie",
+                label: "Battery",
                 id: "battery",
                 icon: BatteryCharging,
                 count: sourceCounts.battery,
               },
             ].map((source) => (
               <Link
-                href={`/partage?source=${source.id}`}
+                href={`/sharing?source=${source.id}`}
                 key={source.label}
                 onClick={() => {
                   setMenuOpen(false);
@@ -289,38 +286,38 @@ export function AppShell({
           </div>
           <span className="sidebar-meta">
             <Radio size={12} />
-            Accra, Ghana · 10 zones pilotes
+            Accra, Ghana · 10 pilot areas
           </span>
         </div>
         <div className="sidebar-footer">
           <Link
-            href="/parametres"
-            className={`nav-item ${pathname === "/parametres" ? "active" : ""}`}
+            href="/settings"
+            className={`nav-item ${pathname === "/settings" ? "active" : ""}`}
             onClick={() => setMenuOpen(false)}
-            title="Paramètres"
+            title="Settings"
           >
             <Settings2 size={18} />
-            <span>Paramètres</span>
+            <span>Settings</span>
           </Link>
           <div className="sidebar-user-row">
             <button className="profile-button" onClick={() => onDialog("auth")}>
               <span className="avatar">{initials}</span>
               <span>
                 {profile.name}
-                <small>Profil de démonstration</small>
+                <small>Demo profile</small>
               </span>
             </button>
             <button
               className="icon-button sidebar-collapse"
               aria-label={
                 display.collapsed
-                  ? "Développer la barre latérale"
-                  : "Réduire la barre latérale"
+                  ? "Expand the sidebar"
+                  : "Collapse the sidebar"
               }
               title={
                 display.collapsed
-                  ? "Développer la barre latérale"
-                  : "Réduire la barre latérale"
+                  ? "Expand the sidebar"
+                  : "Collapse the sidebar"
               }
               onClick={() =>
                 updateDisplay((previous) => ({
@@ -343,7 +340,7 @@ export function AppShell({
           <div className="topbar-left">
             <button
               className="icon-button menu-toggle"
-              aria-label="Ouvrir le menu"
+              aria-label="Open menu"
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen(!menuOpen)}
             >
@@ -357,7 +354,7 @@ export function AppShell({
           <div className="topbar-actions">
             <button
               className="icon-button mobile-report"
-              aria-label="Signaler mon quartier"
+              aria-label="Report my neighbourhood"
               onClick={() => onDialog("report")}
             >
               <Plus size={18} />
@@ -367,10 +364,10 @@ export function AppShell({
               <span />
               {
                 {
-                  off: "DÉMO",
-                  loading: "CONNEXION…",
-                  ready: "EN DIRECT",
-                  error: "HORS LIGNE",
+                  off: "DEMO",
+                  loading: "CONNECTING…",
+                  ready: "LIVE",
+                  error: "OFFLINE",
                 }[liveState]
               }
             </span>
@@ -383,15 +380,15 @@ export function AppShell({
               >
                 <summary
                   className="layout-trigger"
-                  aria-label="Modifier la disposition"
-                  title="Modifier la disposition"
+                  aria-label="Edit layout"
+                  title="Edit layout"
                 >
                   <SlidersHorizontal size={15} />
-                  <span>Modifier la disposition</span>
+                  <span>Edit layout</span>
                 </summary>
                 <div className="layout-options">
-                  <strong>Votre tableau de bord</strong>
-                  <p>Affichez et réorganisez vos sections.</p>
+                  <strong>Your dashboard</strong>
+                  <p>Show and reorder your sections.</p>
                   {display.order.map((id, index) => (
                     <div className="layout-option" key={id}>
                       <label>
@@ -411,14 +408,14 @@ export function AppShell({
                         {sectionLabels[id]}
                       </label>
                       <button
-                        aria-label={`Monter ${sectionLabels[id]}`}
+                        aria-label={`Move up ${sectionLabels[id]}`}
                         disabled={index === 0}
                         onClick={() => moveSection(id, -1)}
                       >
                         <ChevronLeft size={14} className="rotate-up" />
                       </button>
                       <button
-                        aria-label={`Descendre ${sectionLabels[id]}`}
+                        aria-label={`Move down ${sectionLabels[id]}`}
                         disabled={index === sectionIds.length - 1}
                         onClick={() => moveSection(id, 1)}
                       >
@@ -437,7 +434,7 @@ export function AppShell({
                       }))
                     }
                   >
-                    Rétablir la disposition
+                    Reset layout
                   </button>
                 </div>
               </details>
@@ -446,10 +443,10 @@ export function AppShell({
               className="icon-button theme-button"
               aria-label={
                 display.theme === "dark"
-                  ? "Activer le thème clair"
-                  : "Activer le thème sombre"
+                  ? "Switch to light theme"
+                  : "Switch to dark theme"
               }
-              title={display.theme === "dark" ? "Thème clair" : "Thème sombre"}
+              title={display.theme === "dark" ? "Light theme" : "Dark theme"}
               onClick={() =>
                 updateDisplay((previous) => ({
                   ...previous,
@@ -465,7 +462,7 @@ export function AppShell({
             </button>
             <button
               className="notification-button icon-button"
-              aria-label="Voir les notifications"
+              aria-label="View notifications"
               onClick={() => onDialog("notifications")}
             >
               <Bell size={18} />
@@ -473,7 +470,7 @@ export function AppShell({
             </button>
             <button
               className="top-avatar avatar"
-              aria-label="Mon profil"
+              aria-label="My profile"
               onClick={() => onDialog("auth")}
             >
               {initials}
@@ -483,8 +480,8 @@ export function AppShell({
         {!online && (
           <div className="offline-banner" role="status">
             <WifiOff size={16} />
-            Hors connexion. Vos contributions restent sur cet appareil ; la
-            carte nécessite internet.
+            Offline. Your contributions stay on this device; the map needs the
+            internet.
           </div>
         )}
         <main id="main-content" className="main-content" tabIndex={-1}>

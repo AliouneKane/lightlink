@@ -46,10 +46,10 @@ function initialsFor(name: string) {
     .slice(0, 2)
     .map((word) => word[0])
     .join("")
-    .toLocaleUpperCase("fr");
+    .toLocaleUpperCase("en");
 }
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat("fr-FR", {
+  return new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -104,7 +104,7 @@ export default function CommunityScreen() {
               tone="muted"
               style={{ letterSpacing: 1.7 }}
             >
-              L’ÉNERGIE NOUS RELIE
+              ENERGY CONNECTS US
             </Txt>
           </View>
           <Txt
@@ -113,7 +113,7 @@ export default function CommunityScreen() {
             accessibilityRole="header"
             style={{ lineHeight: 40, letterSpacing: -1.1 }}
           >
-            Communauté
+            Community
           </Txt>
         </View>
         {nearbyAuthors.length > 0 && (
@@ -150,13 +150,13 @@ export default function CommunityScreen() {
         )}
       </View>
       <Txt size={13} tone="muted" style={{ marginTop: -12 }}>
-        L’énergie du quartier, c’est aussi vous.
+        The neighbourhood’s energy is you too.
       </Txt>
       <StorageNotice />
 
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Signaler l’état du courant"
+        accessibilityLabel="Report the power status"
         onPress={() => {
           feedback();
           router.push("/signaler");
@@ -180,10 +180,10 @@ export default function CommunityScreen() {
             weight="extrabold"
             style={{ color: "#132d39", letterSpacing: -0.3 }}
           >
-            Et chez vous, le courant ?
+            And at your place, is the power on?
           </Txt>
           <Txt size={11} weight="medium" style={{ color: "#35452D" }}>
-            Signaler l’état du courant
+            Report the power status
           </Txt>
         </View>
         <View style={styles.invitationArrow}>
@@ -196,19 +196,18 @@ export default function CommunityScreen() {
           <SectionTitle
             title={
               filter === "all"
-                ? "Les voix des quartiers"
-                : "Les voix du quartier"
+                ? "Voices of the neighbourhoods"
+                : "Voices of the neighbourhood"
             }
           />
           <Txt size={11} tone="muted">
-            Contributions du scénario et signalements enregistrés sur cet
-            appareil.
+            Scenario contributions and reports saved on this device.
           </Txt>
         </View>
         <Chips
           options={[
-            { value: "all", label: "Tous les quartiers", icon: Users },
-            { value: "current", label: "Mon quartier", icon: MapPin },
+            { value: "all", label: "All neighbourhoods", icon: Users },
+            { value: "current", label: "My neighbourhood", icon: MapPin },
           ]}
           value={filter}
           onChange={(value) => {
@@ -218,7 +217,7 @@ export default function CommunityScreen() {
         />
         <View style={styles.countRow}>
           <Txt size={11} tone="muted">
-            {reports.length} contribution{reports.length > 1 ? "s" : ""}
+            {reports.length} contribution{reports.length === 1 ? "" : "s"}
           </Txt>
           <View style={[styles.row, { gap: 5 }]}>
             <View
@@ -230,7 +229,7 @@ export default function CommunityScreen() {
               }}
             />
             <Txt size={10} tone="muted">
-              Démo locale
+              Local demo
             </Txt>
           </View>
         </View>
@@ -242,14 +241,14 @@ export default function CommunityScreen() {
             <MessageCircle size={30} color={colors.muted} strokeWidth={1.5} />
           </View>
           <Txt size={18} weight="bold">
-            À vous d’ouvrir la conversation
+            Start the conversation
           </Txt>
           <Txt size={14} tone="muted" style={styles.centerText}>
-            Aucune contribution locale pour {current?.name ?? "ce quartier"}.
-            Ajoutez votre premier signalement.
+            No local contribution for {current?.name ?? "this neighbourhood"}.
+            Add your first report.
           </Txt>
           <Button
-            label="Ajouter un signalement"
+            label="Add a report"
             icon={ArrowUpRight}
             onPress={() => router.push("/signaler")}
           />
@@ -348,7 +347,7 @@ export default function CommunityScreen() {
                             }}
                           >
                             <Txt size={9} weight="extrabold" tone="accent">
-                              VOUS
+                              YOU
                             </Txt>
                           </View>
                         )}
@@ -361,7 +360,7 @@ export default function CommunityScreen() {
                       <StatusPill status={report.status} />
                       <Txt size={13} style={{ lineHeight: 21 }}>
                         {report.description ||
-                          "État du courant signalé dans ce quartier."}
+                          "Power status reported in this neighbourhood."}
                       </Txt>
                     </View>
                     {nextDate === date && (
@@ -383,20 +382,20 @@ export default function CommunityScreen() {
       {reports.length > visibleReports.length && (
         <View style={{ gap: 8 }}>
           <Txt size={12} tone="muted" style={styles.centerText}>
-            {visibleReports.length} contributions affichées sur {reports.length}
+            {visibleReports.length} of {reports.length} contributions shown
           </Txt>
           <Button
             label={
-              "Afficher " +
+              "Show " +
               Math.min(12, reports.length - visibleReports.length) +
-              " contributions de plus"
+              " more contributions"
             }
             variant="secondary"
             onPress={() => setVisibleCount((count) => count + 12)}
           />
         </View>
       )}
-      <DemoNote text="Les contributions restent sur cet appareil. Aucun signalement n’est envoyé au réseau électrique ou à d’autres habitants." />
+      <DemoNote text="Contributions stay on this device. No report is sent to the power grid or to other residents." />
     </Screen>
   );
 }

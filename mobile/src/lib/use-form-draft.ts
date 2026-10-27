@@ -60,7 +60,7 @@ function createRecord(
           emit({
             ...snapshot,
             storageError:
-              "Sauvegarde du brouillon indisponible. Votre saisie est conservée pendant cette session.",
+              "Draft saving unavailable. Your input is kept for this session.",
           });
       });
     return writes;
@@ -121,7 +121,7 @@ function createRecord(
             ...snapshot,
             ready: true,
             storageError:
-              "Sauvegarde du brouillon indisponible. Votre saisie est conservée pendant cette session.",
+              "Draft saving unavailable. Your input is kept for this session.",
           });
       }
     },

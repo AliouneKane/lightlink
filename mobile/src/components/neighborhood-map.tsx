@@ -186,7 +186,7 @@ export function NeighborhoodMap({
               textAnchor="middle"
               opacity={0.7}
             >
-              GOLFE DE GUINÉE
+              GULF OF GUINEA
             </SvgText>
             {neighborhoods.map((area) => {
               const point = project(area);
@@ -259,12 +259,12 @@ export function NeighborhoodMap({
                 accessibilityLabel={
                   area
                     ? `${area.name}, ${statusMeta[area.status].label}`
-                    : `${ids.length} quartiers proches : ${group.points.map((point) => point.area.name).join(", ")}`
+                    : `${ids.length} nearby neighbourhoods: ${group.points.map((point) => point.area.name).join(", ")}`
                 }
                 accessibilityHint={
                   area
-                    ? "Sélectionner ce quartier"
-                    : "Ouvrir le choix des quartiers regroupés"
+                    ? "Select this neighbourhood"
+                    : "Open the grouped neighbourhoods picker"
                 }
                 accessibilityState={{ selected: active }}
                 onPress={() => (area ? onSelect(area.id) : setOpenIds(ids))}
@@ -359,17 +359,17 @@ export function NeighborhoodMap({
           {[
             {
               icon: Plus,
-              label: "Agrandir l’aperçu",
+              label: "Enlarge the preview",
               onPress: () => setZoom((value) => Math.min(2.4, value + 0.35)),
             },
             {
               icon: Minus,
-              label: "Réduire l’aperçu",
+              label: "Shrink the preview",
               onPress: () => setZoom((value) => Math.max(1, value - 0.35)),
             },
             {
               icon: Maximize2,
-              label: "Afficher tous les quartiers",
+              label: "Show all neighbourhoods",
               onPress: () => setZoom(1),
             },
           ].map(({ icon: Icon, label, onPress }) => (
@@ -392,7 +392,7 @@ export function NeighborhoodMap({
           style={[styles.caption, { backgroundColor: colors.surface }]}
         >
           <Txt size={10} tone="muted">
-            Aperçu schématique · centres approximatifs
+            Schematic preview · approximate centres
           </Txt>
         </View>
       </View>
@@ -411,7 +411,7 @@ export function NeighborhoodMap({
         >
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Fermer les quartiers regroupés"
+            accessibilityLabel="Close the grouped neighbourhoods"
             onPress={() => setOpenIds([])}
             style={StyleSheet.absoluteFill}
           />
@@ -436,11 +436,11 @@ export function NeighborhoodMap({
                 weight="extrabold"
                 style={{ flex: 1 }}
               >
-                Quartiers à proximité
+                Nearby neighbourhoods
               </Txt>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Fermer"
+                accessibilityLabel="Close"
                 onPress={() => setOpenIds([])}
                 style={[
                   styles.control,
@@ -451,15 +451,15 @@ export function NeighborhoodMap({
               </Pressable>
             </View>
             <Txt size={12} tone="muted">
-              Ces centres sont rapprochés dans l’aperçu. Choisissez votre
-              quartier.
+              These centres are close together in the preview. Choose your
+              neighbourhood.
             </Txt>
             <ScrollView showsVerticalScrollIndicator={false}>
               {openAreas.map((area) => (
                 <Pressable
                   key={area.id}
                   accessibilityRole="button"
-                  accessibilityLabel={`Choisir ${area.name}`}
+                  accessibilityLabel={`Choose ${area.name}`}
                   accessibilityState={{ selected: area.id === selectedId }}
                   onPress={() => {
                     onSelect(area.id);

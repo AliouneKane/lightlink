@@ -3,6 +3,8 @@
 import { useSyncExternalStore } from "react";
 import {
   initialState,
+  legacyStorageKey,
+  migrateLegacyState,
   parseStoredState,
   storageKey,
   type DemoState,
@@ -14,7 +16,11 @@ const listeners = new Set<() => void>();
 function readState() {
   if (snapshot) return snapshot;
   try {
-    snapshot = parseStoredState(window.localStorage.getItem(storageKey));
+    const saved = window.localStorage.getItem(storageKey);
+    snapshot =
+      saved !== null
+        ? parseStoredState(saved)
+        : migrateLegacyState(window.localStorage.getItem(legacyStorageKey));
   } catch {
     snapshot = initialState;
   }

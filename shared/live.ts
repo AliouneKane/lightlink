@@ -60,7 +60,7 @@ export function applyLiveStatus(
       // Task 69: the demo script's reports are always labelled as such.
       restoration:
         Number(row.simulated_reports ?? 0) > 0
-          ? `Données simulées · ${restorationLabel(row, status)}`
+          ? `Simulated data · ${restorationLabel(row, status)}`
           : restorationLabel(row, status),
       plannedUntil:
         row.planned_now && row.planned_until ? row.planned_until : undefined,
@@ -77,9 +77,7 @@ export function withoutLiveData(
   state: "loading" | "error",
 ): Neighborhood[] {
   const label =
-    state === "loading"
-      ? "Chargement des données en direct…"
-      : "Données en direct indisponibles";
+    state === "loading" ? "Loading live data…" : "Live data unavailable";
   return zones.map((zone) => ({
     ...zone,
     status: "unknown",
@@ -91,16 +89,14 @@ export function withoutLiveData(
 function restorationLabel(row: ZoneStatusRow, status: EnergyStatus): string {
   const until = row.planned_until ? formatTime(row.planned_until) : null;
   if (status === "powered")
-    return until
-      ? `Coupure annoncée par l’ECG jusqu’à ${until}`
-      : "Courant disponible";
+    return until ? `ECG outage announced until ${until}` : "Power available";
   if (row.outage_origin === "planned")
     return until
-      ? `Coupure prévue par l’ECG · fin annoncée ${until}`
-      : "Coupure prévue par l’ECG";
+      ? `Planned ECG outage · announced end ${until}`
+      : "Planned ECG outage";
   return status === "outage"
-    ? "Coupure non annoncée · confirmée par les habitants"
-    : "Coupure non annoncée · à confirmer";
+    ? "Unannounced outage · confirmed by residents"
+    : "Unannounced outage · to be confirmed";
 }
 
 export function scheduleRowsToAnnouncements(
@@ -112,7 +108,7 @@ export function scheduleRowsToAnnouncements(
     startsAt: new Date(row.starts_at).toISOString(),
     endsAt: new Date(row.ends_at).toISOString(),
     partial: row.partial,
-    localities: row.localities || "Quartier",
+    localities: row.localities || "Neighbourhood",
     sourceUrl: row.source_url ?? "",
     demo: false,
   }));
@@ -167,18 +163,18 @@ export function liveErrorMessage(error: {
 }): string {
   const message = error.message ?? "";
   if (message.includes("Too many reports"))
-    return "Vous avez déjà envoyé 5 signalements en 10 minutes. Réessayez un peu plus tard.";
+    return "You have already sent 5 reports in 10 minutes. Please try again a little later.";
   if (message.includes("too far"))
-    return "Votre position est trop loin de ce quartier. Choisissez le quartier où vous êtes.";
+    return "Your location is too far from this neighbourhood. Choose the neighbourhood you are in.";
   if (message.includes("Observation older than 24 hours"))
-    return "Ce signalement date de plus de 24 heures : il n’a pas été envoyé.";
+    return "This report is more than 24 hours old: it was not sent.";
   if (message.includes("Observation time is in the future"))
-    return "L’heure de votre téléphone semble fausse. Vérifiez-la, puis réessayez.";
+    return "Your phone’s clock seems wrong. Check it, then try again.";
   if (message.includes("row-level security"))
-    return "Connectez-vous pour envoyer un signalement.";
+    return "Sign in to send a report.";
   if (/fetch|network|Failed to fetch|timeout/i.test(message))
-    return "Pas de connexion. Votre signalement n’a pas été envoyé : réessayez quand le réseau revient.";
-  return "Le signalement n’a pas pu être envoyé. Réessayez dans un instant.";
+    return "No connection. Your report was not sent: try again when the network is back.";
+  return "The report could not be sent. Please try again in a moment.";
 }
 
 /** Network failures can be retried later; refusals by the database cannot. */
@@ -187,7 +183,7 @@ export function isRetryable(error: { message?: string }): boolean {
 }
 
 /**
- * The "Coupures" filter of the maps: reported outages, and ECG outages announced now
+ * The "Outages" filter of the maps: reported outages, and ECG outages announced now
  * even before any resident reports them (PAN's review of #8).
  */
 export function isOutageForFilter(zone: {

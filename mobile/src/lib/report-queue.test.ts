@@ -26,7 +26,7 @@ const offline: SendResult = { ok: false, retry: true, message: "offline" };
 const refused: SendResult = {
   ok: false,
   retry: false,
-  message: "Vous avez déjà envoyé 5 signalements en 10 minutes.",
+  message: "You have already sent 5 reports in 10 minutes.",
 };
 
 describe("offline report queue", () => {
@@ -113,7 +113,7 @@ describe("offline report queue", () => {
     });
     const first = createReportQueue(storage, send);
     await first.load();
-    expect(first.getSnapshot().notice).toContain("sans heure");
+    expect(first.getSnapshot().notice).toContain("without a time");
     await first.flush();
     // The app restarts between retries.
     const second = createReportQueue(storage, send);

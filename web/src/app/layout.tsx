@@ -3,9 +3,9 @@ import "leaflet/dist/leaflet.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "LightLink — L’énergie nous relie",
+  title: "LightLink — Energy connects us",
   description:
-    "Anticipez les coupures et partagez l’énergie dans votre quartier. La solidarité énergétique, à Accra.",
+    "See outages coming and share energy in your neighbourhood. Energy solidarity, in Accra.",
   icons: { icon: "/lightlink-mark.svg" },
 };
 
@@ -13,7 +13,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="fr">
+    <html lang="en">
       <body>{children}</body>
     </html>
   );

@@ -200,7 +200,7 @@ export function BackHeader({
     <View style={styles.row}>
       <IconButton
         icon={ArrowLeft}
-        label="Retour"
+        label="Back"
         onPress={
           onBack ??
           (() => (router.canGoBack() ? router.back() : router.replace("/")))
@@ -478,7 +478,7 @@ export function Chips({
 export function ZonePicker({
   value,
   onChange,
-  label = "Choisir le quartier",
+  label = "Choose the neighbourhood",
   compact = false,
 }: {
   value: string;
@@ -516,7 +516,7 @@ export function ZonePicker({
         <MapPin size={17} color={colors.accent} />
         <Txt weight="bold" style={{ flex: 1 }}>
           {neighborhoods.find((zone) => zone.id === value)?.name ??
-            "Choisir un quartier"}
+            "Choose a neighbourhood"}
         </Txt>
         <ChevronDown size={17} color={colors.muted} />
       </Pressable>
@@ -534,7 +534,7 @@ export function ZonePicker({
           }}
         >
           <Pressable
-            accessibilityLabel="Fermer le choix du quartier"
+            accessibilityLabel="Close the neighbourhood picker"
             accessibilityRole="button"
             onPress={() => setOpen(false)}
             style={StyleSheet.absoluteFill}
@@ -556,16 +556,16 @@ export function ZonePicker({
           >
             <View style={styles.row}>
               <Txt weight="extrabold" size={21} style={{ flex: 1 }}>
-                Votre quartier
+                Your neighbourhood
               </Txt>
               <IconButton
                 icon={X}
-                label="Fermer"
+                label="Close"
                 onPress={() => setOpen(false)}
               />
             </View>
             <Txt tone="muted" size={13}>
-              Les 10 quartiers du scénario à Accra.
+              The 10 scenario neighbourhoods in Accra.
             </Txt>
             <ScrollView
               showsVerticalScrollIndicator={false}
@@ -679,17 +679,22 @@ export function StatusPill({ status }: { status: NeighborhoodStatus }) {
     </View>
   );
 }
+/** Describes the demo; in live mode it shows `live` instead, or nothing. */
 export function DemoNote({
-  text = "Scénario du 4 oct. 2026 · données de démonstration",
+  text = "Scenario of 4 Oct 2026 · demo data",
+  live,
 }: {
   text?: string;
+  live?: string;
 }) {
   const { colors } = useTheme();
+  const { liveEnabled } = useDemo();
+  if (liveEnabled && !live) return null;
   return (
     <View style={{ flexDirection: "row", gap: 7, alignItems: "flex-start" }}>
       <Info size={14} color={colors.muted} style={{ marginTop: 2 }} />
       <Txt tone="muted" size={11} style={{ flex: 1 }}>
-        {text}
+        {liveEnabled ? live : text}
       </Txt>
     </View>
   );
@@ -708,8 +713,8 @@ export function StorageNotice() {
       {sync.pending > 0 && (
         <Txt size={12} accessibilityLiveRegion="polite">
           {sync.pending === 1
-            ? "1 signalement attend le réseau. Il partira automatiquement."
-            : `${sync.pending} signalements attendent le réseau. Ils partiront automatiquement.`}
+            ? "1 report is waiting for the network. It will be sent automatically."
+            : `${sync.pending} reports are waiting for the network. They will be sent automatically.`}
         </Txt>
       )}
       {sharingNotice && (
@@ -729,7 +734,7 @@ function ConnectivityNotice() {
   const { isConnected } = useNetInfo();
   return isConnected === false ? (
     <Txt size={11} tone="muted" accessibilityRole="alert">
-      Hors ligne · vos contributions restent sur cet appareil.
+      Offline · your contributions stay on this device.
     </Txt>
   ) : null;
 }
@@ -758,10 +763,7 @@ export function OfferCard({
       accessibilityRole="button"
       accessibilityLabel={offer.title}
       accessibilityHint={
-        meta.label +
-        ", " +
-        offer.slots +
-        " places. Ouvrir les détails de l’offre."
+        meta.label + ", " + offer.slots + " places. Open the offer details."
       }
       onPress={() => {
         feedback();
@@ -784,7 +786,7 @@ export function OfferCard({
           contentFit="cover"
           transition={0}
           style={StyleSheet.absoluteFill}
-          accessibilityLabel="Illustration de la source d’énergie"
+          accessibilityLabel="Energy source illustration"
         />
         <LinearGradient
           colors={["#09192300", "#09192325", "#091923f5"]}
@@ -828,7 +830,7 @@ export function OfferCard({
               {offer.distance === undefined
                 ? zone
                 : offer.distance < 0.1
-                  ? "Tout près"
+                  ? "Very close"
                   : offer.distance.toFixed(1) + " km"}
             </Txt>
           </View>
@@ -845,7 +847,7 @@ export function OfferCard({
           <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
             <MapPin size={12} color="#facb4c" />
             <Txt size={11} weight="medium" style={{ color: "#e3ebee" }}>
-              {zone} · jusqu’à {offer.until}
+              {zone} · until {offer.until}
             </Txt>
           </View>
           <Txt
@@ -873,13 +875,13 @@ export function OfferCard({
         <View style={{ flex: 1, gap: 2 }}>
           <Txt size={19} weight="extrabold">
             {offer.price === 0 ? (
-              "Gratuit"
+              "Free"
             ) : (
               <>
                 {offer.price}
                 <Txt size={11} tone="muted">
                   {" "}
-                  GHS conseillés
+                  GHS suggested
                 </Txt>
               </>
             )}

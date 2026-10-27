@@ -71,19 +71,19 @@ export default function TabLayout() {
       >
         <Tabs.Screen
           name="index"
-          options={{ title: "Accueil", tabBarIcon: icon(House) }}
+          options={{ title: "Home", tabBarIcon: icon(House) }}
         />
         <Tabs.Screen
           name="carte"
-          options={{ title: "Carte", tabBarIcon: icon(Map) }}
+          options={{ title: "Map", tabBarIcon: icon(Map) }}
         />
         <Tabs.Screen
           name="partage"
-          options={{ title: "Partage", tabBarIcon: icon(PlugZap) }}
+          options={{ title: "Sharing", tabBarIcon: icon(PlugZap) }}
         />
         <Tabs.Screen
           name="communaute"
-          options={{ title: "Communauté", tabBarIcon: icon(Users) }}
+          options={{ title: "Community", tabBarIcon: icon(Users) }}
         />
       </Tabs>
     </TabSceneContext.Provider>

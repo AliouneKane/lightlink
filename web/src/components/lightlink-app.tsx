@@ -84,17 +84,18 @@ const EnergyMap = dynamic(() => import("./energy-map"), {
   loading: () => (
     <div className="map-loading">
       <span className="loading-orbit" />
-      <span>Chargement de la carte d’Accra…</span>
+      <span>Loading the map of Accra…</span>
     </div>
   ),
 });
 
 const sourceLabels = {
-  solar: "Solaire",
-  generator: "Générateur",
-  battery: "Batterie",
+  solar: "Solar",
+  generator: "Generator",
+  battery: "Battery",
 };
 const sourceIcons = { solar: Sun, generator: Zap, battery: BatteryCharging };
+const capitalize = (text: string) => text[0].toUpperCase() + text.slice(1);
 const now = () =>
   new Date(Math.max(Date.now(), Date.parse(DEMO_TIMESTAMP)) + 1).toISOString();
 
@@ -208,7 +209,7 @@ export function LightLinkApp({
     setToast(
       persisted
         ? message
-        : `${message} Stockage indisponible : conservé pour cette session seulement.`,
+        : `${message} Storage unavailable: kept for this session only.`,
     );
   }
   function openDialog(next: typeof dialog) {
@@ -217,7 +218,7 @@ export function LightLinkApp({
   }
   function locate() {
     if (!navigator.geolocation) {
-      setToast("La géolocalisation n’est pas disponible sur ce navigateur.");
+      setToast("Geolocation is not available in this browser.");
       return;
     }
     setLocating(true);
@@ -225,15 +226,11 @@ export function LightLinkApp({
       (position) => {
         setFocus([position.coords.latitude, position.coords.longitude]);
         setLocating(false);
-        setToast(
-          "Carte centrée sur votre position. Les exemples restent situés à Accra.",
-        );
+        setToast("Map centred on your location. The examples remain in Accra.");
       },
       () => {
         setLocating(false);
-        setToast(
-          "Position indisponible. Sélectionnez un quartier dans la liste.",
-        );
+        setToast("Location unavailable. Select a neighbourhood from the list.");
       },
       { timeout: 10000, maximumAge: 60000 },
     );
@@ -270,8 +267,8 @@ export function LightLinkApp({
         ],
       }),
       liveEnabled
-        ? "Signalement envoyé. Merci, la carte se met à jour pour tout le quartier."
-        : "Signalement ajouté à votre démo. Merci pour votre contribution !",
+        ? "Report sent. Thank you, the map updates for the whole neighbourhood."
+        : "Report added to your demo. Thank you for your contribution!",
     );
     void live.refresh();
     setSelectedId(report.neighborhoodId);
@@ -299,7 +296,7 @@ export function LightLinkApp({
           ...previous.reports,
         ],
       }),
-      "Merci ! Votre réponse aide à vérifier si les annonces ECG sont tenues.",
+      "Thank you! Your answer helps check whether ECG announcements are kept.",
     );
   }
   function submitOffer(event: FormEvent<HTMLFormElement>) {
@@ -327,7 +324,7 @@ export function LightLinkApp({
           createLiveOffer(db, { ...draft, address }, state.profile.name),
         )
         .then((failure) =>
-          setToast(failure ?? "Votre offre est publiée dans le quartier."),
+          setToast(failure ?? "Your offer is published in the neighbourhood."),
         );
       setDialog(null);
       return;
@@ -356,7 +353,7 @@ export function LightLinkApp({
           ...previous.offers,
         ],
       }),
-      "Votre offre de démonstration est disponible dans le quartier.",
+      "Your demo offer is available in the neighbourhood.",
     );
     setDialog(null);
   }
@@ -370,7 +367,7 @@ export function LightLinkApp({
       name.length > 50 ||
       !zones.some((zone) => zone.id === neighborhoodId)
     ) {
-      setFormError("Indiquez un nom de 2 à 50 caractères et un quartier.");
+      setFormError("Enter a name of 2 to 50 characters and a neighbourhood.");
       return;
     }
     if (liveEnabled && form.has("email")) {
@@ -389,9 +386,9 @@ export function LightLinkApp({
       (previous) => ({ ...previous, profile: { name, neighborhoodId } }),
       liveEnabled
         ? authMode === "register"
-          ? "Compte créé. Bienvenue sur LightLink !"
-          : "Vous êtes connecté."
-        : "Profil de démonstration enregistré. Aucun compte réel n’a été créé.",
+          ? "Account created. Welcome to LightLink!"
+          : "You are signed in."
+        : "Demo profile saved. No real account was created.",
     );
     setSelectedId(neighborhoodId);
     setDialog(null);
@@ -410,7 +407,7 @@ export function LightLinkApp({
         .then((failure) =>
           setToast(
             failure ??
-              "Demande envoyée. L’hôte est prévenu ; l’adresse s’affichera s’il accepte.",
+              "Request sent. The host has been notified; the address will appear if they accept.",
           ),
         );
       setOfferDetail(null);
@@ -424,7 +421,7 @@ export function LightLinkApp({
           ...previous.bookings,
         ],
       }),
-      "Demande simulée enregistrée. Aucun message n’est envoyé au propriétaire.",
+      "Simulated request saved. No message is sent to the owner.",
     );
     setOfferDetail(null);
   }
@@ -441,7 +438,7 @@ export function LightLinkApp({
           <Image
             className="offer-photo"
             src={`/images/${offer.source}.png`}
-            alt={`Illustration de ${sourceLabels[offer.source].toLowerCase()} pour cette offre de démonstration`}
+            alt={`${sourceLabels[offer.source]} illustration for this demo offer`}
             fill
             sizes="(max-width: 600px) 100vw, (max-width: 1200px) 40vw, 320px"
           />
@@ -451,13 +448,13 @@ export function LightLinkApp({
           </span>
           <span className="available-badge">
             <span />
-            Disponible
+            Available
           </span>
           <span
             className="offer-price"
-            title="Contribution conseillée, sans paiement"
+            title="Suggested contribution, no payment"
           >
-            {offer.price === 0 ? "Gratuit" : `${offer.price} GHS`}
+            {offer.price === 0 ? "Free" : `${offer.price} GHS`}
           </span>
         </div>
         <div className="offer-body">
@@ -475,14 +472,14 @@ export function LightLinkApp({
               <span className="avatar small">{offer.initials}</span>
               <span>
                 {offer.host.split(" ")[0]}
-                <small>Jusqu’à {offer.until}</small>
+                <small>Until {offer.until}</small>
               </span>
             </span>
             <button
               className="text-button"
               onClick={() => setOfferDetail(offer)}
             >
-              {booked ? "Demande envoyée" : "Voir l’offre"}
+              {booked ? "Request sent" : "View offer"}
               <ArrowUpRight size={15} />
             </button>
           </div>
@@ -497,11 +494,11 @@ export function LightLinkApp({
         <div className="panel-heading">
           <h2>
             <Sparkles size={18} />
-            Une longueur d’avance
+            One step ahead
           </h2>
-          <span className="tiny-tag">ESTIMATION</span>
+          <span className="tiny-tag">ESTIMATE</span>
         </div>
-        <p className="muted">Votre quartier · {homeZone.name}</p>
+        <p className="muted">Your neighbourhood · {homeZone.name}</p>
         <div className="prediction-window">
           <span className="prediction-icon">
             <ZapOff size={21} />
@@ -510,15 +507,15 @@ export function LightLinkApp({
             <strong>{forecast.summary}</strong>
             <span>
               {forecast.lowData
-                ? "Estimation · pas assez de données pour ce quartier"
-                : `${forecast.probability} % au plus fort`}
+                ? "Estimate · not enough data for this neighbourhood"
+                : `${forecast.probability}% at the peak`}
             </span>
           </div>
         </div>
         <RiskChart forecast={forecast} />
         {/* Task 105: the colour follows the level, never green when confidence is low. */}
         <div className="confidence" data-level={forecast.confidenceLevel}>
-          <span>Confiance {forecast.confidenceLevel}</span>
+          <span>{capitalize(forecast.confidenceLevel)} confidence</span>
           <strong>
             {forecast.confidence}% <ShieldCheck size={14} />
           </strong>
@@ -527,11 +524,11 @@ export function LightLinkApp({
           <span style={{ width: `${forecast.confidence}%` }} />
         </div>
         <p className="prediction-note">
-          {forecastSourceLabel(forecast)}. Une estimation, sans garantie :
-          vérifiez les annonces officielles ECG.
+          {forecastSourceLabel(forecast)}. An estimate, not a guarantee: check
+          the official ECG announcements.
         </p>
-        <Link href="/previsions" className="text-button prediction-link">
-          Comprendre la prévision
+        <Link href="/forecast" className="text-button prediction-link">
+          Understand the forecast
           <ArrowRight size={15} />
         </Link>
       </section>
@@ -568,15 +565,15 @@ export function LightLinkApp({
                   }
                   <span>
                     {report.status === "powered"
-                      ? "Le courant est revenu"
+                      ? "Power is back"
                       : report.status === "unstable"
-                        ? "Coupure probable"
-                        : "Coupure signalée"}
+                        ? "Likely outage"
+                        : "Outage reported"}
                   </span>
                 </strong>
                 <p>
                   {report.author} · {formatTime(report.createdAt)} ·{" "}
-                  {new Date(report.createdAt).toLocaleDateString("fr-FR", {
+                  {new Date(report.createdAt).toLocaleDateString("en-GB", {
                     day: "numeric",
                     month: "short",
                     timeZone: "UTC",
@@ -586,22 +583,19 @@ export function LightLinkApp({
                   <p className="feed-description">{report.description}</p>
                 )}
               </div>
-              <span className="feed-tag">Communauté</span>
+              <span className="feed-tag">Community</span>
             </article>
           ))
         ) : (
           <div className="empty-state">
             <Users size={28} />
-            <h3>Aucun signalement trouvé</h3>
-            <p>
-              Essayez un autre quartier ou contribuez avec votre premier
-              signalement.
-            </p>
+            <h3>No reports found</h3>
+            <p>Try another neighbourhood or contribute your first report.</p>
             <button
               className="button secondary"
               onClick={() => openDialog("report")}
             >
-              Signaler mon quartier
+              Report my neighbourhood
             </button>
           </div>
         )}
@@ -614,28 +608,28 @@ export function LightLinkApp({
       <section className={`panel map-panel ${full ? "map-full" : ""}`}>
         <div className="panel-heading">
           <div>
-            <h2>{full ? "Accra et ses quartiers pilotes" : "Accra, Ghana"}</h2>
-            {full && (
-              <p>Repérez les coupures et les points d’énergie à proximité.</p>
-            )}
+            <h2>
+              {full ? "Accra and its pilot neighbourhoods" : "Accra, Ghana"}
+            </h2>
+            {full && <p>Spot outages and energy points nearby.</p>}
           </div>
           {!full && (
             <Link
-              href="/carte"
+              href="/map"
               className="icon-button"
-              aria-label="Agrandir la carte"
+              aria-label="Expand the map"
             >
               <ArrowUpRight size={19} />
             </Link>
           )}
         </div>
         <div className="map-toolbar">
-          <div className="segmented-control" aria-label="Couches de la carte">
+          <div className="segmented-control" aria-label="Map layers">
             {(
               [
-                { id: "all", name: "Tout voir" },
-                { id: "outages", name: "Coupures" },
-                { id: "energy", name: "Énergie" },
+                { id: "all", name: "Show all" },
+                { id: "outages", name: "Outages" },
+                { id: "energy", name: "Energy" },
               ] as const
             ).map((item) => (
               <button
@@ -654,7 +648,7 @@ export function LightLinkApp({
             disabled={locating}
           >
             <Compass size={15} />
-            {locating ? "Recherche…" : "Me localiser"}
+            {locating ? "Locating…" : "Locate me"}
           </button>
         </div>
         <EnergyMap
@@ -677,35 +671,35 @@ export function LightLinkApp({
           <div className="map-legend">
             <span>
               <i className="powered" />
-              Courant OK
+              Power on
             </span>
             <span>
               <i className="unstable" />
-              Coupure probable
+              Likely outage
             </span>
             <span>
               <i className="outage" />
-              Coupure signalée
+              Outage reported
             </span>
             <span>
               <i className="planned" />
-              Coupure annoncée (ECG)
+              Announced outage (ECG)
             </span>
             <span>
               <i className="energy" />
-              Énergie à partager
+              Energy to share
             </span>
           </div>
           <span className="map-update">
             {live.state === "off"
-              ? "Données simulées"
+              ? "Simulated data"
               : live.zones
                 ? live.zones.some((row) => Number(row.simulated_reports) > 0)
-                  ? "En direct · inclut des signalements simulés"
-                  : "Signalements des habitants, en direct"
+                  ? "Live · includes simulated reports"
+                  : "Residents’ reports, live"
                 : live.state === "loading"
-                  ? "Connexion aux données en direct…"
-                  : "Données en direct indisponibles"}
+                  ? "Connecting to live data…"
+                  : "Live data unavailable"}
           </span>
         </div>
         <div className="neighborhood-detail">
@@ -715,10 +709,10 @@ export function LightLinkApp({
           <div>
             <strong>{selected.name}</strong>
             <span>
-              {selected.reports} signalements ·{" "}
+              {selected.reports} reports ·{" "}
               {latestSelectedReport
-                ? `dernier : ${formatTime(latestSelectedReport.createdAt)}`
-                : "aucun détail récent"}
+                ? `latest: ${formatTime(latestSelectedReport.createdAt)}`
+                : "no recent detail"}
             </span>
           </div>
           <Status status={selected.status} />
@@ -729,18 +723,18 @@ export function LightLinkApp({
               openDialog("report");
             }}
           >
-            Signaler
+            Report
             <Plus size={15} />
           </button>
         </div>
         {full && (
-          <div className="zone-list" aria-label="Quartiers pilotes">
+          <div className="zone-list" aria-label="Pilot neighbourhoods">
             {matchingZones.length ? (
               matchingZones.map((zone) => (
                 <button
                   key={zone.id}
                   className={selectedId === zone.id ? "selected" : ""}
-                  aria-label={`${zone.name}, ${zone.reports} signalements, ${statusLabels[zone.status]}`}
+                  aria-label={`${zone.name}, ${zone.reports} reports, ${statusLabels[zone.status]}`}
                   aria-pressed={selectedId === zone.id}
                   onClick={() => {
                     setSelectedId(zone.id);
@@ -749,15 +743,13 @@ export function LightLinkApp({
                 >
                   <span>
                     {zone.name}
-                    <small>{zone.reports} signalements</small>
+                    <small>{zone.reports} reports</small>
                   </span>
                   <Status status={zone.status} />
                 </button>
               ))
             ) : (
-              <p className="muted">
-                Aucun quartier ne correspond à la recherche.
-              </p>
+              <p className="muted">No neighbourhood matches the search.</p>
             )}
           </div>
         )}
@@ -794,23 +786,23 @@ export function LightLinkApp({
       {view !== "dashboard" && (
         <div className="page-intro">
           <p>
-            {view === "carte"
-              ? "Les coupures et les points d’énergie de dix quartiers d’Accra."
-              : view === "previsions"
-                ? "Des estimations transparentes pour anticiper votre journée."
-                : view === "partage"
-                  ? "Des voisins prêts à partager, classés du plus proche au plus éloigné."
-                  : view === "communaute"
-                    ? "Chaque signalement aide le quartier à mieux s’organiser."
-                    : "Votre profil et vos préférences de démonstration."}
+            {view === "map"
+              ? "Outages and energy points in ten Accra neighbourhoods."
+              : view === "forecast"
+                ? "Transparent estimates to plan your day."
+                : view === "sharing"
+                  ? "Neighbours ready to share, sorted from nearest to farthest."
+                  : view === "community"
+                    ? "Every report helps the neighbourhood get organised."
+                    : "Your demo profile and preferences."}
           </p>
-          {view === "partage" && (
+          {view === "sharing" && (
             <button
               className="button primary"
               onClick={() => openDialog("offer")}
             >
               <Plus size={16} />
-              Publier une offre
+              Publish an offer
             </button>
           )}
         </div>
@@ -838,18 +830,18 @@ export function LightLinkApp({
           onClearSearch={() => setSearch("")}
         />
       )}
-      {view === "carte" && renderMapPanel(true)}
+      {view === "map" && renderMapPanel(true)}
 
-      {view === "previsions" && (
+      {view === "forecast" && (
         <>
           <div className="prediction-page-grid">
             <section className="panel forecast-main">
               <div className="panel-heading">
                 <div>
                   <span className="eyebrow">
-                    VOTRE QUARTIER · {homeZone.name.toUpperCase()}
+                    YOUR NEIGHBOURHOOD · {homeZone.name.toUpperCase()}
                   </span>
-                  <h2>Le rythme de votre énergie</h2>
+                  <h2>The rhythm of your power</h2>
                 </div>
                 <span className="tiny-tag">
                   {forecastSourceLabel(forecast).toUpperCase()}
@@ -857,17 +849,17 @@ export function LightLinkApp({
               </div>
               <div className="forecast-kpi">
                 <div>
-                  <span>Créneau probable</span>
+                  <span>Likely window</span>
                   <strong>
                     {forecast.windowStart} <i>–</i> {forecast.windowEnd}
                   </strong>
                 </div>
                 <div>
-                  <span>Risque au plus fort</span>
+                  <span>Peak risk</span>
                   <strong>{forecast.probability}%</strong>
                 </div>
                 <div>
-                  <span>Confiance {forecast.confidenceLevel}</span>
+                  <span>{capitalize(forecast.confidenceLevel)} confidence</span>
                   <strong>{forecast.confidence}%</strong>
                 </div>
               </div>
@@ -879,8 +871,8 @@ export function LightLinkApp({
                   {forecast.insight}
                 </p>
               </div>
-              <Link href="/partage" className="button primary">
-                Trouver une solution
+              <Link href="/sharing" className="button primary">
+                Find a solution
                 <ArrowRight size={16} />
               </Link>
             </section>
@@ -889,40 +881,40 @@ export function LightLinkApp({
                 <ShieldCheck size={27} />
               </span>
               <h2>
-                Une estimation,
+                An estimate,
                 <br />
-                en toute transparence.
+                in full transparency.
               </h2>
               <p>
-                Ces chiffres viennent des annonces officielles de l’ECG et des
-                coupures passées du quartier. Chaque paramètre est sourcé ou
-                recalibré avec les réponses des habitants.
+                These figures come from official ECG announcements and the
+                neighbourhood’s past outages. Every parameter is sourced or
+                recalibrated with residents’ answers.
               </p>
               <ol>
                 <li>
                   <span>01</span>
                   <div>
-                    <strong>Horaires ECG</strong>
-                    <p>Coupures annoncées par l’ECG pour votre quartier.</p>
+                    <strong>ECG schedules</strong>
+                    <p>Outages announced by the ECG for your neighbourhood.</p>
                   </div>
                 </li>
                 <li>
                   <span>02</span>
                   <div>
-                    <strong>Historique du quartier</strong>
-                    <p>Fréquence et durée médiane des coupures.</p>
+                    <strong>Neighbourhood history</strong>
+                    <p>Frequency and median duration of outages.</p>
                   </div>
                 </li>
                 <li>
                   <span>03</span>
                   <div>
-                    <strong>Signalements communautaires</strong>
-                    <p>Des contributions récentes pour affiner l’estimation.</p>
+                    <strong>Community reports</strong>
+                    <p>Recent contributions to refine the estimate.</p>
                   </div>
                 </li>
               </ol>
               <span className="method-note">
-                Une prévision indique une possibilité, jamais une certitude.
+                A forecast shows a possibility, never a certainty.
               </span>
             </section>
           </div>
@@ -931,7 +923,7 @@ export function LightLinkApp({
               <div className="panel-heading">
                 <h2>
                   <Clock3 size={18} />
-                  Calendrier ECG
+                  ECG schedule
                 </h2>
                 <span className="tiny-tag">{homeZone.name}</span>
               </div>
@@ -943,19 +935,17 @@ export function LightLinkApp({
                 >
                   <p className="announcement-meta">
                     {currentAnnouncement.demo && (
-                      <span className="tiny-tag">DÉMO</span>
+                      <span className="tiny-tag">DEMO</span>
                     )}
                     {currentAnnouncement.demo
-                      ? "Aujourd’hui · scénario de démonstration"
+                      ? "Today · demo scenario"
                       : `${formatDay(currentAnnouncement.startsAt)} · ${formatTime(currentAnnouncement.startsAt)}–${formatTime(currentAnnouncement.endsAt)} GMT`}
                   </p>
-                  <h3 id="announcement-question-title">
-                    Avez-vous du courant ?
-                  </h3>
+                  <h3 id="announcement-question-title">Do you have power?</h3>
                   <p>
                     {currentAnnouncement.demo
-                      ? "Annonce de démonstration : l’ECG n’a rien publié pour votre quartier aujourd’hui."
-                      : `Coupure annoncée par l’ECG : ${currentAnnouncement.localities}.`}
+                      ? "Demo announcement: the ECG published nothing for your neighbourhood today."
+                      : `Outage announced by the ECG: ${currentAnnouncement.localities}.`}
                   </p>
                   <div className="announcement-actions">
                     <button
@@ -964,7 +954,7 @@ export function LightLinkApp({
                       aria-pressed={currentAnswer?.status === "powered"}
                       onClick={() => answerAnnouncement(true)}
                     >
-                      Oui, j’ai du courant
+                      Yes, I have power
                     </button>
                     <button
                       type="button"
@@ -972,21 +962,21 @@ export function LightLinkApp({
                       aria-pressed={currentAnswer?.status === "outage"}
                       onClick={() => answerAnnouncement(false)}
                     >
-                      Non, c’est coupé
+                      No, it’s off
                     </button>
                   </div>
                   {currentAnswer && (
                     <p className="announcement-answer" role="status">
-                      Réponse enregistrée :{" "}
+                      Answer saved:{" "}
                       {currentAnswer.status === "powered"
-                        ? "courant disponible"
-                        : "coupure"}
-                      . Vous pouvez la modifier.
+                        ? "power available"
+                        : "outage"}
+                      . You can change it.
                     </p>
                   )}
                   <span className="method-note">
-                    Vos réponses vérifient si les annonces sont tenues. Seul le
-                    nombre de réponses sert au calcul.
+                    Your answers check whether announcements are kept. Only the
+                    number of answers is used in the calculation.
                   </span>
                 </div>
               )}
@@ -1000,7 +990,7 @@ export function LightLinkApp({
                       </strong>
                       <span>
                         {item.localities}
-                        {item.partial ? " (partiel)" : ""}
+                        {item.partial ? " (partial)" : ""}
                       </span>
                       <a
                         href={item.sourceUrl}
@@ -1008,7 +998,7 @@ export function LightLinkApp({
                         rel="noopener noreferrer"
                         className="text-button"
                       >
-                        Source ECG
+                        ECG source
                         <ArrowUpRight size={14} />
                       </a>
                     </li>
@@ -1016,7 +1006,7 @@ export function LightLinkApp({
                 </ul>
               ) : (
                 <p className="announcement-empty">
-                  Aucune annonce ECG récente pour {homeZone.name}.
+                  No recent ECG announcement for {homeZone.name}.
                 </p>
               )}
               <a
@@ -1025,7 +1015,7 @@ export function LightLinkApp({
                 rel="noopener noreferrer"
                 className="text-button"
               >
-                Consulter ECG
+                Visit ECG
                 <ArrowUpRight size={16} />
               </a>
             </section>
@@ -1033,21 +1023,21 @@ export function LightLinkApp({
               <div className="panel-heading">
                 <h2>
                   <Activity size={18} />
-                  Qualité des données
+                  Data quality
                 </h2>
-                <span className="tiny-tag">ESTIMATION</span>
+                <span className="tiny-tag">ESTIMATE</span>
               </div>
               <div className="empty-state">
                 <Activity size={32} />
                 <h3>
                   {forecast.announced
-                    ? "Coupure annoncée par l’ECG"
-                    : "Peu de jours observés"}
+                    ? "Outage announced by the ECG"
+                    : "Few days observed"}
                 </h3>
                 <p>
                   {forecast.announced
-                    ? "La confiance mesure la part des annonces ECG réellement tenues ; vos réponses à « Avez-vous du courant ? » l’ajustent."
-                    : "Sans annonce, la confiance reflète le nombre de jours de coupures observés dans le quartier. Elle monte avec vos signalements."}
+                    ? "Confidence measures the share of ECG announcements actually kept; your answers to “Do you have power?” adjust it."
+                    : "Without an announcement, confidence reflects the number of outage days observed in the neighbourhood. It grows with your reports."}
                 </p>
               </div>
             </section>
@@ -1055,7 +1045,7 @@ export function LightLinkApp({
         </>
       )}
 
-      {view === "partage" && (
+      {view === "sharing" && (
         <>
           {/*
           <div className="sharing-banner">
@@ -1063,14 +1053,14 @@ export function LightLinkApp({
               <HeartHandshake size={28} />
             </span>
             <div>
-              <h2>Votre surplus. Leur prochain chapitre.</h2>
+              <h2>Your surplus. Their next chapter.</h2>
               <p>
-                Un téléphone chargé, une boutique ouverte, un devoir terminé.
+                A charged phone, an open shop, finished homework.
               </p>
             </div>
             <span className="sharing-note">
               <ShieldCheck size={16} />
-              Sans paiement dans cette version
+              No payment in this version
             </span>
           </div>
           */}
@@ -1080,14 +1070,14 @@ export function LightLinkApp({
                 [
                   {
                     id: "all",
-                    label: "Toutes les énergies",
+                    label: "All energy",
                     icon: SlidersHorizontal,
                   },
-                  { id: "solar", label: "Solaire", icon: Sun },
-                  { id: "generator", label: "Générateur", icon: Zap },
+                  { id: "solar", label: "Solar", icon: Sun },
+                  { id: "generator", label: "Generator", icon: Zap },
                   {
                     id: "battery",
-                    label: "Batterie",
+                    label: "Battery",
                     icon: BatteryCharging,
                   },
                 ] as const
@@ -1106,17 +1096,17 @@ export function LightLinkApp({
             <div className="market-meta">
               <span className="sharing-note">
                 <ShieldCheck size={14} />
-                Sans paiement dans cette version
+                No payment in this version
               </span>
               <span className="sort-label">
                 <ArrowDownLeft size={15} />
-                Les plus proches d’abord
+                Nearest first
               </span>
             </div>
           </div>
           <div className="result-heading">
-            <strong>{offers.length} offres disponibles</strong>
-            <span>Autour de {homeZone.name} · distances approximatives</span>
+            <strong>{offers.length} offers available</strong>
+            <span>Around {homeZone.name} · approximate distances</span>
           </div>
           <div className="offers-grid marketplace">
             {offers.map((offer) => renderOfferCard(offer))}
@@ -1124,8 +1114,8 @@ export function LightLinkApp({
           {offers.length === 0 && (
             <div className="panel empty-state">
               <Zap size={32} />
-              <h3>Aucune offre ne correspond</h3>
-              <p>Essayez une autre source d’énergie ou partagez la vôtre.</p>
+              <h3>No matching offer</h3>
+              <p>Try another energy source or share your own.</p>
               <button
                 className="button secondary"
                 onClick={() => {
@@ -1133,18 +1123,16 @@ export function LightLinkApp({
                   setSearch("");
                 }}
               >
-                Réinitialiser les filtres
+                Reset filters
               </button>
             </div>
           )}
           {shownBookings.length > 0 && (
             <section className="panel requests-panel">
               <div className="panel-heading">
-                <h2>
-                  {liveEnabled ? "Mes demandes" : "Mes demandes simulées"}
-                </h2>
+                <h2>{liveEnabled ? "My requests" : "My simulated requests"}</h2>
                 <span className="tiny-tag">
-                  {shownBookings.length} DEMANDE(S)
+                  {shownBookings.length} REQUEST(S)
                 </span>
               </div>
               {shownBookings.map((booking) => {
@@ -1157,7 +1145,7 @@ export function LightLinkApp({
                       <Clock3 size={19} />
                     </span>
                     <div>
-                      <strong>{offer?.title ?? "Offre indisponible"}</strong>
+                      <strong>{offer?.title ?? "Offer unavailable"}</strong>
                       <span>
                         {liveEnabled && booking.status
                           ? booking.address &&
@@ -1165,7 +1153,7 @@ export function LightLinkApp({
                               booking.status === "finished")
                             ? `${requestStatusLabels[booking.status]} · ${booking.address}`
                             : requestStatusLabels[booking.status]
-                          : "En attente d’acceptation · aucun propriétaire contacté"}
+                          : "Waiting for acceptance · no owner contacted"}
                       </span>
                     </div>
                     {liveEnabled ? (
@@ -1184,7 +1172,7 @@ export function LightLinkApp({
                                 )
                               }
                             >
-                              Terminer
+                              Finish
                             </button>
                           )}
                           <button
@@ -1199,7 +1187,7 @@ export function LightLinkApp({
                               )
                             }
                           >
-                            Annuler
+                            Cancel
                           </button>
                         </>
                       )
@@ -1214,11 +1202,11 @@ export function LightLinkApp({
                                 (item) => item.id !== booking.id,
                               ),
                             }),
-                            "Demande simulée annulée.",
+                            "Simulated request cancelled.",
                           )
                         }
                       >
-                        Annuler
+                        Cancel
                       </button>
                     )}
                   </div>
@@ -1230,8 +1218,8 @@ export function LightLinkApp({
             // Task 91: the whole neighbourhood is cut, the database proposes fixed places.
             <section className="panel requests-panel">
               <div className="panel-heading">
-                <h2>Lieux d’énergie un peu plus loin</h2>
-                <span className="tiny-tag">QUARTIER COUPÉ</span>
+                <h2>Energy places a little further away</h2>
+                <span className="tiny-tag">NEIGHBOURHOOD CUT</span>
               </div>
               {sharing.data.places.map((place) => (
                 <div className="request-row" key={place.id}>
@@ -1253,9 +1241,9 @@ export function LightLinkApp({
           {liveEnabled && sharing.data.incoming.length > 0 && (
             <section className="panel requests-panel">
               <div className="panel-heading">
-                <h2>Demandes reçues sur mes offres</h2>
+                <h2>Requests received on my offers</h2>
                 <span className="tiny-tag">
-                  {sharing.data.incoming.length} DEMANDE(S)
+                  {sharing.data.incoming.length} REQUEST(S)
                 </span>
               </div>
               {sharing.data.incoming.map((request) => (
@@ -1268,7 +1256,7 @@ export function LightLinkApp({
                     <span>
                       {requestStatusLabels[request.status]} ·{" "}
                       {formatTime(request.createdAt)}
-                      {request.message ? ` · « ${request.message} »` : ""}
+                      {request.message ? ` · “${request.message}”` : ""}
                     </span>
                   </div>
                   {request.status === "pending" && (
@@ -1281,7 +1269,7 @@ export function LightLinkApp({
                           )
                         }
                       >
-                        Accepter
+                        Accept
                       </button>
                       <button
                         className="text-button"
@@ -1291,7 +1279,7 @@ export function LightLinkApp({
                           )
                         }
                       >
-                        Refuser
+                        Decline
                       </button>
                     </>
                   )}
@@ -1304,7 +1292,7 @@ export function LightLinkApp({
                         )
                       }
                     >
-                      Terminer
+                      Finish
                     </button>
                   )}
                 </div>
@@ -1319,13 +1307,13 @@ export function LightLinkApp({
         </>
       )}
 
-      {view === "communaute" && (
+      {view === "community" && (
         <div className="community-page-grid">
           <section className="panel">
             <div className="panel-heading">
               <div>
-                <h2>La voix de votre quartier</h2>
-                <p>Signalements communautaires du scénario de démonstration.</p>
+                <h2>The voice of your neighbourhood</h2>
+                <p>Community reports from the demo scenario.</p>
               </div>
               <span className="tiny-tag">
                 {state.reports.length} CONTRIBUTIONS
@@ -1337,29 +1325,29 @@ export function LightLinkApp({
             <section className="community-callout">
               <Users size={31} />
               <h2>
-                Votre signalement
+                Your report
                 <br />
-                fait la différence.
+                makes a difference.
               </h2>
               <p>
-                Une coupure ? Le courant est revenu ? Aidez vos voisins à savoir
-                où ils en sont.
+                An outage? Power back? Help your neighbours know where things
+                stand.
               </p>
               <button
                 className="button primary"
                 onClick={() => openDialog("report")}
               >
                 <Plus size={17} />
-                Contribuer
+                Contribute
               </button>
             </section>
             <section className="panel">
               <div className="panel-heading">
-                <h2>10 quartiers, un réseau</h2>
+                <h2>10 neighbourhoods, one network</h2>
               </div>
               <div className="community-zones">
                 {zones.map((zone) => (
-                  <Link href={`/carte?quartier=${zone.id}`} key={zone.id}>
+                  <Link href={`/map?zone=${zone.id}`} key={zone.id}>
                     <span>
                       <MapPin size={14} />
                       {zone.name}
@@ -1373,19 +1361,19 @@ export function LightLinkApp({
         </div>
       )}
 
-      {view === "parametres" && (
+      {view === "settings" && (
         <div className="settings-grid">
           <section className="panel settings-panel">
             <div className="panel-heading">
-              <h2>Mon profil</h2>
-              <span className="tiny-tag">DÉMONSTRATION</span>
+              <h2>My profile</h2>
+              <span className="tiny-tag">DEMO</span>
             </div>
             <form
               onSubmit={submitProfile}
               key={`${state.profile.name}-${state.profile.neighborhoodId}`}
             >
               <label className="field">
-                Votre nom
+                Your name
                 <input
                   name="name"
                   defaultValue={state.profile.name}
@@ -1395,7 +1383,7 @@ export function LightLinkApp({
                 />
               </label>
               <label className="field">
-                Votre quartier
+                Your neighbourhood
                 <select
                   name="neighborhood"
                   defaultValue={state.profile.neighborhoodId}
@@ -1408,7 +1396,7 @@ export function LightLinkApp({
                 </select>
               </label>
               <p className="form-note">
-                Ce profil est enregistré uniquement dans votre navigateur.
+                This profile is saved only in your browser.
               </p>
               {formError && (
                 <p className="form-error" role="alert">
@@ -1417,31 +1405,31 @@ export function LightLinkApp({
               )}
               <button className="button primary" type="submit">
                 <Check size={17} />
-                Enregistrer
+                Save
               </button>
             </form>
           </section>
           <section className="panel settings-panel">
             <div className="panel-heading">
-              <h2>Préférences de la démo</h2>
+              <h2>Demo preferences</h2>
             </div>
             <div className="preference-row">
               <div>
-                <strong>Alertes dans la démo</strong>
-                <p>Afficher les demandes et contributions locales.</p>
+                <strong>Alerts in the demo</strong>
+                <p>Show local requests and contributions.</p>
               </div>
               <button
                 className={`toggle ${state.notificationsEnabled ? "on" : ""}`}
                 role="switch"
                 aria-checked={state.notificationsEnabled}
-                aria-label="Alertes dans la démo"
+                aria-label="Alerts in the demo"
                 onClick={() =>
                   save(
                     (previous) => ({
                       ...previous,
                       notificationsEnabled: !previous.notificationsEnabled,
                     }),
-                    "Préférence enregistrée.",
+                    "Preference saved.",
                   )
                 }
               >
@@ -1451,16 +1439,15 @@ export function LightLinkApp({
             <div className="privacy-note">
               <ShieldCheck size={22} />
               <p>
-                Aucun paiement, aucun mot de passe enregistré, aucune donnée
-                partagée avec l’équipe. Les tuiles de carte sont chargées depuis
-                OpenStreetMap.
+                No payment, no password stored, no data shared with the team.
+                Map tiles are loaded from OpenStreetMap.
               </p>
             </div>
             <button
               className="button danger-outline"
               onClick={() => openDialog("reset")}
             >
-              Réinitialiser les données locales
+              Reset local data
             </button>
           </section>
         </div>
@@ -1469,17 +1456,23 @@ export function LightLinkApp({
       <footer className="app-footer">
         <span>
           <Radio size={12} />
-          Prototype interactif · données simulées à Accra
+          {liveEnabled
+            ? "Accra, Ghana · live reports from residents"
+            : "Interactive prototype · simulated data in Accra"}
         </span>
-        <span>4 oct. 2026 · Aucun signalement envoyé au réseau</span>
+        <span>
+          {liveEnabled
+            ? "Forecasts from official ECG announcements"
+            : "Scenario of 4 Oct 2026 · nothing is sent to the network"}
+        </span>
       </footer>
       {dialog === "report" && (
         <Modal
-          title="Votre quartier a quelque chose à dire."
+          title="Your neighbourhood has something to say."
           onClose={() => setDialog(null)}
         >
           <p className="modal-intro">
-            Un signalement, et vos voisins sont mieux informés.
+            One report, and your neighbours are better informed.
           </p>
           <form onSubmit={submitReport}>
             <div className="report-options">
@@ -1490,8 +1483,8 @@ export function LightLinkApp({
                 onClick={() => setReportStatus("outage")}
               >
                 <ZapOff size={26} />
-                <strong>Plus de courant</strong>
-                <span>Signaler une coupure</span>
+                <strong>No power</strong>
+                <span>Report an outage</span>
               </button>
               <button
                 type="button"
@@ -1500,12 +1493,12 @@ export function LightLinkApp({
                 onClick={() => setReportStatus("powered")}
               >
                 <Zap size={26} />
-                <strong>Le courant est revenu</strong>
-                <span>Informer mes voisins</span>
+                <strong>Power is back</strong>
+                <span>Tell my neighbours</span>
               </button>
             </div>
             <label className="field">
-              Quartier
+              Neighbourhood
               <select name="neighborhood" defaultValue={selectedId}>
                 {zones.map((zone) => (
                   <option key={zone.id} value={zone.id}>
@@ -1515,10 +1508,10 @@ export function LightLinkApp({
               </select>
             </label>
             <label className="field">
-              Une précision ? <span>facultatif</span>
+              Any detail? <span>optional</span>
               <textarea
                 name="description"
-                placeholder="Ex. Toute ma rue est concernée…"
+                placeholder="E.g. My whole street is affected…"
                 maxLength={280}
                 rows={3}
               />
@@ -1526,8 +1519,8 @@ export function LightLinkApp({
             <p className="form-note">
               <ShieldCheck size={15} />
               {liveEnabled
-                ? "Votre signalement est partagé avec le quartier. Votre position n’est jamais montrée."
-                : "Simulation locale : ce signalement ne sera pas envoyé au réseau."}
+                ? "Your report is shared with the neighbourhood. Your location is never shown."
+                : "Local simulation: this report will not be sent to the network."}
             </p>
             {formError && (
               <p className="form-error" role="alert">
@@ -1536,42 +1529,39 @@ export function LightLinkApp({
             )}
             <button className="button primary full-width" type="submit">
               <Radio size={17} />
-              Confirmer le signalement
+              Confirm report
             </button>
           </form>
         </Modal>
       )}
 
       {dialog === "offer" && (
-        <Modal
-          title="L’énergie commence par vous."
-          onClose={() => setDialog(null)}
-        >
+        <Modal title="Energy starts with you." onClose={() => setDialog(null)}>
           <p className="modal-intro">
-            Publiez votre surplus dans le quartier. Aucun paiement en V1.
+            Publish your surplus in the neighbourhood. No payment in V1.
           </p>
           <form onSubmit={submitOffer}>
             <label className="field">
-              Titre de votre offre
+              Title of your offer
               <input
                 name="title"
                 required
                 minLength={3}
                 maxLength={80}
-                placeholder="Ex. Recharge solaire chez Ama"
+                placeholder="E.g. Solar charging at Ama’s"
               />
             </label>
             <div className="form-grid">
               <label className="field">
                 Source
                 <select name="source">
-                  <option value="solar">Solaire</option>
-                  <option value="generator">Générateur</option>
-                  <option value="battery">Batterie</option>
+                  <option value="solar">Solar</option>
+                  <option value="generator">Generator</option>
+                  <option value="battery">Battery</option>
                 </select>
               </label>
               <label className="field">
-                Quartier
+                Neighbourhood
                 <select
                   name="neighborhood"
                   defaultValue={state.profile.neighborhoodId}
@@ -1585,12 +1575,12 @@ export function LightLinkApp({
               </label>
             </div>
             <label className="field">
-              Appareils accueillis
+              Devices welcome
               <input
                 name="capacity"
                 required
                 maxLength={80}
-                placeholder="Ex. Téléphones et ordinateurs"
+                placeholder="E.g. Phones and laptops"
               />
             </label>
             <div className="form-grid three">
@@ -1607,7 +1597,7 @@ export function LightLinkApp({
                 />
               </label>
               <label className="field">
-                Places disponibles
+                Available places
                 <input
                   name="slots"
                   type="number"
@@ -1618,34 +1608,34 @@ export function LightLinkApp({
                 />
               </label>
               <label className="field">
-                Disponible jusqu’à
+                Available until
                 <input name="until" type="time" required defaultValue="21:00" />
               </label>
             </div>
             <label className="field">
-              Précisions <span>facultatif</span>
+              Details <span>optional</span>
               <textarea
                 name="description"
                 rows={2}
                 maxLength={500}
-                placeholder="Indiquez les conditions d’accueil, sans adresse exacte."
+                placeholder="Describe how you host people, without the exact address."
               />
             </label>
             {liveEnabled && (
               <label className="field">
-                Adresse précise <span>facultatif, privée</span>
+                Exact address <span>optional, private</span>
                 <input
                   name="address"
                   maxLength={200}
-                  placeholder="Ex. Maison bleue après la pharmacie"
+                  placeholder="E.g. Blue house after the pharmacy"
                 />
               </label>
             )}
             <p className="form-note">
               <MapPin size={15} />
               {liveEnabled
-                ? "Seul le quartier est public. L’adresse précise n’est montrée qu’aux voisins que vous acceptez."
-                : "Seul le quartier sera visible. Ne publiez pas votre adresse exacte."}
+                ? "Only the neighbourhood is public. The exact address is shown only to neighbours you accept."
+                : "Only the neighbourhood will be visible. Do not publish your exact address."}
             </p>
             {formError && (
               <p className="form-error" role="alert">
@@ -1654,7 +1644,7 @@ export function LightLinkApp({
             )}
             <button className="button primary full-width" type="submit">
               <HeartHandshake size={17} />
-              Publier l’offre de démonstration
+              Publish the demo offer
             </button>
           </form>
         </Modal>
@@ -1666,7 +1656,7 @@ export function LightLinkApp({
             <Image
               className="offer-photo"
               src={`/images/${offerDetail.source}.png`}
-              alt="Visuel d’illustration généré pour cette offre de démonstration"
+              alt="Generated illustration for this demo offer"
               fill
               sizes="540px"
             />
@@ -1681,47 +1671,45 @@ export function LightLinkApp({
                   zones.find((zone) => zone.id === offerDetail.neighborhoodId)
                     ?.name
                 }{" "}
-                · position approximative
+                · approximate location
               </span>
             </div>
           </div>
           <p className="offer-description">
             {offerDetail.description ||
-              "Un voisin partage son énergie pour vous aider à poursuivre votre journée."}
+              "A neighbour shares their energy to help you get on with your day."}
           </p>
           <div className="offer-detail-grid">
             <span>
               <BatteryCharging size={18} />
-              <small>Pour vos appareils</small>
+              <small>For your devices</small>
               <strong>{offerDetail.capacity}</strong>
             </span>
             <span>
               <Clock3 size={18} />
               <small>
-                {liveEnabled ? "Disponible" : "Disponibilité simulée"}
+                {liveEnabled ? "Available" : "Simulated availability"}
               </small>
-              <strong>Jusqu’à {offerDetail.until}</strong>
+              <strong>Until {offerDetail.until}</strong>
             </span>
             <span>
               <Users size={18} />
-              <small>Capacité d’accueil</small>
+              <small>Capacity</small>
               <strong>{offerDetail.slots} place(s)</strong>
             </span>
             <span>
               <HeartHandshake size={18} />
-              <small>Contribution conseillée</small>
+              <small>Suggested contribution</small>
               <strong>
-                {offerDetail.price === 0
-                  ? "Gratuit"
-                  : `${offerDetail.price} GHS`}
+                {offerDetail.price === 0 ? "Free" : `${offerDetail.price} GHS`}
               </strong>
             </span>
           </div>
           <p className="form-note">
             <ShieldCheck size={16} />
             {liveEnabled
-              ? "L’adresse exacte s’affiche dans « Mes demandes » quand l’hôte accepte. Aucun paiement via LightLink."
-              : "L’adresse exacte sera accessible après acceptation dans la version connectée. Aucun paiement ici."}
+              ? "The exact address appears in “My requests” when the host accepts. No payment through LightLink."
+              : "The exact address will be available after acceptance in the connected version. No payment here."}
           </p>
           {liveEnabled && offerDetail.own ? (
             <button
@@ -1732,16 +1720,13 @@ export function LightLinkApp({
                   .run((db) => setLiveOfferOpen(db, offerDetail.id, open))
                   .then((failure) =>
                     setToast(
-                      failure ??
-                        (open ? "Offre réactivée." : "Offre suspendue."),
+                      failure ?? (open ? "Offer reopened." : "Offer paused."),
                     ),
                   );
                 setOfferDetail(null);
               }}
             >
-              {offerDetail.available
-                ? "Suspendre mon offre"
-                : "Réactiver mon offre"}
+              {offerDetail.available ? "Pause my offer" : "Reopen my offer"}
             </button>
           ) : (
             <button
@@ -1763,25 +1748,25 @@ export function LightLinkApp({
               ) ? (
                 <>
                   <CheckCheck size={17} />
-                  Demande déjà enregistrée
+                  Request already saved
                 </>
               ) : (
                 <>
                   <ArrowRight size={17} />
                   {liveEnabled
-                    ? "Demander une place"
-                    : "Simuler une demande d’énergie"}
+                    ? "Request a place"
+                    : "Simulate an energy request"}
                 </>
               )}
             </button>
           )}
           {liveEnabled && !offerDetail.own && (
             <details className="abuse-report">
-              <summary>Signaler cette offre</summary>
+              <summary>Report this offer</summary>
               {[
-                "Prix abusif",
-                "Offre trompeuse ou fausse",
-                "Comportement inapproprié",
+                "Unfair price",
+                "Misleading or fake offer",
+                "Inappropriate behaviour",
               ].map((reason) => (
                 <button
                   key={reason}
@@ -1794,7 +1779,7 @@ export function LightLinkApp({
                       .then((failure) =>
                         setToast(
                           failure ??
-                            "Merci, l’équipe LightLink va examiner cette offre.",
+                            "Thank you, the LightLink team will review this offer.",
                         ),
                       );
                     setOfferDetail(null);
@@ -1810,7 +1795,7 @@ export function LightLinkApp({
 
       {dialog === "auth" && (
         <Modal
-          title="Bienvenue dans le quartier."
+          title="Welcome to the neighbourhood."
           onClose={() => setDialog(null)}
           wide
         >
@@ -1818,11 +1803,11 @@ export function LightLinkApp({
             <div className="auth-brand-panel">
               <Brand />
               <h3>
-                Une communauté.
+                One community.
                 <br />
-                Mille façons
+                A thousand ways
                 <br />
-                de garder la lumière.
+                to keep the lights on.
               </h3>
               <EnergyArtwork />
               <p>Accra, Ghana · LightLink Squad</p>
@@ -1834,28 +1819,29 @@ export function LightLinkApp({
                   className={authMode === "login" ? "active" : ""}
                   onClick={() => setAuthMode("login")}
                 >
-                  Connexion
+                  Sign in
                 </button>
                 <button
                   aria-pressed={authMode === "register"}
                   className={authMode === "register" ? "active" : ""}
                   onClick={() => setAuthMode("register")}
                 >
-                  Inscription
+                  Sign up
                 </button>
               </div>
               <h3 className="auth-title">
                 {authMode === "register"
-                  ? "Rejoignez la communauté"
-                  : "Heureux de vous retrouver"}
+                  ? "Join the community"
+                  : "Good to see you again"}
               </h3>
               <p className="modal-intro">
-                Écran de démonstration. L’authentification sera connectée au
-                backend après validation de l’équipe.
+                {liveEnabled
+                  ? "Create an account to keep your profile and get alerts for your neighbourhood."
+                  : "Demo screen: try the sign-up flow, nothing leaves this browser."}
               </p>
               <form onSubmit={submitProfile}>
                 <label className="field">
-                  Votre nom
+                  Your name
                   <input
                     name="name"
                     defaultValue={state.profile.name}
@@ -1866,24 +1852,24 @@ export function LightLinkApp({
                   />
                 </label>
                 <label className="field">
-                  Adresse e-mail
+                  Email address
                   <input
                     name="email"
                     type="email"
                     required
-                    placeholder="vous@exemple.com"
+                    placeholder="you@example.com"
                     autoComplete="email"
                   />
                 </label>
                 <label className="field">
-                  Mot de passe
+                  Password
                   <span className="password-field">
                     <input
                       name="password"
                       type={showPassword ? "text" : "password"}
                       required
                       minLength={8}
-                      placeholder="8 caractères minimum"
+                      placeholder="At least 8 characters"
                       autoComplete={
                         authMode === "register"
                           ? "new-password"
@@ -1893,9 +1879,7 @@ export function LightLinkApp({
                     <button
                       type="button"
                       aria-label={
-                        showPassword
-                          ? "Masquer le mot de passe"
-                          : "Afficher le mot de passe"
+                        showPassword ? "Hide password" : "Show password"
                       }
                       onClick={() => setShowPassword(!showPassword)}
                     >
@@ -1904,7 +1888,7 @@ export function LightLinkApp({
                   </span>
                 </label>
                 <label className="field">
-                  Votre quartier
+                  Your neighbourhood
                   <select
                     name="neighborhood"
                     defaultValue={state.profile.neighborhoodId}
@@ -1924,17 +1908,17 @@ export function LightLinkApp({
                 <button className="button primary full-width" type="submit">
                   {liveEnabled
                     ? authMode === "register"
-                      ? "Créer mon compte"
-                      : "Me connecter"
+                      ? "Create my account"
+                      : "Sign in"
                     : authMode === "register"
-                      ? "Essayer l’inscription"
-                      : "Essayer la connexion"}
+                      ? "Try sign-up"
+                      : "Try sign-in"}
                   <ArrowRight size={16} />
                 </button>
                 <p className="form-note">
                   {liveEnabled
-                    ? "Votre mot de passe est chiffré par Supabase. Votre position n’est jamais montrée aux autres."
-                    : "Aucun compte réel créé. E-mail et mot de passe ne sont ni envoyés ni enregistrés."}
+                    ? "Your password is encrypted by Supabase. Your location is never shown to others."
+                    : "No real account is created. Email and password are neither sent nor stored."}
                 </p>
               </form>
             </div>
@@ -1944,7 +1928,7 @@ export function LightLinkApp({
 
       {dialog === "notifications" && (
         <Modal
-          title="Votre quartier, à l’écoute."
+          title="Your neighbourhood, listening."
           onClose={() => setDialog(null)}
         >
           {/* Point 8 of #9: in live mode the inbox is always readable; the demo preference
@@ -1952,13 +1936,13 @@ export function LightLinkApp({
           {!liveEnabled && !state.notificationsEnabled ? (
             <div className="empty-state">
               <Bell size={30} />
-              <h3>Alertes de démo désactivées</h3>
+              <h3>Demo alerts turned off</h3>
               <Link
-                href="/parametres"
+                href="/settings"
                 onClick={() => setDialog(null)}
                 className="text-button"
               >
-                Modifier mes préférences
+                Change my preferences
               </Link>
             </div>
           ) : (
@@ -1966,11 +1950,11 @@ export function LightLinkApp({
               {liveEnabled ? (
                 <>
                   <p className="modal-intro">
-                    Vos alertes : coupures dans vos quartiers, rappels ECG,
-                    prévisions et demandes d’énergie.
+                    Your alerts: outages in your neighbourhoods, ECG reminders,
+                    forecasts and energy requests.
                   </p>
                   {sharing.notifications.length === 0 && (
-                    <p className="modal-intro">Aucune alerte pour le moment.</p>
+                    <p className="modal-intro">No alerts for now.</p>
                   )}
                   {sharing.notifications.map((item) => (
                     <div className="notification-item" key={item.id}>
@@ -1995,28 +1979,27 @@ export function LightLinkApp({
                       className="text-button"
                       onClick={() => void sharing.markRead()}
                     >
-                      Tout marquer comme lu
+                      Mark all as read
                     </button>
                   )}
                 </>
               ) : (
                 <>
                   <p className="modal-intro">
-                    Activité locale de démonstration. Aucune notification push
-                    réelle.
+                    Local demo activity. No real push notifications.
                   </p>
                   {shownBookings.map((booking) => (
                     <div className="notification-item" key={booking.id}>
                       <Clock3 size={20} />
                       <div>
-                        <strong>Votre demande est enregistrée</strong>
+                        <strong>Your request is saved</strong>
                         <p>
                           {
                             shownOffers.find(
                               (offer) => offer.id === booking.offerId,
                             )?.title
                           }{" "}
-                          · en attente simulée
+                          · simulated, pending
                         </p>
                       </div>
                     </div>
@@ -2024,10 +2007,9 @@ export function LightLinkApp({
                   <div className="notification-item">
                     <Sun size={20} />
                     <div>
-                      <strong>Bienvenue dans LightLink</strong>
+                      <strong>Welcome to LightLink</strong>
                       <p>
-                        Explorez votre quartier et essayez votre premier
-                        signalement.
+                        Explore your neighbourhood and try your first report.
                       </p>
                     </div>
                   </div>
@@ -2039,81 +2021,75 @@ export function LightLinkApp({
       )}
 
       {dialog === "help" && (
-        <Modal title="La lumière se partage." onClose={() => setDialog(null)}>
+        <Modal title="Light is for sharing." onClose={() => setDialog(null)}>
           <p className="modal-intro">
-            LightLink transforme les coupures localisées en solidarité de
-            voisinage.
+            LightLink turns local outages into neighbourhood solidarity.
           </p>
           <div className="help-steps">
             <div>
               <Map size={24} />
-              <h3>Savoir</h3>
+              <h3>Know</h3>
               <p>
-                Consultez dix quartiers pilotes et signalez une coupure ou un
-                retour du courant.
+                Check ten pilot neighbourhoods and report an outage or power
+                coming back.
               </p>
             </div>
             <div>
               <Sparkles size={24} />
-              <h3>Anticiper</h3>
+              <h3>Anticipate</h3>
               <p>
-                Découvrez les écrans de prévision et leur niveau de confiance,
-                ici simulés.
+                See the outage risk hour by hour, from real ECG announcements,
+                with an honest confidence level.
               </p>
             </div>
             <div>
               <HeartHandshake size={24} />
-              <h3>Partager</h3>
+              <h3>Share</h3>
               <p>
-                Publiez une offre ou simulez une demande, sans paiement et sans
-                contacter de voisin réel.
+                {liveEnabled
+                  ? "Publish an offer or request a place. The exact address is shared only once the host accepts. No payment."
+                  : "Publish an offer or simulate a request, with no payment and without contacting a real neighbour."}
               </p>
             </div>
           </div>
           <p className="form-note">
-            Ce prototype PAN prépare la validation de l’équipe. Les calendriers
-            ECG, l’authentification et les échanges réels seront intégrés
-            ensuite.
+            {liveEnabled
+              ? "Reports, the map and forecasts are live. No payment goes through LightLink."
+              : "Demo mode: the data is simulated and stays in this browser."}
           </p>
           <button
             className="button primary full-width"
             onClick={() => setDialog(null)}
           >
-            C’est parti
+            Let’s go
             <ArrowRight size={16} />
           </button>
         </Modal>
       )}
 
       {dialog === "reset" && (
-        <Modal
-          title="Réinitialiser votre démonstration ?"
-          onClose={() => setDialog(null)}
-        >
+        <Modal title="Reset your demo?" onClose={() => setDialog(null)}>
           <p className="modal-intro">
-            Cela supprime vos signalements, offres, demandes et préférences sur
-            cet appareil, puis restaure les exemples initiaux.
+            This deletes your reports, offers, requests and preferences on this
+            device, then restores the initial examples.
           </p>
           <div className="modal-actions">
             <button
               className="button secondary"
               onClick={() => setDialog(null)}
             >
-              Garder mes données
+              Keep my data
             </button>
             <button
               className="button danger"
               onClick={() => {
-                save(
-                  () => initialState,
-                  "Les données de démonstration ont été réinitialisées.",
-                );
+                save(() => initialState, "The demo data has been reset.");
                 setSelectedId(initialState.profile.neighborhoodId);
                 updateDisplay(() => defaultDisplay);
                 setDialog(null);
               }}
             >
-              Réinitialiser
+              Reset
             </button>
           </div>
         </Modal>
@@ -2126,7 +2102,7 @@ export function LightLinkApp({
           </span>
           <p>{toast}</p>
           <button
-            aria-label="Fermer la notification"
+            aria-label="Close notification"
             onClick={() => setToast(null)}
           >
             <X size={16} />

@@ -102,14 +102,14 @@ assert.ifError((await neighbour.auth.signInAnonymously()).error);
 const endsAt = new Date(Date.now() + 2 * 3600 * 1000).toISOString();
 // The offer and its private address are created together (create_offer, review of #9).
 const refused = await host.rpc("create_offer", {
-  p_zone_id: "osu", p_host_name: "Test", p_title: "[test] Refusée", p_source: "battery", p_capacity: "1 prise",
+  p_zone_id: "osu", p_host_name: "Test", p_title: "[test] Declined", p_source: "battery", p_capacity: "1 socket",
   p_price: 0, p_slots: 1, p_description: "", p_ends_at: endsAt, p_address: "X",
 });
 assert.ok(refused.error, "an address too short is refused");
-const leftover = await host.from("offers").select("id").eq("title", "[test] Refusée");
+const leftover = await host.from("offers").select("id").eq("title", "[test] Declined");
 assert.equal(leftover.data.length, 0, "and no offer is left behind");
 const created = await host.rpc("create_offer", {
-  p_zone_id: "osu", p_host_name: "Test", p_title: "[test] Recharge", p_source: "battery", p_capacity: "1 prise",
+  p_zone_id: "osu", p_host_name: "Test", p_title: "[test] Recharge", p_source: "battery", p_capacity: "1 socket",
   p_price: 0, p_slots: 1, p_description: "", p_ends_at: endsAt, p_address: "Adresse de test",
 });
 assert.ifError(created.error);
@@ -132,7 +132,7 @@ const shown = await neighbour.from("offer_private_details").select("address").eq
 assert.deepEqual(shown.data, [{ address: "Adresse de test" }], "the accepted neighbour sees the place");
 const hostInbox = await host.from("notifications").select("kind").eq("kind", "request_received");
 const neighbourInbox = await neighbour.from("notifications").select("title").eq("kind", "request_answered");
-assert.ok(hostInbox.data.length >= 1 && neighbourInbox.data[0]?.title === "Demande acceptée", "both are notified");
+assert.ok(hostInbox.data.length >= 1 && neighbourInbox.data[0]?.title === "Request accepted", "both are notified");
 assert.ifError((await neighbour.rpc("set_request_status", { request_id: asked.data.id, new_status: "finished" })).error);
 assert.ifError((await host.from("offers").update({ status: "closed" }).eq("id", offerId)).error);
 // The test offer stays closed on the project, titled "[test] Recharge": hosts cannot delete

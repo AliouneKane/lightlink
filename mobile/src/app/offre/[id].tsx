@@ -55,11 +55,11 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
 
   if (!offer)
     return (
-      <Screen title="Offre indisponible">
+      <Screen title="Offer unavailable">
         <Card>
-          <Txt>Cette offre n’est plus dans les données de cet appareil.</Txt>
+          <Txt>This offer is no longer in this device’s data.</Txt>
           <Button
-            label="Voir les offres"
+            label="View offers"
             onPress={() => router.replace("/partage")}
           />
         </Card>
@@ -97,20 +97,20 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
       if (!result)
         setMessage(
           offer.available
-            ? "Offre suspendue. Retrouvez-la dans Mes offres."
-            : "Offre réactivée dans les offres locales.",
+            ? "Offer paused. Find it in My offers."
+            : "Offer reopened in the local offers.",
         );
     } else if (activeBooking) {
       const result = await cancelRequest(activeBooking.id);
       setError(result);
       if (!result)
         setMessage(
-          liveEnabled ? "Demande annulée." : "Demande simulée annulée.",
+          liveEnabled ? "Request cancelled." : "Simulated request cancelled.",
         );
     } else {
       const result = await requestOffer(offer.id);
       setError(result);
-      if (!result && liveEnabled) setMessage("Demande envoyée à l’hôte.");
+      if (!result && liveEnabled) setMessage("Request sent to the host.");
     }
   }
 
@@ -121,7 +121,7 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
           <View style={styles.priceRow}>
             <View style={styles.priceValue}>
               <Txt size={25} weight="extrabold">
-                {offer.price === 0 ? "Gratuit" : offer.price}
+                {offer.price === 0 ? "Free" : offer.price}
               </Txt>
               {offer.price !== 0 && (
                 <Txt size={12} tone="muted">
@@ -132,13 +132,13 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
             <Txt size={11} tone="muted" style={styles.priceCaption}>
               {own
                 ? offer.available
-                  ? "Votre offre est visible"
-                  : "Votre offre est suspendue"
+                  ? "Your offer is visible"
+                  : "Your offer is paused"
                 : activeBooking
                   ? liveEnabled && activeBooking.status
                     ? requestStatusLabels[activeBooking.status]
-                    : "Demande locale en attente"
-                  : "Contribution conseillée"}
+                    : "Local request pending"
+                  : "Suggested contribution"}
             </Txt>
           </View>
           {(error || message) && (
@@ -155,15 +155,15 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
             label={
               own
                 ? offer.available
-                  ? "Suspendre mon offre"
-                  : "Réactiver mon offre"
+                  ? "Pause my offer"
+                  : "Reopen my offer"
                 : activeBooking
-                  ? "Annuler ma demande"
+                  ? "Cancel my request"
                   : available
                     ? liveEnabled
-                      ? "Demander une place"
-                      : "Simuler une demande"
-                    : "Offre indisponible"
+                      ? "Request a place"
+                      : "Simulate a request"
+                    : "Offer unavailable"
             }
             icon={
               own
@@ -196,7 +196,7 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
           }
           contentFit="cover"
           style={StyleSheet.absoluteFill}
-          accessibilityLabel={`Illustration ${meta.label}`}
+          accessibilityLabel={`${meta.label} illustration`}
         />
         <LinearGradient
           colors={[
@@ -210,7 +210,7 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
         <View style={styles.heroHeader}>
           <IconButton
             icon={ArrowLeft}
-            label="Retour"
+            label="Back"
             onPress={() =>
               router.canGoBack() ? router.back() : router.replace("/partage")
             }
@@ -220,9 +220,9 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
             <Txt size={10} weight="bold" style={{ color: "#fff" }}>
               {own
                 ? liveEnabled
-                  ? "VOTRE OFFRE"
-                  : "VOTRE OFFRE LOCALE"
-                : "ENTRE VOISINS"}
+                  ? "YOUR OFFER"
+                  : "YOUR LOCAL OFFER"
+                : "BETWEEN NEIGHBOURS"}
             </Txt>
           </View>
         </View>
@@ -230,7 +230,7 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
           <View style={styles.heroSource}>
             <meta.icon size={16} color="#facb4c" />
             <Txt size={11} weight="bold" style={{ color: "#facb4c" }}>
-              {meta.label.toLocaleUpperCase("fr")}
+              {meta.label.toLocaleUpperCase("en")}
             </Txt>
           </View>
           <Txt
@@ -246,8 +246,8 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
             <Txt size={12} style={{ color: "#d3dee3", flex: 1 }}>
               {location.name} ·{" "}
               {distance < 0.1
-                ? `à ${origin.name}`
-                : `${distance.toFixed(1)} km depuis ${origin.name}`}
+                ? `in ${origin.name}`
+                : `${distance.toFixed(1)} km from ${origin.name}`}
             </Txt>
           </View>
         </View>
@@ -267,11 +267,11 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
         >
           {available
             ? liveEnabled
-              ? "Disponible"
-              : "Disponible dans ce scénario"
+              ? "Available"
+              : "Available in this scenario"
             : own
-              ? "Offre suspendue"
-              : "Actuellement indisponible"}
+              ? "Offer paused"
+              : "Currently unavailable"}
         </Txt>
       </View>
       {booking && liveEnabled && booking.status && (
@@ -279,22 +279,21 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
           <View style={styles.statusRow}>
             <CheckCircle2 size={20} color={colors.green} />
             <Txt weight="bold" style={{ color: colors.green, flex: 1 }}>
-              Votre demande :{" "}
-              {requestStatusLabels[booking.status].toLowerCase()}
+              Your request: {requestStatusLabels[booking.status].toLowerCase()}
             </Txt>
           </View>
           <Txt size={12} tone="muted">
             {booking.status === "accepted" || booking.status === "finished"
               ? booking.address
-                ? `Adresse donnée par l’hôte : ${booking.address}`
-                : "L’hôte n’a pas indiqué d’adresse précise : contactez-le dans le quartier."
+                ? `Address given by the host: ${booking.address}`
+                : "The host gave no exact address: get in touch with them in the neighbourhood."
               : booking.status === "pending"
-                ? "L’hôte a été prévenu. L’adresse exacte s’affichera s’il accepte."
-                : "Cette demande est close."}
+                ? "The host has been notified. The exact address will appear if they accept."
+                : "This request is closed."}
           </Txt>
           {booking.status === "accepted" && (
             <Button
-              label="Terminer : j’ai eu mon énergie"
+              label="Finish: I got my energy"
               variant="secondary"
               onPress={() => answerRequest(booking.id, "finished")}
             />
@@ -303,32 +302,32 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
       )}
       {own && liveEnabled && (
         <Card>
-          <Txt weight="bold">Demandes reçues ({requestsHere.length})</Txt>
+          <Txt weight="bold">Requests received ({requestsHere.length})</Txt>
           {requestsHere.length === 0 && (
             <Txt size={12} tone="muted">
-              Aucune demande pour le moment. Vous serez prévenu dès qu’un voisin
-              en fait une.
+              No requests for now. You will be notified as soon as a neighbour
+              makes one.
             </Txt>
           )}
           {requestsHere.map((item) => (
             <View key={item.id} style={styles.requestRow}>
               <Txt size={12} style={{ flex: 1 }}>
-                {new Date(item.createdAt).toLocaleTimeString("fr-FR", {
+                {new Date(item.createdAt).toLocaleTimeString("en-GB", {
                   hour: "2-digit",
                   minute: "2-digit",
                   timeZone: "Africa/Accra",
                 })}{" "}
                 · {requestStatusLabels[item.status]}
-                {item.message ? ` · « ${item.message} »` : ""}
+                {item.message ? ` · “${item.message}”` : ""}
               </Txt>
               {item.status === "pending" && (
                 <>
                   <Button
-                    label="Accepter"
+                    label="Accept"
                     onPress={() => answerRequest(item.id, "accepted")}
                   />
                   <Button
-                    label="Refuser"
+                    label="Decline"
                     variant="secondary"
                     onPress={() => answerRequest(item.id, "refused")}
                   />
@@ -336,7 +335,7 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
               )}
               {item.status === "accepted" && (
                 <Button
-                  label="Terminer"
+                  label="Finish"
                   variant="secondary"
                   onPress={() => answerRequest(item.id, "finished")}
                 />
@@ -349,11 +348,11 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
         <Card>
           {abuseOpen ? (
             <>
-              <Txt weight="bold">Quel est le problème ?</Txt>
+              <Txt weight="bold">What is the problem?</Txt>
               {[
-                "Prix abusif",
-                "Offre trompeuse ou fausse",
-                "Comportement inapproprié",
+                "Unfair price",
+                "Misleading or fake offer",
+                "Inappropriate behaviour",
               ].map((reason) => (
                 <Button
                   key={reason}
@@ -363,20 +362,20 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
                     reportAbuse(offer.id, reason);
                     setAbuseOpen(false);
                     setMessage(
-                      "Merci, l’équipe LightLink va examiner cette offre.",
+                      "Thank you, the LightLink team will review this offer.",
                     );
                   }}
                 />
               ))}
               <Button
-                label="Annuler"
+                label="Cancel"
                 variant="ghost"
                 onPress={() => setAbuseOpen(false)}
               />
             </>
           ) : (
             <Button
-              label="Signaler cette offre"
+              label="Report this offer"
               variant="ghost"
               onPress={() => setAbuseOpen(true)}
             />
@@ -388,15 +387,15 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
           <View style={styles.statusRow}>
             <CheckCircle2 size={20} color={colors.green} />
             <Txt weight="bold" style={{ color: colors.green, flex: 1 }}>
-              Demande simulée enregistrée
+              Simulated request saved
             </Txt>
           </View>
           <Txt size={12} tone="muted">
-            En attente sur cet appareil. Aucun message n’a été envoyé à l’hôte
-            et aucune place n’a été réservée.
+            Pending on this device. No message was sent to the host and no place
+            was reserved.
           </Txt>
           <Button
-            label="Voir mes demandes"
+            label="View my requests"
             variant="ghost"
             onPress={() =>
               router.push({
@@ -421,10 +420,10 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
             </Txt>
             <Txt size={11} tone="muted">
               {own
-                ? "Votre contribution au quartier"
+                ? "Your contribution to the neighbourhood"
                 : liveEnabled
-                  ? "Votre voisin"
-                  : "Votre voisin dans ce scénario"}
+                  ? "Your neighbour"
+                  : "Your neighbour in this scenario"}
             </Txt>
           </View>
           <View style={[styles.hostBadge, { backgroundColor: colors.soft }]}>
@@ -442,16 +441,16 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
               {offer.slots} place{offer.slots === 1 ? "" : "s"}
             </Txt>
             <Txt size={10} tone="muted">
-              dans le scénario
+              in the scenario
             </Txt>
           </View>
           <View style={[styles.fact, { backgroundColor: colors.soft }]}>
             <Clock3 size={19} color={colors.accent} />
             <Txt size={16} weight="bold">
-              Jusqu’à {offer.until}
+              Until {offer.until}
             </Txt>
             <Txt size={10} tone="muted">
-              horaire du scénario
+              scenario time
             </Txt>
           </View>
         </View>
@@ -466,17 +465,17 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
       {own && (
         <Card>
           <Txt size={16} weight="bold">
-            Vous gardez la main.
+            You stay in control.
           </Txt>
           <Txt size={13} tone="muted">
-            Vous avez publié cette offre.
+            You published this offer.
           </Txt>
           <Txt size={13} tone="muted">
-            Suspendez votre offre pour la masquer des offres disponibles de cet
-            appareil. Vous pourrez la réactiver depuis cette page ou Mes offres.
+            Pause your offer to hide it from the available offers on this
+            device. You can reopen it from this page or My offers.
           </Txt>
           <Button
-            label="Voir mes offres"
+            label="View my offers"
             variant="ghost"
             onPress={() =>
               router.push({
@@ -491,10 +490,10 @@ function OfferContent({ id, zone }: { id: string; zone?: string }) {
       <View style={styles.privacy}>
         <ShieldCheck color={colors.muted} size={18} />
         <Txt tone="muted" size={11} style={{ flex: 1 }}>
-          Position au centre du quartier. Aucune adresse privée n’est affichée.
+          Location at the neighbourhood centre. No private address is shown.
         </Txt>
       </View>
-      <DemoNote text="Offre locale de démonstration. Aucun hôte n’est contacté, aucun paiement n’est collecté et aucune acceptation distante n’est simulée." />
+      <DemoNote text="Local demo offer. No host is contacted, no payment is collected and no remote acceptance is simulated." />
     </Screen>
   );
 }

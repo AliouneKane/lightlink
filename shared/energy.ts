@@ -72,10 +72,12 @@ export interface DemoState {
   notificationsEnabled: boolean;
 }
 
-export const storageKey = "lightlink.demo.v1";
+// v2: demo content translated to English; a v1 store would show French offers.
+export const storageKey = "lightlink.demo.v2";
+/** Read only while no v2 store exists, to keep the resident's profile. */
+export const legacyStorageKey = "lightlink.demo.v1";
 export const DEMO_TIMESTAMP = "2026-10-04T15:42:00.000Z";
-export const DEMO_LABEL =
-  "Données de démonstration · 4 octobre 2026, 15:42 GMT";
+export const DEMO_LABEL = "Demo data · 4 October 2026, 15:42 GMT";
 
 /** Risk and confidence are illustrative percentages, not model predictions. */
 export const neighborhoods: Neighborhood[] = [
@@ -86,7 +88,7 @@ export const neighborhoods: Neighborhood[] = [
     lng: -0.182,
     status: "outage",
     reports: 24,
-    restoration: "Estimation démo · 17:30",
+    restoration: "Demo estimate · 17:30",
     risk: 82,
     confidence: 92,
   },
@@ -97,7 +99,7 @@ export const neighborhoods: Neighborhood[] = [
     lng: -0.166,
     status: "powered",
     reports: 8,
-    restoration: "Courant disponible",
+    restoration: "Power available",
     risk: 12,
     confidence: 88,
   },
@@ -108,7 +110,7 @@ export const neighborhoods: Neighborhood[] = [
     lng: -0.158,
     status: "unstable",
     reports: 17,
-    restoration: "Alimentation intermittente",
+    restoration: "Intermittent supply",
     risk: 61,
     confidence: 81,
   },
@@ -119,7 +121,7 @@ export const neighborhoods: Neighborhood[] = [
     lng: -0.213,
     status: "outage",
     reports: 19,
-    restoration: "Estimation démo · 18:00",
+    restoration: "Demo estimate · 18:00",
     risk: 76,
     confidence: 86,
   },
@@ -130,7 +132,7 @@ export const neighborhoods: Neighborhood[] = [
     lng: -0.173,
     status: "powered",
     reports: 6,
-    restoration: "Courant disponible",
+    restoration: "Power available",
     risk: 9,
     confidence: 90,
   },
@@ -141,7 +143,7 @@ export const neighborhoods: Neighborhood[] = [
     lng: -0.263,
     status: "unstable",
     reports: 13,
-    restoration: "Alimentation intermittente",
+    restoration: "Intermittent supply",
     risk: 55,
     confidence: 78,
   },
@@ -152,7 +154,7 @@ export const neighborhoods: Neighborhood[] = [
     lng: -0.189,
     status: "powered",
     reports: 7,
-    restoration: "Courant disponible",
+    restoration: "Power available",
     risk: 15,
     confidence: 85,
   },
@@ -163,7 +165,7 @@ export const neighborhoods: Neighborhood[] = [
     lng: -0.225,
     status: "outage",
     reports: 16,
-    restoration: "Estimation démo · 18:30",
+    restoration: "Demo estimate · 18:30",
     risk: 72,
     confidence: 84,
   },
@@ -174,7 +176,7 @@ export const neighborhoods: Neighborhood[] = [
     lng: -0.165,
     status: "unstable",
     reports: 11,
-    restoration: "Alimentation intermittente",
+    restoration: "Intermittent supply",
     risk: 58,
     confidence: 79,
   },
@@ -185,7 +187,7 @@ export const neighborhoods: Neighborhood[] = [
     lng: 0.004,
     status: "powered",
     reports: 9,
-    restoration: "Courant disponible",
+    restoration: "Power available",
     risk: 18,
     confidence: 83,
   },
@@ -194,7 +196,7 @@ export const neighborhoods: Neighborhood[] = [
 export const initialOffers: EnergyOffer[] = [
   {
     id: "offer-labone-solar",
-    title: "Un bureau, du soleil et du Wi-Fi",
+    title: "A desk, sunshine and Wi-Fi",
     host: "Esi A.",
     initials: "EA",
     neighborhoodId: "labone",
@@ -202,16 +204,16 @@ export const initialOffers: EnergyOffer[] = [
     lng: -0.166,
     source: "solar",
     available: true,
-    capacity: "2 kW · ordinateurs et téléphones",
+    capacity: "2 kW · laptops and phones",
     price: 10,
     slots: 4,
     until: "19:00",
     description:
-      "Espace de travail partagé alimenté par des panneaux solaires. Contribution conseillée pour l’accueil, sans paiement dans cette démo.",
+      "Shared workspace powered by solar panels. Suggested contribution for hosting, no payment in this demo.",
   },
   {
     id: "offer-osu-battery",
-    title: "Recharge express à Osu",
+    title: "Quick charging in Osu",
     host: "Kwame O.",
     initials: "KO",
     neighborhoodId: "osu",
@@ -219,16 +221,16 @@ export const initialOffers: EnergyOffer[] = [
     lng: -0.182,
     source: "battery",
     available: true,
-    capacity: "1 kWh · petits appareils",
+    capacity: "1 kWh · small devices",
     price: 5,
     slots: 3,
     until: "18:00",
     description:
-      "Batterie de secours pour recharger téléphones et ordinateurs. Point exact communiqué seulement après acceptation.",
+      "Backup battery to charge phones and laptops. Exact place shared only after acceptance.",
   },
   {
     id: "offer-cantonments-solar",
-    title: "Énergie solaire pour vos projets",
+    title: "Solar power for your projects",
     host: "Akosua M.",
     initials: "AM",
     neighborhoodId: "cantonments",
@@ -236,16 +238,16 @@ export const initialOffers: EnergyOffer[] = [
     lng: -0.173,
     source: "solar",
     available: true,
-    capacity: "3 kW · 6 prises disponibles",
+    capacity: "3 kW · 6 sockets available",
     price: 15,
     slots: 6,
     until: "20:00",
     description:
-      "Quelques places dans un espace convivial avec installation solaire et batterie de stockage.",
+      "A few places in a friendly space with a solar installation and storage battery.",
   },
   {
     id: "offer-adabraka-generator",
-    title: "Un relais énergie à Adabraka",
+    title: "An energy stop in Adabraka",
     host: "Kofi B.",
     initials: "KB",
     neighborhoodId: "adabraka",
@@ -253,16 +255,16 @@ export const initialOffers: EnergyOffer[] = [
     lng: -0.213,
     source: "generator",
     available: true,
-    capacity: "5 kVA · matériel léger",
+    capacity: "5 kVA · light equipment",
     price: 20,
     slots: 2,
     until: "18:30",
     description:
-      "Groupe électrogène avec places de recharge. La contribution conseillée aide à couvrir le carburant.",
+      "Generator with charging places. The suggested contribution helps cover the fuel.",
   },
   {
     id: "offer-east-legon-battery",
-    title: "Recharge au calme à East Legon",
+    title: "Quiet charging in East Legon",
     host: "Abena D.",
     initials: "AD",
     neighborhoodId: "east-legon",
@@ -270,12 +272,12 @@ export const initialOffers: EnergyOffer[] = [
     lng: -0.158,
     source: "battery",
     available: true,
-    capacity: "2 kWh · ordinateurs et téléphones",
+    capacity: "2 kWh · laptops and phones",
     price: 8,
     slots: 3,
     until: "19:30",
     description:
-      "Batterie domestique et coin de travail pour continuer une session pendant une interruption.",
+      "Home battery and a work corner to keep going during an outage.",
   },
 ];
 
@@ -286,7 +288,7 @@ export const seedReports: CommunityReport[] = [
     status: "outage",
     author: "Kwame O.",
     createdAt: "2026-10-04T15:38:00.000Z",
-    description: "Coupure signalée dans le scénario de démonstration.",
+    description: "Outage reported in the demo scenario.",
   },
   {
     id: "seed-labone",
@@ -294,7 +296,7 @@ export const seedReports: CommunityReport[] = [
     status: "powered",
     author: "Esi A.",
     createdAt: "2026-10-04T15:34:00.000Z",
-    description: "Courant revenu dans le scénario de démonstration.",
+    description: "Power back in the demo scenario.",
   },
   {
     id: "seed-east-legon",
@@ -302,7 +304,7 @@ export const seedReports: CommunityReport[] = [
     status: "unstable",
     author: "Abena D.",
     createdAt: "2026-10-04T15:31:00.000Z",
-    description: "Interruption à confirmer dans le scénario de démonstration.",
+    description: "Interruption to be confirmed in the demo scenario.",
   },
   {
     id: "seed-adabraka",
@@ -310,7 +312,7 @@ export const seedReports: CommunityReport[] = [
     status: "outage",
     author: "Kofi B.",
     createdAt: "2026-10-04T15:29:00.000Z",
-    description: "Coupure signalée dans le scénario de démonstration.",
+    description: "Outage reported in the demo scenario.",
   },
   {
     id: "seed-dansoman",
@@ -318,7 +320,7 @@ export const seedReports: CommunityReport[] = [
     status: "unstable",
     author: "Nana S.",
     createdAt: "2026-10-04T15:25:00.000Z",
-    description: "Interruption à confirmer dans le scénario de démonstration.",
+    description: "Interruption to be confirmed in the demo scenario.",
   },
 ];
 
@@ -378,10 +380,10 @@ export function getNeighborhoods(reports: CommunityReport[]): Neighborhood[] {
         status === neighborhood.status
           ? neighborhood.restoration
           : status === "powered"
-            ? "Courant revenu · signalement local"
+            ? "Power back · local report"
             : status === "unstable"
-              ? "Interruption à confirmer"
-              : "Retour du courant à confirmer",
+              ? "Interruption to be confirmed"
+              : "Power return to be confirmed",
     };
   });
 }
@@ -414,7 +416,7 @@ function normalizeSearch(value: string): string {
   return value
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .toLocaleLowerCase("fr")
+    .toLocaleLowerCase("en")
     .trim();
 }
 
@@ -458,11 +460,10 @@ export function validateReport(input: {
   description: string;
 }): string | null {
   if (!findNeighborhood(input.neighborhoodId))
-    return "Choisissez un quartier de la zone pilote.";
-  if (!validStatuses.includes(input.status))
-    return "Choisissez le statut du courant.";
+    return "Choose a neighbourhood in the pilot area.";
+  if (!validStatuses.includes(input.status)) return "Choose the power status.";
   if (typeof input.description !== "string" || input.description.length > 500)
-    return "La description doit contenir au maximum 500 caractères.";
+    return "The description must be 500 characters or fewer.";
   return null;
 }
 
@@ -481,38 +482,37 @@ export function validateOffer(input: {
     input.title.trim().length < 3 ||
     input.title.trim().length > 100
   )
-    return "Le titre doit contenir entre 3 et 100 caractères.";
+    return "The title must be between 3 and 100 characters.";
   if (!findNeighborhood(input.neighborhoodId))
-    return "Choisissez un quartier de la zone pilote.";
-  if (!validSources.includes(input.source))
-    return "Choisissez une source d’énergie.";
+    return "Choose a neighbourhood in the pilot area.";
+  if (!validSources.includes(input.source)) return "Choose an energy source.";
   if (
     typeof input.capacity !== "string" ||
     !input.capacity.trim() ||
     input.capacity.length > 100
   )
-    return "Précisez une capacité de 100 caractères maximum.";
+    return "Give a capacity of 100 characters or fewer.";
   if (
     typeof input.price !== "number" ||
     !Number.isFinite(input.price) ||
     input.price < 0 ||
     input.price > 1000
   )
-    return "La contribution conseillée doit être comprise entre 0 et 1 000 GHS.";
+    return "The suggested contribution must be between 0 and 1,000 GHS.";
   if (
     typeof input.slots !== "number" ||
     !Number.isInteger(input.slots) ||
     input.slots < 1 ||
     input.slots > 50
   )
-    return "Indiquez entre 1 et 50 places disponibles.";
+    return "Enter between 1 and 50 available places.";
   if (
     typeof input.until !== "string" ||
     !/^([01]\d|2[0-3]):[0-5]\d$/.test(input.until)
   )
-    return "Indiquez une heure de fin valide au format HH:mm.";
+    return "Enter a valid end time in HH:mm format.";
   if (typeof input.description !== "string" || input.description.length > 600)
-    return "La description doit contenir au maximum 600 caractères.";
+    return "The description must be 600 characters or fewer.";
   return null;
 }
 
@@ -685,11 +685,21 @@ export function parseStoredState(value: string | null): DemoState {
   }
 }
 
+/**
+ * A v1 store holds French demo content. Its profile and alert preference carry
+ * over, because live mode syncs the local neighbourhood to `profiles.zone_id`;
+ * the reports and offers are regenerated in English.
+ */
+export function migrateLegacyState(value: string | null): DemoState {
+  const { profile, notificationsEnabled } = parseStoredState(value);
+  return { ...freshInitialState(), profile, notificationsEnabled };
+}
+
 /** Accra uses GMT all year; explicitly avoid the viewer's local timezone. */
 export function formatTime(date: string | Date): string {
   const parsed = date instanceof Date ? date : new Date(date);
   if (!Number.isFinite(parsed.getTime())) return "—";
-  return new Intl.DateTimeFormat("fr-FR", {
+  return new Intl.DateTimeFormat("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "Africa/Accra",

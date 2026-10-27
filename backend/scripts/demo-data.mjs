@@ -14,16 +14,16 @@ import { pathToFileURL } from "node:url";
 // One line per report: zone, kind, minutes ago, what a resident would write.
 // Osu confirmed (3+ outages, a surprise), Labone and Dansoman probable, Madina powered.
 export const scenario = [
-  ["osu", "outage", 12, "Plus de courant depuis midi sur Oxford Street."],
-  ["osu", "outage", 20, "Coupure aussi vers le Danquah Circle."],
-  ["osu", "outage", 31, "Tout le quartier est dans le noir."],
-  ["osu", "outage", 44, "Coupure chez moi, le frigo s'est arrêté."],
-  ["labone", "outage", 18, "Coupure à Labone, rien depuis 20 minutes."],
-  ["dansoman", "outage", 25, "Courant coupé près du marché."],
-  ["dansoman", "outage", 38, "Pareil de mon côté."],
-  ["dansoman", "restored", 9, "Le courant est revenu dans ma rue."],
-  ["madina", "powered", 15, "Tout va bien à Madina."],
-  ["madina", "powered", 27, "Courant stable ici."],
+  ["osu", "outage", 12, "No power since noon on Oxford Street."],
+  ["osu", "outage", 20, "Outage near Danquah Circle too."],
+  ["osu", "outage", 31, "The whole neighbourhood is in the dark."],
+  ["osu", "outage", 44, "Outage at home, the fridge stopped."],
+  ["labone", "outage", 18, "Outage in Labone, nothing for 20 minutes."],
+  ["dansoman", "outage", 25, "Power cut near the market."],
+  ["dansoman", "outage", 38, "Same on my side."],
+  ["dansoman", "restored", 9, "Power is back on my street."],
+  ["madina", "powered", 15, "All good in Madina."],
+  ["madina", "powered", 27, "Stable power here."],
 ];
 
 const quote = (text) => `'${text.replaceAll("'", "''")}'`;
@@ -31,7 +31,7 @@ const quote = (text) => `'${text.replaceAll("'", "''")}'`;
 export function insertSql(rows = scenario) {
   const values = rows.map(
     ([zone, kind, minutes, text]) =>
-      `  (${quote(zone)}, ${quote(kind)}, ${quote(`[SIMULÉ] ${text}`)}, true, now() - interval '${minutes} minutes')`,
+      `  (${quote(zone)}, ${quote(kind)}, ${quote(`[SIMULATED] ${text}`)}, true, now() - interval '${minutes} minutes')`,
   );
   return [
     "insert into public.outage_reports (zone_id, kind, description, simulated, observed_at) values",
@@ -69,7 +69,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const mode = process.argv[2];
   if (mode === "on") {
     run(`${deleteSql}\n${insertSql()}`);
-    console.log(`${scenario.length} simulated reports added (labelled [SIMULÉ], gone from the map within 2 hours).`);
+    console.log(`${scenario.length} simulated reports added (labelled [SIMULATED], gone from the map within 2 hours).`);
   } else if (mode === "off") {
     run(deleteSql);
     console.log("Simulated reports removed.");

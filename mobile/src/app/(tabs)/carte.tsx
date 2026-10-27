@@ -42,7 +42,7 @@ const normalize = (value: string) =>
   value
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .toLocaleLowerCase("fr")
+    .toLocaleLowerCase("en")
     .trim();
 
 export default function MapScreen() {
@@ -123,7 +123,7 @@ function MapExplorer({ initialSelectedId }: { initialSelectedId: string }) {
     <View style={[styles.row, { gap: 10 }]}>
       <View style={{ flex: 1 }}>
         <Button
-          label="Signaler"
+          label="Report"
           icon={MessageCircle}
           onPress={() =>
             router.push({
@@ -135,7 +135,7 @@ function MapExplorer({ initialSelectedId }: { initialSelectedId: string }) {
       </View>
       <View style={{ flex: 1 }}>
         <Button
-          label="Voir les offres"
+          label="View offers"
           icon={Zap}
           variant="secondary"
           onPress={() =>
@@ -148,16 +148,16 @@ function MapExplorer({ initialSelectedId }: { initialSelectedId: string }) {
 
   return (
     <Screen
-      title="Carte des quartiers"
-      subtitle="Accra, Ghana · l’énergie autour de vous"
+      title="Neighbourhood map"
+      subtitle="Accra, Ghana · the energy around you"
       scrollRef={scrollRef}
       action={
         <IconButton
           icon={Search}
           label={
             searchOpen
-              ? "Masquer la recherche de quartier"
-              : "Rechercher un quartier"
+              ? "Hide the neighbourhood search"
+              : "Search a neighbourhood"
           }
           onPress={() => setSearchOpen((value) => !value)}
         />
@@ -167,7 +167,7 @@ function MapExplorer({ initialSelectedId }: { initialSelectedId: string }) {
         {(searchOpen || query !== "") && (
           <View style={{ position: "relative" }}>
             <Field
-              label="Rechercher un quartier"
+              label="Search a neighbourhood"
               value={query}
               onChangeText={setQuery}
               placeholder="Osu, Madina, Labone…"
@@ -186,20 +186,20 @@ function MapExplorer({ initialSelectedId }: { initialSelectedId: string }) {
         )}
         <Chips
           options={[
-            { value: "all", label: "Tous", icon: ListFilter },
+            { value: "all", label: "All", icon: ListFilter },
             {
               value: "powered",
-              label: "Avec courant",
+              label: "Power on",
               icon: statusMeta.powered.icon,
             },
             {
               value: "outage",
-              label: "Coupures",
+              label: "Outages",
               icon: statusMeta.outage.icon,
             },
             {
               value: "unstable",
-              label: "Instable",
+              label: "Unstable",
               icon: statusMeta.unstable.icon,
             },
           ]}
@@ -211,8 +211,8 @@ function MapExplorer({ initialSelectedId }: { initialSelectedId: string }) {
       <View style={{ gap: 12 }}>
         <View style={styles.row}>
           <Txt size={12} weight="bold" style={{ flex: 1 }}>
-            {visible.length} quartier{visible.length > 1 ? "s" : ""} pilote
-            {visible.length > 1 ? "s" : ""}
+            {visible.length} pilot neighbourhood
+            {visible.length === 1 ? "" : "s"}
           </Txt>
           <View style={[styles.demoBadge, { backgroundColor: colors.soft }]}>
             <View
@@ -224,7 +224,7 @@ function MapExplorer({ initialSelectedId }: { initialSelectedId: string }) {
               }}
             />
             <Txt size={10} weight="bold" tone="muted">
-              DÉMONSTRATION
+              DEMO
             </Txt>
           </View>
         </View>
@@ -242,13 +242,13 @@ function MapExplorer({ initialSelectedId }: { initialSelectedId: string }) {
           <Card>
             <MapPin size={28} color={colors.muted} />
             <Txt size={16} weight="bold">
-              Aucun quartier trouvé
+              No neighbourhood found
             </Txt>
             <Txt size={13} tone="muted">
-              Essayez un autre nom ou affichez tous les états du courant.
+              Try another name or show every power status.
             </Txt>
             <Button
-              label="Réinitialiser les filtres"
+              label="Reset filters"
               variant="secondary"
               onPress={() => {
                 setQuery("");
@@ -295,7 +295,7 @@ function MapExplorer({ initialSelectedId }: { initialSelectedId: string }) {
                   tone="muted"
                   style={{ letterSpacing: 1.5 }}
                 >
-                  QUARTIER SÉLECTIONNÉ
+                  SELECTED NEIGHBOURHOOD
                 </Txt>
                 <Txt size={23} weight="extrabold" accessibilityRole="header">
                   {selected.name}
@@ -324,8 +324,8 @@ function MapExplorer({ initialSelectedId }: { initialSelectedId: string }) {
                 </Txt>
                 <Txt size={11} tone="muted">
                   {latestReport
-                    ? `Signalement démo · ${new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone: "Africa/Accra" }).format(new Date(latestReport.createdAt))} à ${formatTime(latestReport.createdAt)} GMT`
-                    : "État du scénario local"}
+                    ? `Demo report · ${new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "Africa/Accra" }).format(new Date(latestReport.createdAt))} at ${formatTime(latestReport.createdAt)} GMT`
+                    : "Local scenario status"}
                 </Txt>
               </View>
             </View>
@@ -345,7 +345,7 @@ function MapExplorer({ initialSelectedId }: { initialSelectedId: string }) {
                   {selected.reports}
                 </Txt>
                 <Txt size={11} tone="muted">
-                  signalements démo
+                  demo reports
                 </Txt>
               </View>
               <View
@@ -356,15 +356,14 @@ function MapExplorer({ initialSelectedId }: { initialSelectedId: string }) {
                   {offers.length}
                 </Txt>
                 <Txt size={11} tone="muted">
-                  offre{offers.length > 1 ? "s" : ""} d’énergie locale
-                  {offers.length > 1 ? "s" : ""}
+                  local energy offer{offers.length === 1 ? "" : "s"}
                 </Txt>
               </View>
             </View>
             {selectedActions}
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={`Voir les prévisions de ${selected.name}`}
+              accessibilityLabel={`View the forecast for ${selected.name}`}
               onPress={() =>
                 router.push({
                   pathname: "/previsions",
@@ -374,7 +373,7 @@ function MapExplorer({ initialSelectedId }: { initialSelectedId: string }) {
               style={[styles.row, { minHeight: 44, justifyContent: "center" }]}
             >
               <Txt size={12} weight="bold" tone="accent">
-                Consulter les prévisions
+                View the forecast
               </Txt>
               <ArrowUpRight size={15} color={colors.accent} />
             </Pressable>
@@ -384,7 +383,7 @@ function MapExplorer({ initialSelectedId }: { initialSelectedId: string }) {
 
       {visible.length > 0 && (
         <View style={{ gap: 12 }}>
-          <SectionTitle title="Explorer les quartiers" />
+          <SectionTitle title="Explore the neighbourhoods" />
           <View
             style={{
               borderRadius: 19,
@@ -398,7 +397,7 @@ function MapExplorer({ initialSelectedId }: { initialSelectedId: string }) {
               <Pressable
                 key={area.id}
                 accessibilityRole="button"
-                accessibilityLabel={`Choisir ${area.name}, ${statusMeta[area.status].label}, ${area.reports} signalements de démonstration`}
+                accessibilityLabel={`Choose ${area.name}, ${statusMeta[area.status].label}, ${area.reports} demo reports`}
                 accessibilityState={{ selected: area.id === selected?.id }}
                 onPress={() => chooseArea(area.id, true)}
                 style={({ pressed }) => [
@@ -444,7 +443,7 @@ function MapExplorer({ initialSelectedId }: { initialSelectedId: string }) {
           </View>
         </View>
       )}
-      <DemoNote text="États et signalements simulés. Les points indiquent les centres approximatifs des quartiers, jamais une adresse privée." />
+      <DemoNote text="Simulated statuses and reports. Dots show approximate neighbourhood centres, never a private address." />
     </Screen>
   );
 }

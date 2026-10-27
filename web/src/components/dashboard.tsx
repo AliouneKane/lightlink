@@ -49,13 +49,13 @@ export function Dashboard({
   const display = useDisplay();
   return (
     <>
-      <section className="stats-grid" aria-label="Indicateurs de démonstration">
+      <section className="stats-grid" aria-label="Demo indicators">
         <article className="stat-card">
           <span className="stat-icon blue">
             <MapPin size={28} />
           </span>
           <div className="stat-copy">
-            <span className="stat-label">Votre quartier</span>
+            <span className="stat-label">Your neighbourhood</span>
             <strong className="stat-zone" title={homeZone.name}>
               {homeZone.name}
             </strong>
@@ -66,7 +66,7 @@ export function Dashboard({
             <ZapOff size={28} />
           </span>
           <div className="stat-copy">
-            <span className="stat-label">Quartiers sans courant</span>
+            <span className="stat-label">Neighbourhoods without power</span>
             <strong>
               {outageCount ?? <span aria-label="Nombre inconnu">—</span>}
               <small> / {zones.length}</small>
@@ -78,10 +78,10 @@ export function Dashboard({
             <Zap size={28} />
           </span>
           <div className="stat-copy">
-            <span className="stat-label">Énergie à proximité</span>
+            <span className="stat-label">Energy nearby</span>
             <strong>
               {offerCount}
-              <small> offres</small>
+              <small> offers</small>
             </strong>
           </div>
         </article>
@@ -93,7 +93,7 @@ export function Dashboard({
             <span className="stat-label">Contributions</span>
             <strong>
               {reportCount}
-              <small> signalements</small>
+              <small> reports</small>
             </strong>
           </div>
         </article>
@@ -107,18 +107,18 @@ export function Dashboard({
             <div className="section-heading">
               <h2>
                 <Zap size={18} />
-                Énergie à proximité
+                Energy nearby
                 <span className="section-count">{offerCount}</span>
               </h2>
-              <Link href="/partage" className="text-button">
-                Tout voir
+              <Link href="/sharing" className="text-button">
+                See all
                 <ChevronRight size={16} />
               </Link>
             </div>
             {offers.length ? (
               <div
                 className="energy-rail"
-                aria-label="Offres d’énergie à proximité"
+                aria-label="Energy offers nearby"
                 tabIndex={0}
               >
                 {offers}
@@ -126,9 +126,9 @@ export function Dashboard({
             ) : (
               <div className="panel empty-state">
                 <Zap size={28} />
-                <h3>Aucune offre pour cette recherche</h3>
+                <h3>No offers for this search</h3>
                 <button className="text-button" onClick={onClearSearch}>
-                  Effacer la recherche
+                  Clear search
                 </button>
               </div>
             )}
@@ -142,10 +142,10 @@ export function Dashboard({
             <div className="section-heading">
               <h2>
                 <Map size={18} />
-                Le réseau de votre quartier
+                Your neighbourhood’s grid
               </h2>
-              <Link href="/carte" className="text-button">
-                Explorer la carte
+              <Link href="/map" className="text-button">
+                Explore the map
                 <ChevronRight size={16} />
               </Link>
             </div>
@@ -153,7 +153,7 @@ export function Dashboard({
               {map}
               <section className="panel network-zones">
                 <div className="panel-heading">
-                  <h2>Quartiers pilotes</h2>
+                  <h2>Pilot neighbourhoods</h2>
                   <span className="tiny-tag">{zones.length} ZONES</span>
                 </div>
                 <div className="network-zone-list">
@@ -161,14 +161,14 @@ export function Dashboard({
                     <button
                       key={zone.id}
                       className={zone.id === selectedId ? "selected" : ""}
-                      aria-label={`${zone.name}, ${zone.reports} signalements, ${statusLabels[zone.status]}`}
+                      aria-label={`${zone.name}, ${zone.reports} reports, ${statusLabels[zone.status]}`}
                       aria-pressed={zone.id === selectedId}
                       onClick={() => onSelect(zone.id)}
                     >
                       <span className={`zone-color ${zone.status}`} />
                       <span className="zone-title">
                         {zone.name}
-                        <small>{zone.reports} signalements</small>
+                        <small>{zone.reports} reports</small>
                       </span>
                       <Status status={zone.status} />
                     </button>
@@ -186,10 +186,10 @@ export function Dashboard({
             <div className="section-heading">
               <h2>
                 <Clock3 size={18} />
-                Prévisions et dernières contributions
+                Forecast and latest contributions
               </h2>
-              <Link href="/communaute" className="text-button">
-                Toute l’activité
+              <Link href="/community" className="text-button">
+                All activity
                 <ChevronRight size={16} />
               </Link>
             </div>
@@ -199,13 +199,13 @@ export function Dashboard({
                 <div className="panel-heading">
                   <h2>
                     <Radio size={16} />
-                    Le quartier vous informe
+                    The neighbourhood keeps you informed
                   </h2>
-                  <span className="tiny-tag">COMMUNAUTÉ</span>
+                  <span className="tiny-tag">COMMUNITY</span>
                 </div>
                 {community}
-                <Link href="/communaute" className="text-button">
-                  Voir les signalements
+                <Link href="/community" className="text-button">
+                  View reports
                   <ArrowRight size={14} />
                 </Link>
               </section>
@@ -215,8 +215,8 @@ export function Dashboard({
         {!Object.values(display.visible).some(Boolean) && (
           <div className="panel empty-state">
             <LayoutDashboard size={30} />
-            <h3>Votre espace, à votre façon.</h3>
-            <p>Choisissez vos sections avec « Modifier la disposition ».</p>
+            <h3>Your space, your way.</h3>
+            <p>Choose your sections with “Edit layout”.</p>
             <button
               className="button secondary"
               onClick={() =>
@@ -228,7 +228,7 @@ export function Dashboard({
                 }))
               }
             >
-              Rétablir les sections
+              Restore sections
             </button>
           </div>
         )}

@@ -46,7 +46,7 @@ describe("demonstration neighbourhood status", () => {
     expect(zone?.reports).toBe(
       neighborhoods.find((item) => item.id === "osu")!.reports + 2,
     );
-    expect(zone?.restoration).toContain("Courant revenu");
+    expect(zone?.restoration).toContain("Power back");
     expect(neighborhoods.find((item) => item.id === "osu")?.status).toBe(
       "outage",
     );
@@ -70,7 +70,7 @@ describe("nearby energy discovery", () => {
       ),
     ).toBe(true);
     expect(
-      getOffers(initialOffers, "osu", "solar", "energie").map(
+      getOffers(initialOffers, "osu", "solar", "PRÓJECTS").map(
         (offer) => offer.id,
       ),
     ).toEqual(["offer-cantonments-solar"]);
@@ -94,7 +94,7 @@ describe("nearby energy discovery", () => {
 
 describe("forms", () => {
   const validOffer = {
-    title: "Recharge solaire",
+    title: "Solar charging",
     neighborhoodId: "osu",
     source: "solar",
     capacity: "2 kW",

@@ -44,7 +44,7 @@ export default function Sharing() {
   return <SharingResults key={initialOrigin} initialOrigin={initialOrigin} />;
 }
 function SharingResults({ initialOrigin }: { initialOrigin: string }) {
-  const { state, places, liveEnabled, neighborhoods } = useDemo();
+  const { state, places, neighborhoods } = useDemo();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
@@ -57,18 +57,18 @@ function SharingResults({ initialOrigin }: { initialOrigin: string }) {
   const sortOptions = [
     {
       value: "distance",
-      label: "À proximité",
-      hint: "Les offres les plus proches d’abord.",
+      label: "Nearby",
+      hint: "Nearest offers first.",
     },
     {
       value: "price",
-      label: "Petit budget",
-      hint: "La contribution la plus basse d’abord.",
+      label: "Low budget",
+      hint: "Lowest contribution first.",
     },
     {
       value: "slots",
-      label: "Plus de places",
-      hint: "Les sources avec le plus de places.",
+      label: "Most places",
+      hint: "Sources with the most places.",
     },
   ];
   const offers = getOffers(state.offers, origin, filter, query).sort((a, b) =>
@@ -81,12 +81,12 @@ function SharingResults({ initialOrigin }: { initialOrigin: string }) {
   return (
     <Screen
       contentGap={16}
-      title="Les bonnes énergies."
-      subtitle="Un voisin. Une source. Un nouveau lien."
+      title="Good energy nearby."
+      subtitle="A neighbour. A source. A new link."
       action={
         <IconButton
           icon={Plus}
-          label="Publier une offre"
+          label="Publish an offer"
           onPress={() => router.push("/publier")}
         />
       }
@@ -100,12 +100,12 @@ function SharingResults({ initialOrigin }: { initialOrigin: string }) {
               setOrigin(value);
               setLimit(12);
             }}
-            label="Chercher autour d’un quartier"
+            label="Search around a neighbourhood"
           />
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Trier les offres"
+          accessibilityLabel="Sort offers"
           accessibilityHint={
             sortOptions.find((option) => option.value === sort)?.label
           }
@@ -132,9 +132,9 @@ function SharingResults({ initialOrigin }: { initialOrigin: string }) {
         </Pressable>
       </View>
       <Field
-        label="Rechercher une énergie"
+        label="Search for energy"
         hideLabel
-        placeholder="Quartier, offre ou voisin…"
+        placeholder="Neighbourhood, offer or neighbour…"
         value={query}
         onChangeText={(value) => {
           setQuery(value);
@@ -151,10 +151,10 @@ function SharingResults({ initialOrigin }: { initialOrigin: string }) {
           setLimit(12);
         }}
         options={[
-          { value: "all", label: "Tout" },
-          { value: "solar", label: "Solaire", icon: Sun },
-          { value: "generator", label: "Générateur", icon: PlugZap },
-          { value: "battery", label: "Batterie", icon: BatteryCharging },
+          { value: "all", label: "All" },
+          { value: "solar", label: "Solar", icon: Sun },
+          { value: "generator", label: "Generator", icon: PlugZap },
+          { value: "battery", label: "Battery", icon: BatteryCharging },
         ]}
       />
       <View
@@ -166,10 +166,10 @@ function SharingResults({ initialOrigin }: { initialOrigin: string }) {
       >
         <Txt weight="bold" size={14}>
           {offers.length}{" "}
-          {offers.length === 1 ? "offre disponible" : "offres disponibles"}
+          {offers.length === 1 ? "offer available" : "offers available"}
         </Txt>
         <Txt size={10} tone="muted" weight="bold" style={{ letterSpacing: 1 }}>
-          DÉMO LOCALE
+          LOCAL DEMO
         </Txt>
       </View>
       {offers.slice(0, limit).map((offer) => (
@@ -186,7 +186,7 @@ function SharingResults({ initialOrigin }: { initialOrigin: string }) {
       ))}
       {offers.length > limit && (
         <Button
-          label="Voir plus d’offres"
+          label="See more offers"
           variant="secondary"
           onPress={() => setLimit((value) => value + 12)}
         />
@@ -195,13 +195,13 @@ function SharingResults({ initialOrigin }: { initialOrigin: string }) {
         <Card>
           <Search size={30} color="#b2bec8" />
           <Txt size={19} weight="bold">
-            Aucune offre par ici.
+            No offers around here.
           </Txt>
           <Txt tone="muted">
-            Essayez un autre quartier ou une autre source d’énergie.
+            Try another neighbourhood or another energy source.
           </Txt>
           <Button
-            label="Effacer les filtres"
+            label="Clear filters"
             variant="secondary"
             onPress={() => {
               setQuery("");
@@ -211,7 +211,7 @@ function SharingResults({ initialOrigin }: { initialOrigin: string }) {
         </Card>
       )}
       <Button
-        label="J’ai de l’énergie à partager"
+        label="I have energy to share"
         icon={Plus}
         variant="secondary"
         onPress={() => router.push("/publier")}
@@ -220,7 +220,7 @@ function SharingResults({ initialOrigin }: { initialOrigin: string }) {
         // Task 91: the whole neighbourhood is cut, the database proposes fixed places.
         <Card>
           <Txt size={15} weight="bold">
-            Lieux d’énergie un peu plus loin
+            Energy places a little further away
           </Txt>
           {places.map((place) => (
             <Txt key={place.id} size={12} tone="muted">
@@ -233,11 +233,8 @@ function SharingResults({ initialOrigin }: { initialOrigin: string }) {
         </Card>
       )}
       <DemoNote
-        text={
-          liveEnabled
-            ? "Offres des voisins, sans paiement via LightLink. Distances entre centres de quartiers, à vol d’oiseau."
-            : "Offres de démonstration, sans paiement. Distances entre centres de quartiers, à vol d’oiseau."
-        }
+        text="Demo offers, no payment. Straight-line distances between neighbourhood centres."
+        live="Neighbours’ offers, no payment through LightLink. Straight-line distances between neighbourhood centres."
       />
       <Modal
         transparent
@@ -255,7 +252,7 @@ function SharingResults({ initialOrigin }: { initialOrigin: string }) {
           <Pressable
             style={StyleSheet.absoluteFill}
             accessibilityRole="button"
-            accessibilityLabel="Fermer le tri"
+            accessibilityLabel="Close sorting"
             onPress={() => setSortOpen(false)}
           />
           <View
@@ -282,11 +279,11 @@ function SharingResults({ initialOrigin }: { initialOrigin: string }) {
                 accessibilityRole="header"
                 style={{ flex: 1 }}
               >
-                À votre façon.
+                Your way.
               </Txt>
               <IconButton
                 icon={X}
-                label="Fermer"
+                label="Close"
                 onPress={() => setSortOpen(false)}
               />
             </View>

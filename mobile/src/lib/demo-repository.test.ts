@@ -1,10 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   createDemoRepository,
+  legacyMobileStorageKey,
   mobileStorageKey as storageKey,
   type DemoStorage,
 } from "./demo-repository";
-import { initialState, neighborhoods, parseStoredState } from "./energy";
+import {
+  initialState,
+  neighborhoods,
+  parseStoredState,
+  syncProfileZone,
+} from "./energy";
 
 function memoryStorage(saved: string | null = null) {
   let value = saved;
@@ -30,18 +36,18 @@ function deferred<T>() {
 const report = {
   neighborhoodId: "labone",
   status: "outage" as const,
-  description: "Coupure observée pendant la démonstration.",
+  description: "Outage observed during the demo.",
 };
 
 const offer = {
   title: "Recharge solaire du quartier",
   neighborhoodId: "madina",
   source: "solar" as const,
-  capacity: "Téléphones et ordinateurs",
+  capacity: "Phones and laptops",
   price: 0,
   slots: 3,
   until: "21:00",
-  description: "Offre locale simulée.",
+  description: "Simulated local offer.",
 };
 
 function testOptions() {
@@ -65,11 +71,11 @@ describe("mobile local persistence", () => {
     const repository = createDemoRepository(storage, testOptions());
     const hydration = repository.hydrate();
     expect(repository.hydrate()).toBe(hydration);
-    expect(repository.report(report)).toMatch(/chargement/);
-    expect(repository.createOffer(offer)).toMatch(/chargement/);
-    expect(repository.requestOffer("offer-osu-battery")).toMatch(/chargement/);
+    expect(repository.report(report)).toMatch(/loading/);
+    expect(repository.createOffer(offer)).toMatch(/loading/);
+    expect(repository.requestOffer("offer-osu-battery")).toMatch(/loading/);
     expect(repository.setOfferAvailability("offer-osu-battery", false)).toMatch(
-      /chargement/,
+      /loading/,
     );
     repository.setNotifications(true);
     repository.reset();
@@ -184,7 +190,7 @@ describe("mobile local persistence", () => {
     repository.createOffer(offer);
     await repository.flush();
     expect(storage.setItem).toHaveBeenCalledTimes(1);
-    expect(repository.getSnapshot().storageError).toMatch(/stockage local/);
+    expect(repository.getSnapshot().storageError).toMatch(/Local storage/);
     expect(repository.getSnapshot().state.offers).toHaveLength(6);
     repository.updateProfile({ name: "Ama", neighborhoodId: "madina" });
     await repository.flush();
@@ -255,24 +261,24 @@ describe("mobile neighborhood and sharing journeys", () => {
       price: 0,
     });
     repository.updateProfile({ name: "Kwame", neighborhoodId: "madina" });
-    expect(repository.requestOffer(published.id)).toMatch(/propre offre/);
+    expect(repository.requestOffer(published.id)).toMatch(/your own offer/);
     expect(
       repository.getOffers("solar", "Recharge solaire du quartier")[0].id,
     ).toBe(published.id);
     await repository.flush();
     const reopened = createDemoRepository(storage);
     await reopened.hydrate();
-    expect(reopened.requestOffer(published.id)).toMatch(/propre offre/);
+    expect(reopened.requestOffer(published.id)).toMatch(/your own offer/);
   });
 
   it("creates one pending request without consuming slots, survives reload and cancels", async () => {
     const storage = memoryStorage();
     const repository = createDemoRepository(storage, testOptions());
     await repository.hydrate();
-    expect(repository.requestOffer("missing")).toMatch(/disponible/);
+    expect(repository.requestOffer("missing")).toMatch(/available/);
     const available = repository.getOffers()[0];
     expect(repository.requestOffer(available.id)).toBeNull();
-    expect(repository.requestOffer(available.id)).toMatch(/déjà/);
+    expect(repository.requestOffer(available.id)).toMatch(/already/);
     expect(
       repository
         .getSnapshot()
@@ -294,12 +300,10 @@ describe("mobile neighborhood and sharing journeys", () => {
     const storage = memoryStorage();
     const repository = createDemoRepository(storage, testOptions());
     await repository.hydrate();
-    expect(repository.setOfferAvailability("missing", false)).toMatch(
-      /appareil/,
-    );
+    expect(repository.setOfferAvailability("missing", false)).toMatch(/device/);
     expect(
       repository.setOfferAvailability(initialState.offers[0].id, false),
-    ).toMatch(/seulement gérer/);
+    ).toMatch(/only manage/);
     expect(storage.setItem).not.toHaveBeenCalled();
     repository.createOffer(offer);
     const published = repository.getSnapshot().state.offers[0];
@@ -324,7 +328,7 @@ describe("mobile neighborhood and sharing journeys", () => {
     expect(reopened.getOffers().some((item) => item.id === published.id)).toBe(
       true,
     );
-    expect(reopened.requestOffer(published.id)).toMatch(/propre offre/);
+    expect(reopened.requestOffer(published.id)).toMatch(/your own offer/);
     await reopened.flush();
     const nextSession = createDemoRepository(storage);
     await nextSession.hydrate();
@@ -355,11 +359,11 @@ describe("mobile neighborhood and sharing journeys", () => {
       repository.getSnapshot().state.bookings.map((item) => item.id),
     ).toEqual(["first"]);
     expect(repository.setOfferAvailability(owned.id, true)).toMatch(
-      /aucune place/,
+      /no available place/,
     );
     expect(
       repository.setOfferAvailability(owned.id, "yes" as unknown as boolean),
-    ).toMatch(/disponible ou suspendue/);
+    ).toMatch(/available or paused/);
     expect(storage.setItem).not.toHaveBeenCalled();
     repository.setNotifications(true);
     await repository.flush();
@@ -425,12 +429,94 @@ describe("mobile neighborhood and sharing journeys", () => {
     );
     const repository = createDemoRepository(storage);
     await repository.hydrate();
-    expect(repository.createOffer(offer)).toMatch(/100 offres/);
-    expect(repository.requestOffer(offers[1].id)).toMatch(/disponible/);
-    expect(repository.requestOffer(offers[2].id)).toMatch(/disponible/);
+    expect(repository.createOffer(offer)).toMatch(/100 offers/);
+    expect(repository.requestOffer(offers[1].id)).toMatch(/available/);
+    expect(repository.requestOffer(offers[2].id)).toMatch(/available/);
     expect(repository.getSnapshot().state.bookings).toHaveLength(100);
-    expect(repository.requestOffer(offers[3].id)).toMatch(/déjà/);
+    expect(repository.requestOffer(offers[3].id)).toMatch(/already/);
     await repository.flush();
     expect(storage.setItem).not.toHaveBeenCalled();
+  });
+});
+
+describe("English store upgrade (PAN's review of #16)", () => {
+  const legacyState = {
+    ...initialState,
+    reports: [
+      {
+        ...initialState.reports[0],
+        id: "report-fr",
+        description: "Coupure observée à Madina.",
+      },
+    ],
+    profile: { name: "Madina resident", neighborhoodId: "madina" },
+    notificationsEnabled: true,
+  };
+
+  function upgradedStorage(entries: Record<string, string>) {
+    const values = new Map(Object.entries(entries));
+    return {
+      values,
+      getItem: vi.fn(async (key: string) => values.get(key) ?? null),
+      setItem: vi.fn(async (key: string, next: string) => {
+        values.set(key, next);
+      }),
+    };
+  }
+
+  it("resumes an open session with the v1 neighbourhood and English content", async () => {
+    const storage = upgradedStorage({
+      [legacyMobileStorageKey]: JSON.stringify(legacyState),
+    });
+    const repository = createDemoRepository(storage);
+    await repository.hydrate();
+    const { state } = repository.getSnapshot();
+    expect(state.profile).toEqual(legacyState.profile);
+    expect(state.notificationsEnabled).toBe(true);
+    expect(state.reports).toEqual(initialState.reports);
+    // Resuming an offline report syncs the phone's neighbourhood first.
+    const zoneWrites: string[] = [];
+    const db = {
+      auth: {
+        getSession: async () => ({
+          data: { session: { user: { id: "user-1" } } },
+        }),
+      },
+      from: () => ({
+        update: (row: { zone_id: string }) => ({
+          eq: () => ({
+            select: async () => {
+              zoneWrites.push(row.zone_id);
+              return { data: [{ id: "user-1" }], error: null };
+            },
+          }),
+        }),
+      }),
+    };
+    expect(await syncProfileZone(db, state.profile.neighborhoodId)).toBeNull();
+    expect(zoneWrites).toEqual(["madina"]);
+    // The first write creates the v2 store with the same resident.
+    expect(repository.report(report)).toBeNull();
+    await repository.flush();
+    expect(
+      parseStoredState(storage.values.get(storageKey) ?? null).profile,
+    ).toEqual(legacyState.profile);
+  });
+
+  it("ignores the v1 store once a v2 store exists", async () => {
+    const storage = upgradedStorage({
+      [legacyMobileStorageKey]: JSON.stringify(legacyState),
+      [storageKey]: JSON.stringify({
+        ...initialState,
+        profile: { name: "Ama", neighborhoodId: "labone" },
+      }),
+    });
+    const repository = createDemoRepository(storage);
+    await repository.hydrate();
+    expect(repository.getSnapshot().state.profile).toEqual({
+      name: "Ama",
+      neighborhoodId: "labone",
+    });
+    expect(storage.getItem).toHaveBeenCalledExactlyOnceWith(storageKey);
   });
 });

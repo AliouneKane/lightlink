@@ -32,7 +32,7 @@ In Ghana, power cuts (*dumsor*) are often local: one neighbourhood is in the dar
 | | Pillar | What residents get |
 |:-:|---|---|
 | 🗺️ | **Know** | A live map of the 10 pilot neighbourhoods built from residents' reports, with official ECG outages shown apart (planned or surprise). Reporting takes two taps and works offline. |
-| 📈 | **Predict** | Hour-by-hour outage risk for the day: *"Coupure probable entre 09:00 et 17:00 (confiance 90 %)"*, with an honest confidence level and *"pas assez de données"* when the data is thin. |
+| 📈 | **Predict** | Hour-by-hour outage risk for the day: *"Likely outage between 09:00 and 17:00 (confidence 90%)"*, with an honest confidence level and *"not enough data"* when the data is thin. |
 | 🔌 | **Share** | Neighbours offer solar, generator or battery power; others find the nearest offer, request a place, and see the exact address only once accepted. |
 | 🔔 | **Alert** | Notifications when one's neighbourhood is cut, before an announced ECG outage, and when a request is received or answered. |
 
@@ -75,7 +75,7 @@ flowchart LR
 
 - **The rules live in the database.** Anti-abuse limits, privacy of addresses, sharing rules and alerts are enforced by Postgres (row level security, triggers), so the web and mobile apps behave the same.
 - **The forecast is explainable.** A rules model combines real ECG announcements with each neighbourhood's observed base rate; every parameter is sourced or measured ([details](prediction/README.md)). No model is trained on invented data.
-- **Residents improve it.** During an announced outage the app asks *"Avez-vous du courant ?"*: the answers measure how often ECG announcements are actually held.
+- **Residents improve it.** During an announced outage the app asks *"Do you have power?"*: the answers measure how often ECG announcements are actually held.
 
 More in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
@@ -129,7 +129,7 @@ How to run each test: [docs/TESTS.md](docs/TESTS.md). Measurements and dependenc
 
 - **Official ECG announcements** from X, Instagram, the ECG website and the press ([sources](docs/SOURCES_HORAIRES_ECG.md)), stored in `data/`; new ones are copied by hand into [`data/saisie/`](data/saisie/README.md).
 - **Residents' reports** and answers, aggregated by neighbourhood; a resident's position is never shown to others.
-- **Simulated data is always labelled**: the demo mode shows the model's real output for 16 Oct 2026 with its date, and presentation data is marked *[SIMULÉ]*.
+- **Simulated data is always labelled**: the demo mode shows the model's real output for 16 Oct 2026 with its date, and presentation data is marked *[SIMULATED]*.
 
 ## Known limits
 

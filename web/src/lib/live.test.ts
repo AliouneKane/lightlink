@@ -46,7 +46,7 @@ describe("live neighbourhood state", () => {
     const byId = Object.fromEntries(zones.map((zone) => [zone.id, zone]));
     expect(byId.osu.status).toBe("outage");
     expect(byId.osu.reports).toBe(3);
-    expect(byId.osu.restoration).toContain("non annoncée");
+    expect(byId.osu.restoration).toContain("Unannounced");
     expect(byId.labone.status).toBe("unstable");
     expect(byId.madina.status).toBe("powered");
     expect(byId.madina.reports).toBe(2);
@@ -66,9 +66,7 @@ describe("live neighbourhood state", () => {
         outage_origin: "planned",
       }),
     ]);
-    expect(osu.restoration).toBe(
-      "Coupure prévue par l’ECG · fin annoncée 17:00",
-    );
+    expect(osu.restoration).toBe("Planned ECG outage · announced end 17:00");
     const [announcedOnly] = applyLiveStatus(neighborhoods, [
       row({ planned_now: true, planned_until: "2026-10-17T17:00:00Z" }),
     ]);
@@ -78,9 +76,7 @@ describe("live neighbourhood state", () => {
     expect(
       applyLiveStatus(neighborhoods, [row({})])[0].plannedUntil,
     ).toBeUndefined();
-    expect(announcedOnly.restoration).toBe(
-      "Coupure annoncée par l’ECG jusqu’à 17:00",
-    );
+    expect(announcedOnly.restoration).toBe("ECG outage announced until 17:00");
   });
 });
 
@@ -94,11 +90,11 @@ describe("simulated demo reports (task 69)", () => {
         outage_origin: "surprise",
       }),
     ]);
-    expect(osu.restoration).toMatch(/^Données simulées · /);
+    expect(osu.restoration).toMatch(/^Simulated data · /);
     const [real] = applyLiveStatus(neighborhoods, [
       row({ simulated_reports: 0 }),
     ]);
-    expect(real.restoration).not.toContain("simulées");
+    expect(real.restoration).not.toContain("Simulated");
   });
 });
 
@@ -168,12 +164,12 @@ describe("live reports", () => {
   it("explains database refusals and keeps network failures for retry", () => {
     expect(
       liveErrorMessage({ message: "Too many reports, try again later" }),
-    ).toContain("5 signalements");
+    ).toContain("5 reports");
     expect(
       liveErrorMessage({
         message: "Position too far from the reported neighbourhood",
       }),
-    ).toContain("trop loin");
+    ).toContain("too far");
     expect(isRetryable({ message: "TypeError: Failed to fetch" })).toBe(true);
     expect(isRetryable({ message: "Too many reports, try again later" })).toBe(
       false,
@@ -190,14 +186,14 @@ describe("PAN's review of #6", () => {
       expect(zones.every((zone) => zone.status === "unknown")).toBe(true);
     }
     expect(withoutLiveData(neighborhoods, "error")[0].restoration).toBe(
-      "Données en direct indisponibles",
+      "Live data unavailable",
     );
   });
 
   it("does not promise an automatic resend on the web", () => {
     const message = liveErrorMessage({ message: "TypeError: Failed to fetch" });
-    expect(message).toContain("réessayez");
-    expect(message).not.toContain("sera envoyé");
+    expect(message).toContain("try again");
+    expect(message).not.toContain("will be sent");
   });
 
   it("sends the observation time and a stable id only when given", () => {

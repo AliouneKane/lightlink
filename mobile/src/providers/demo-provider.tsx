@@ -116,8 +116,8 @@ export function DemoProvider({
           ).catch(() => undefined);
         }
         const error = db
-          ? await action(db).catch(() => "L’action n’a pas pu aboutir.")
-          : "Pas de connexion. Réessayez quand le réseau revient.";
+          ? await action(db).catch(() => "The action could not be completed.")
+          : "No connection. Try again when the network is back.";
         // A form shows its own error: no second message in the common notice.
         if (options.notify !== false) setSharingNotice(error);
         await refreshSharing();
