@@ -4,5 +4,6 @@ dist
 artifacts
 test-results
 playwright-report
+vendor
 package-lock.json
 expo-env.d.ts

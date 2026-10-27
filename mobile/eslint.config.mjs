@@ -9,6 +9,7 @@ export default defineConfig([
       "artifacts/**",
       "test-results/**",
       "playwright-report/**",
+      "vendor/**",
       "expo-env.d.ts",
     ],
   },
