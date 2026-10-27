@@ -1,10 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   createDemoRepository,
+  legacyMobileStorageKey,
   mobileStorageKey as storageKey,
   type DemoStorage,
 } from "./demo-repository";
-import { initialState, neighborhoods, parseStoredState } from "./energy";
+import {
+  initialState,
+  neighborhoods,
+  parseStoredState,
+  syncProfileZone,
+} from "./energy";
 
 function memoryStorage(saved: string | null = null) {
   let value = saved;
@@ -430,5 +436,87 @@ describe("mobile neighborhood and sharing journeys", () => {
     expect(repository.requestOffer(offers[3].id)).toMatch(/already/);
     await repository.flush();
     expect(storage.setItem).not.toHaveBeenCalled();
+  });
+});
+
+describe("English store upgrade (PAN's review of #16)", () => {
+  const legacyState = {
+    ...initialState,
+    reports: [
+      {
+        ...initialState.reports[0],
+        id: "report-fr",
+        description: "Coupure observée à Madina.",
+      },
+    ],
+    profile: { name: "Madina resident", neighborhoodId: "madina" },
+    notificationsEnabled: true,
+  };
+
+  function upgradedStorage(entries: Record<string, string>) {
+    const values = new Map(Object.entries(entries));
+    return {
+      values,
+      getItem: vi.fn(async (key: string) => values.get(key) ?? null),
+      setItem: vi.fn(async (key: string, next: string) => {
+        values.set(key, next);
+      }),
+    };
+  }
+
+  it("resumes an open session with the v1 neighbourhood and English content", async () => {
+    const storage = upgradedStorage({
+      [legacyMobileStorageKey]: JSON.stringify(legacyState),
+    });
+    const repository = createDemoRepository(storage);
+    await repository.hydrate();
+    const { state } = repository.getSnapshot();
+    expect(state.profile).toEqual(legacyState.profile);
+    expect(state.notificationsEnabled).toBe(true);
+    expect(state.reports).toEqual(initialState.reports);
+    // Resuming an offline report syncs the phone's neighbourhood first.
+    const zoneWrites: string[] = [];
+    const db = {
+      auth: {
+        getSession: async () => ({
+          data: { session: { user: { id: "user-1" } } },
+        }),
+      },
+      from: () => ({
+        update: (row: { zone_id: string }) => ({
+          eq: () => ({
+            select: async () => {
+              zoneWrites.push(row.zone_id);
+              return { data: [{ id: "user-1" }], error: null };
+            },
+          }),
+        }),
+      }),
+    };
+    expect(await syncProfileZone(db, state.profile.neighborhoodId)).toBeNull();
+    expect(zoneWrites).toEqual(["madina"]);
+    // The first write creates the v2 store with the same resident.
+    expect(repository.report(report)).toBeNull();
+    await repository.flush();
+    expect(
+      parseStoredState(storage.values.get(storageKey) ?? null).profile,
+    ).toEqual(legacyState.profile);
+  });
+
+  it("ignores the v1 store once a v2 store exists", async () => {
+    const storage = upgradedStorage({
+      [legacyMobileStorageKey]: JSON.stringify(legacyState),
+      [storageKey]: JSON.stringify({
+        ...initialState,
+        profile: { name: "Ama", neighborhoodId: "labone" },
+      }),
+    });
+    const repository = createDemoRepository(storage);
+    await repository.hydrate();
+    expect(repository.getSnapshot().state.profile).toEqual({
+      name: "Ama",
+      neighborhoodId: "labone",
+    });
+    expect(storage.getItem).toHaveBeenCalledExactlyOnceWith(storageKey);
   });
 });

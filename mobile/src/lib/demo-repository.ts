@@ -2,6 +2,7 @@ import {
   DEMO_TIMESTAMP,
   getNeighborhoods,
   getOffers,
+  migrateLegacyState,
   neighborhoods,
   parseStoredState,
   validateOffer,
@@ -49,6 +50,8 @@ interface RepositoryOptions {
 const loadingError = "Your local data is still loading.";
 // v2: demo content translated to English; a v1 store would show French offers.
 export const mobileStorageKey = "lightlink.mobile.demo.v2";
+/** Read only while no v2 store exists, to keep the resident's profile. */
+export const legacyMobileStorageKey = "lightlink.mobile.demo.v1";
 const storageWarning =
   "Local storage is unavailable. Your changes remain usable during this session but will not be kept after closing.";
 const ownedOfferPrefix = "mobile-offer-";
@@ -145,7 +148,13 @@ export function createDemoRepository(
       hydration = (async () => {
         try {
           const saved = await storage.getItem(mobileStorageKey);
-          snapshot = { ...snapshot, state: parseMobileState(saved) };
+          const state =
+            saved !== null
+              ? parseMobileState(saved)
+              : migrateLegacyState(
+                  await storage.getItem(legacyMobileStorageKey),
+                );
+          snapshot = { ...snapshot, state };
         } catch {
           // Do not overwrite a store whose existing contents could not be read.
           storageFailed();

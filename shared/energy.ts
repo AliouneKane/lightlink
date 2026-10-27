@@ -74,6 +74,8 @@ export interface DemoState {
 
 // v2: demo content translated to English; a v1 store would show French offers.
 export const storageKey = "lightlink.demo.v2";
+/** Read only while no v2 store exists, to keep the resident's profile. */
+export const legacyStorageKey = "lightlink.demo.v1";
 export const DEMO_TIMESTAMP = "2026-10-04T15:42:00.000Z";
 export const DEMO_LABEL = "Demo data · 4 October 2026, 15:42 GMT";
 
@@ -681,6 +683,16 @@ export function parseStoredState(value: string | null): DemoState {
   } catch {
     return freshInitialState();
   }
+}
+
+/**
+ * A v1 store holds French demo content. Its profile and alert preference carry
+ * over, because live mode syncs the local neighbourhood to `profiles.zone_id`;
+ * the reports and offers are regenerated in English.
+ */
+export function migrateLegacyState(value: string | null): DemoState {
+  const { profile, notificationsEnabled } = parseStoredState(value);
+  return { ...freshInitialState(), profile, notificationsEnabled };
 }
 
 /** Accra uses GMT all year; explicitly avoid the viewer's local timezone. */
