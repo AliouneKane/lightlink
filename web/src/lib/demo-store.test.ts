@@ -10,13 +10,29 @@ import {
 } from "./energy";
 
 // A store written by the French interface, before the v2 key.
+const ownReport = {
+  ...initialState.reports[0],
+  id: "report-fr",
+  description: "Coupure observée à Madina.",
+};
+const ownOffer = {
+  ...initialState.offers[0],
+  id: "offer-own",
+  title: "Mon panneau solaire",
+};
 const legacyState = {
   ...initialState,
   reports: [
+    ownReport,
+    // A seed report as the French interface wrote it.
+    { ...initialState.reports[0], description: "Coupure confirmée." },
+  ],
+  offers: [ownOffer, initialState.offers[0]],
+  bookings: [
     {
-      ...initialState.reports[0],
-      id: "report-fr",
-      description: "Coupure observée à Madina.",
+      id: "booking-seed",
+      offerId: initialState.offers[0].id,
+      createdAt: "2026-10-05T10:00:00.000Z",
     },
   ],
   profile: { name: "Madina resident", neighborhoodId: "madina" },
@@ -52,6 +68,7 @@ function stubBrowserStorage(entries: Record<string, string>) {
     localStorage: {
       getItem: (key: string) => values.get(key) ?? null,
       setItem: (key: string, value: string) => void values.set(key, value),
+      removeItem: (key: string) => void values.delete(key),
     },
   });
   return values;
@@ -70,13 +87,13 @@ describe("English store upgrade (PAN's review of #16)", () => {
   beforeEach(() => vi.unstubAllGlobals());
   afterEach(() => vi.unstubAllGlobals());
 
-  it("keeps the v1 profile and preference, with English demo content", () => {
+  it("keeps the resident's v1 content, with English demo content", () => {
     const migrated = migrateLegacyState(JSON.stringify(legacyState));
     expect(migrated.profile).toEqual(legacyState.profile);
     expect(migrated.notificationsEnabled).toBe(true);
-    expect(migrated.reports).toEqual(initialState.reports);
-    expect(migrated.offers).toEqual(initialState.offers);
-    expect(migrated.bookings).toEqual([]);
+    expect(migrated.reports).toEqual([ownReport, ...initialState.reports]);
+    expect(migrated.offers).toEqual([ownOffer, ...initialState.offers]);
+    expect(migrated.bookings).toEqual(legacyState.bookings);
     expect(migrateLegacyState(null)).toEqual(initialState);
     expect(migrateLegacyState("{ broken")).toEqual(initialState);
   });
@@ -94,7 +111,18 @@ describe("English store upgrade (PAN's review of #16)", () => {
     // The v2 store now exists, in English, with the same resident.
     const saved = parseStoredState(values.get(storageKey) ?? null);
     expect(saved.profile).toEqual(legacyState.profile);
-    expect(saved.reports).toEqual(initialState.reports);
+    expect(saved.reports).toEqual([ownReport, ...initialState.reports]);
+  });
+
+  it("migrates once: deletes the v1 store after saving v2", async () => {
+    const values = stubBrowserStorage({
+      [legacyStorageKey]: JSON.stringify(legacyState),
+    });
+    await readStore();
+    expect(values.has(legacyStorageKey)).toBe(false);
+    expect(parseStoredState(values.get(storageKey) ?? null).offers[0]).toEqual(
+      ownOffer,
+    );
   });
 
   it("ignores the v1 store once a v2 store exists", async () => {

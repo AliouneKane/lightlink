@@ -4,8 +4,7 @@ import { useSyncExternalStore } from "react";
 import {
   initialState,
   legacyStorageKey,
-  migrateLegacyState,
-  parseStoredState,
+  loadStoredState,
   storageKey,
   type DemoState,
 } from "./energy";
@@ -13,16 +12,36 @@ import {
 let snapshot: DemoState | null = null;
 const listeners = new Set<() => void>();
 
+function readLegacy() {
+  try {
+    return window.localStorage.getItem(legacyStorageKey);
+  } catch {
+    return null;
+  }
+}
+
 function readState() {
   if (snapshot) return snapshot;
+  let saved: string | null;
   try {
-    const saved = window.localStorage.getItem(storageKey);
-    snapshot =
-      saved !== null
-        ? parseStoredState(saved)
-        : migrateLegacyState(window.localStorage.getItem(legacyStorageKey));
+    saved = window.localStorage.getItem(storageKey);
   } catch {
     snapshot = initialState;
+    return snapshot;
+  }
+  const { state, migrated } = loadStoredState(
+    saved,
+    saved === null ? readLegacy() : null,
+  );
+  snapshot = state;
+  if (migrated) {
+    // Migrate once: the v2 store becomes the source of truth.
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(state));
+      window.localStorage.removeItem(legacyStorageKey);
+    } catch {
+      // The next session migrates again; the session itself still works.
+    }
   }
   return snapshot;
 }

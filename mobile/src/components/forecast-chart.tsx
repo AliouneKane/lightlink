@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { Platform, Pressable, StyleSheet, View } from "react-native";
+import {
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+  type KeyDownEvent,
+} from "react-native";
 import Svg, { Circle, Line, Rect, Text as SvgText } from "react-native-svg";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { chartHours, type ZoneForecast } from "@/lib/forecast";
@@ -46,7 +52,9 @@ export function ForecastChart({ forecast }: { forecast: ZoneForecast }) {
           "aria-valuemax": riskValues.length,
           "aria-valuenow": selected + 1,
           "aria-valuetext": selectionDescription,
-          onKeyDown: (event: { key: string; preventDefault: () => void }) => {
+          // On the web, nativeEvent is the DOM KeyboardEvent, which has the same key.
+          onKeyDown: (event: KeyDownEvent) => {
+            const { key } = event.nativeEvent;
             if (
               [
                 "ArrowRight",
@@ -55,18 +63,16 @@ export function ForecastChart({ forecast }: { forecast: ZoneForecast }) {
                 "ArrowDown",
                 "Home",
                 "End",
-              ].includes(event.key)
+              ].includes(key)
             ) {
               event.preventDefault();
               select(
-                event.key === "Home"
+                key === "Home"
                   ? 0
-                  : event.key === "End"
+                  : key === "End"
                     ? riskValues.length - 1
                     : selected +
-                      (event.key === "ArrowRight" || event.key === "ArrowUp"
-                        ? 1
-                        : -1),
+                      (key === "ArrowRight" || key === "ArrowUp" ? 1 : -1),
               );
             }
           },

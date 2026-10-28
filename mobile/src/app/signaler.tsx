@@ -2,10 +2,10 @@ import { useRef, useState } from "react";
 import {
   Keyboard,
   Pressable,
-  ScrollView,
   StyleSheet,
-  TextInput,
   View,
+  type ScrollViewInstance,
+  type TextInputInstance,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -136,8 +136,8 @@ function ReportContent({ initialZone }: { initialZone: string }) {
   const [saved, setSaved] = useState<
     (ReportDraft & { status: EnergyStatus; author: string }) | null
   >(null);
-  const scrollRef = useRef<ScrollView>(null);
-  const descriptionRef = useRef<TextInput>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
+  const descriptionRef = useRef<TextInputInstance>(null);
   const statusY = useRef(0);
   const zone = neighborhoods.find(
     (item) => item.id === (saved?.zoneId ?? zoneId),

@@ -2,7 +2,7 @@ import {
   DEMO_TIMESTAMP,
   getNeighborhoods,
   getOffers,
-  migrateLegacyState,
+  loadStoredState,
   neighborhoods,
   parseStoredState,
   validateOffer,
@@ -17,6 +17,8 @@ import {
 export interface DemoStorage {
   getItem(key: string): Promise<string | null>;
   setItem(key: string, value: string): Promise<void>;
+  /** Deletes the v1 store once migrated; without it the entry is just ignored. */
+  removeItem?(key: string): Promise<void>;
 }
 
 export interface DemoSnapshot {
@@ -60,8 +62,7 @@ const ownedOfferPrefix = "mobile-offer-";
 export const isOwnedOffer = (offerId: string) =>
   offerId.startsWith(ownedOfferPrefix);
 
-function parseMobileState(value: string | null): DemoState {
-  const state = parseStoredState(value);
+function normalizeMobileState(state: DemoState): DemoState {
   const requested = new Set<string>();
   return {
     ...state,
@@ -146,21 +147,32 @@ export function createDemoRepository(
     hydrate(): Promise<void> {
       if (hydration) return hydration;
       hydration = (async () => {
+        let migrated = false;
         try {
           const saved = await storage.getItem(mobileStorageKey);
-          const state =
-            saved !== null
-              ? parseMobileState(saved)
-              : migrateLegacyState(
-                  await storage.getItem(legacyMobileStorageKey),
-                );
-          snapshot = { ...snapshot, state };
+          // An unreadable v1 entry is ignored: it must not disable the v2 store.
+          const legacy =
+            saved === null
+              ? await storage.getItem(legacyMobileStorageKey).catch(() => null)
+              : null;
+          const loaded = loadStoredState(saved, legacy, normalizeMobileState);
+          snapshot = { ...snapshot, state: loaded.state };
+          migrated = loaded.migrated;
         } catch {
           // Do not overwrite a store whose existing contents could not be read.
           storageFailed();
         }
         snapshot = { ...snapshot, ready: true };
-        notify();
+        if (migrated) {
+          // Migrate once: the v2 store becomes the source of truth.
+          save(snapshot.state);
+          writes = writes.then(async () => {
+            if (!storageAvailable) return;
+            await storage
+              .removeItem?.(legacyMobileStorageKey)
+              .catch(() => undefined);
+          });
+        } else notify();
       })();
       return hydration;
     },

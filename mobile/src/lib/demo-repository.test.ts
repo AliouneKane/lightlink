@@ -440,15 +440,30 @@ describe("mobile neighborhood and sharing journeys", () => {
 });
 
 describe("English store upgrade (PAN's review of #16)", () => {
+  const ownReport = {
+    ...initialState.reports[0],
+    id: "mobile-report-fr",
+    description: "Coupure observée à Madina.",
+  };
+  const ownOffer = {
+    ...initialState.offers[0],
+    id: "mobile-offer-own",
+    title: "Mon panneau solaire",
+  };
+  const booking = {
+    id: "mobile-request-1",
+    offerId: initialState.offers[1].id,
+    createdAt: "2026-10-05T10:00:00.000Z",
+  };
   const legacyState = {
     ...initialState,
     reports: [
-      {
-        ...initialState.reports[0],
-        id: "report-fr",
-        description: "Coupure observée à Madina.",
-      },
+      ownReport,
+      // A seed report as the French interface wrote it.
+      { ...initialState.reports[0], description: "Coupure confirmée." },
     ],
+    offers: [ownOffer, ...initialState.offers],
+    bookings: [booking],
     profile: { name: "Madina resident", neighborhoodId: "madina" },
     notificationsEnabled: true,
   };
@@ -460,6 +475,9 @@ describe("English store upgrade (PAN's review of #16)", () => {
       getItem: vi.fn(async (key: string) => values.get(key) ?? null),
       setItem: vi.fn(async (key: string, next: string) => {
         values.set(key, next);
+      }),
+      removeItem: vi.fn(async (key: string) => {
+        values.delete(key);
       }),
     };
   }
@@ -473,7 +491,9 @@ describe("English store upgrade (PAN's review of #16)", () => {
     const { state } = repository.getSnapshot();
     expect(state.profile).toEqual(legacyState.profile);
     expect(state.notificationsEnabled).toBe(true);
-    expect(state.reports).toEqual(initialState.reports);
+    expect(state.reports).toEqual([ownReport, ...initialState.reports]);
+    expect(state.offers).toEqual([ownOffer, ...initialState.offers]);
+    expect(state.bookings).toEqual([booking]);
     // Resuming an offline report syncs the phone's neighbourhood first.
     const zoneWrites: string[] = [];
     const db = {
@@ -501,6 +521,34 @@ describe("English store upgrade (PAN's review of #16)", () => {
     expect(
       parseStoredState(storage.values.get(storageKey) ?? null).profile,
     ).toEqual(legacyState.profile);
+  });
+
+  it("migrates once: saves v2 and deletes v1 right after hydration", async () => {
+    const storage = upgradedStorage({
+      [legacyMobileStorageKey]: JSON.stringify(legacyState),
+    });
+    const repository = createDemoRepository(storage);
+    await repository.hydrate();
+    await repository.flush();
+    expect(storage.values.has(legacyMobileStorageKey)).toBe(false);
+    expect(
+      parseStoredState(storage.values.get(storageKey) ?? null).offers[0],
+    ).toEqual(ownOffer);
+  });
+
+  it("keeps v2 storage working when only the v1 entry is unreadable", async () => {
+    const storage = upgradedStorage({});
+    storage.getItem.mockImplementation(async (key: string) => {
+      if (key === legacyMobileStorageKey) throw new Error("corrupt entry");
+      return null;
+    });
+    const repository = createDemoRepository(storage);
+    await repository.hydrate();
+    expect(repository.getSnapshot().storageError).toBeNull();
+    expect(repository.getSnapshot().state).toEqual(initialState);
+    expect(repository.report(report)).toBeNull();
+    await repository.flush();
+    expect(storage.values.has(storageKey)).toBe(true);
   });
 
   it("ignores the v1 store once a v2 store exists", async () => {

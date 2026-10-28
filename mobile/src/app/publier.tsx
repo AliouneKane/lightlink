@@ -2,10 +2,10 @@ import { useRef, useState } from "react";
 import {
   Keyboard,
   Pressable,
-  ScrollView,
   StyleSheet,
-  TextInput,
   View,
+  type ScrollViewInstance,
+  type TextInputInstance,
 } from "react-native";
 import { router } from "expo-router";
 import {
@@ -117,13 +117,13 @@ export default function Publish() {
     value: OfferDraft;
     previousIds: string[];
   } | null>(null);
-  const scrollRef = useRef<ScrollView>(null);
-  const titleRef = useRef<TextInput>(null);
-  const capacityRef = useRef<TextInput>(null);
-  const slotsRef = useRef<TextInput>(null);
-  const untilRef = useRef<TextInput>(null);
-  const priceRef = useRef<TextInput>(null);
-  const descriptionRef = useRef<TextInput>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
+  const titleRef = useRef<TextInputInstance>(null);
+  const capacityRef = useRef<TextInputInstance>(null);
+  const slotsRef = useRef<TextInputInstance>(null);
+  const untilRef = useRef<TextInputInstance>(null);
+  const priceRef = useRef<TextInputInstance>(null);
+  const descriptionRef = useRef<TextInputInstance>(null);
   const sectionY = useRef({ source: 0, welcome: 0, description: 0 });
   const fieldY = useRef<Partial<Record<InputKey, number>>>({});
 
