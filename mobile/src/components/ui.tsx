@@ -19,7 +19,9 @@ import {
   Text,
   TextInput,
   View,
+  type ScrollViewInstance,
   type TextProps,
+  type TextInputInstance,
   type TextInputProps,
   type StyleProp,
   type ViewStyle,
@@ -103,7 +105,7 @@ export function Screen({
   subtitle?: string;
   action?: ReactNode;
   scroll?: boolean;
-  scrollRef?: Ref<ScrollView>;
+  scrollRef?: Ref<ScrollViewInstance>;
   footer?: ReactNode;
   contentGap?: number;
 }) {
@@ -342,7 +344,7 @@ export function IconButton({
   );
 }
 export const Field = forwardRef<
-  TextInput,
+  TextInputInstance,
   TextInputProps & {
     label: string;
     error?: string;

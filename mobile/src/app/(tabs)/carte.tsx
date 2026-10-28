@@ -3,10 +3,10 @@ import {
   AccessibilityInfo,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   View,
   useWindowDimensions,
+  type ScrollViewInstance,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import {
@@ -66,7 +66,7 @@ function MapExplorer({ initialSelectedId }: { initialSelectedId: string }) {
   const { colors } = useTheme();
   const reducedMotion = useReducedMotion();
   const { height: windowHeight } = useWindowDimensions();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const detailY = useRef(0);
   const [selectedId, setSelectedId] = useState(initialSelectedId);
   const [query, setQuery] = useState("");

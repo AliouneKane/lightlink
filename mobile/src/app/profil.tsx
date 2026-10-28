@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Switch,
   View,
+  type ScrollViewInstance,
 } from "react-native";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { usePreventRemove } from "expo-router/react-navigation";
@@ -60,7 +61,7 @@ export default function ProfileScreen() {
   const reducedMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
   const { section } = useLocalSearchParams<{ section?: string }>();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const { colors, mode, setMode, resetTheme } = useTheme();
   const {
     state,
