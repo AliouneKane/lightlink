@@ -335,6 +335,7 @@ export const initialState: DemoState = {
 const validStatuses: readonly string[] = ["powered", "outage", "unstable"];
 const validSources: readonly string[] = ["solar", "generator", "battery"];
 const seedIds = new Set(seedReports.map((report) => report.id));
+const seedOfferIds = new Set(initialOffers.map((offer) => offer.id));
 const findNeighborhood = (id: unknown) =>
   neighborhoods.find((item) => item.id === id);
 
@@ -686,13 +687,49 @@ export function parseStoredState(value: string | null): DemoState {
 }
 
 /**
- * A v1 store holds French demo content. Its profile and alert preference carry
- * over, because live mode syncs the local neighbourhood to `profiles.zone_id`;
- * the reports and offers are regenerated in English.
+ * A v1 store holds French demo content. Only the seed reports and offers are
+ * regenerated in English: the resident's profile (live mode syncs it to
+ * `profiles.zone_id`), alert preference, own reports, own offers and bookings
+ * carry over. Seed ids are the same in v1 and v2, so bookings stay attached.
  */
 export function migrateLegacyState(value: string | null): DemoState {
-  const { profile, notificationsEnabled } = parseStoredState(value);
-  return { ...freshInitialState(), profile, notificationsEnabled };
+  const legacy = parseStoredState(value);
+  const fresh = freshInitialState();
+  const offers = [
+    ...legacy.offers.filter((offer) => !seedOfferIds.has(offer.id)),
+    ...fresh.offers,
+  ].slice(0, 100);
+  return {
+    reports: [
+      ...legacy.reports.filter((report) => !seedIds.has(report.id)),
+      ...fresh.reports,
+    ].slice(0, 200),
+    offers,
+    bookings: legacy.bookings.filter((booking) =>
+      offers.some((offer) => offer.id === booking.offerId),
+    ),
+    profile: legacy.profile,
+    notificationsEnabled: legacy.notificationsEnabled,
+  };
+}
+
+/**
+ * Picks the state to open with: the current store when it exists, otherwise the
+ * v1 store migrated. `migrated` asks the caller to save the result under the
+ * current key and delete the legacy one, so the migration runs only once.
+ * `legacy` is null when there is no v1 store or it could not be read.
+ */
+export function loadStoredState(
+  saved: string | null,
+  legacy: string | null,
+  normalize: (state: DemoState) => DemoState = (state) => state,
+): { state: DemoState; migrated: boolean } {
+  if (saved !== null)
+    return { state: normalize(parseStoredState(saved)), migrated: false };
+  return {
+    state: normalize(migrateLegacyState(legacy)),
+    migrated: legacy !== null,
+  };
 }
 
 /** Accra uses GMT all year; explicitly avoid the viewer's local timezone. */
