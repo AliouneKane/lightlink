@@ -61,7 +61,7 @@
   },
   "overrides": {
     "zod": "^4.6.7",
-    "node-forge": "^1.4.1",
+    "node-forge": "^1.4.3",
     "decode-uri-component": "$decode-uri-component"
   }
 }
